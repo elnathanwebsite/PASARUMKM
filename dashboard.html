@@ -1131,13 +1131,27 @@
                 </div>
 
                 <!-- Pencarian Produk (Manual) -->
-                <div class="mb-5 px-1">
+                <div class="mb-3 px-1">
                     <div class="relative">
                         <i
                             class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
                         <input type="text" id="manual-search-input" oninput="handleManualSearch(this.value)"
                             class="w-full bg-slate-50 border-none rounded-2xl py-3.5 pl-11 pr-4 text-sm font-medium focus:ring-2 focus:ring-blue-100 placeholder:text-slate-400 shadow-sm"
                             placeholder="Cari nama produk...">
+                    </div>
+                </div>
+
+                <!-- Filter Kategori -->
+                <div class="mb-5 px-1">
+                    <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" id="category-filter-container">
+                        <button onclick="setCategoryFilter('Semua', this)" class="category-btn active px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap bg-blue-600 text-white shadow-sm transition-colors">Semua</button>
+                        <button onclick="setCategoryFilter('Makanan', this)" class="category-btn px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">Makanan</button>
+                        <button onclick="setCategoryFilter('Minuman', this)" class="category-btn px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">Minuman</button>
+                        <button onclick="setCategoryFilter('Fashion', this)" class="category-btn px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">Fashion</button>
+                        <button onclick="setCategoryFilter('Kerajinan', this)" class="category-btn px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">Kerajinan</button>
+                        <button onclick="setCategoryFilter('Pertanian', this)" class="category-btn px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">Pertanian</button>
+                        <button onclick="setCategoryFilter('Jasa', this)" class="category-btn px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">Jasa</button>
+                        <button onclick="setCategoryFilter('Lainnya', this)" class="category-btn px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">Lainnya</button>
                     </div>
                 </div>
 
@@ -2104,6 +2118,7 @@
         let currentUid = null;
         let productsCache = [];
         let currentMarketPage = 1;
+        let currentMarketCategory = 'Semua';
         const MARKET_LIMIT = 20;
 
         // ================================================================
@@ -2542,7 +2557,7 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        model: "google/gemini-2.0-flash-lite-preview-02-05:free",
+                        model: "nvidia/nemotron-nano-12b-v2-vl:free",
                         messages: [
                             {
                                 role: "system",
@@ -2695,7 +2710,7 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        model: "google/gemini-2.0-flash-lite-preview-02-05:free",
+                        model: "nvidia/nemotron-nano-12b-v2-vl:free",
                         messages: [
                             {
                                 role: "system",
@@ -2805,6 +2820,11 @@
                     otherProducts = productsCache.filter(p => p.sellerId !== currentUid);
                 }
 
+                // Apply Category Filter to otherProducts
+                if (currentMarketCategory !== 'Semua') {
+                    otherProducts = otherProducts.filter(p => p.category === currentMarketCategory);
+                }
+
                 // Render Produk Saya (Dua Laci: Beranda & Toko)
                 if (myProducts.length > 0) {
                     myProductsSection.classList.remove('hidden');
@@ -2860,7 +2880,11 @@
             const grid = document.getElementById('product-grid');
             const loadMoreContainer = document.getElementById('load-more-container');
             
-            const otherProducts = productsCache.filter(p => p.sellerId !== currentUid);
+            let otherProducts = productsCache.filter(p => p.sellerId !== currentUid);
+            if (currentMarketCategory !== 'Semua') {
+                otherProducts = otherProducts.filter(p => p.category === currentMarketCategory);
+            }
+            
             const startIndex = currentMarketPage * MARKET_LIMIT;
             currentMarketPage++;
             const endIndex = currentMarketPage * MARKET_LIMIT;
@@ -2874,6 +2898,32 @@
                 loadMoreContainer.classList.add('hidden');
                 loadMoreContainer.classList.remove('flex');
             }
+        };
+
+        window.setCategoryFilter = function(category, btnElement) {
+            currentMarketCategory = category;
+            
+            // Update UI
+            const btns = document.querySelectorAll('.category-btn');
+            btns.forEach(btn => {
+                btn.className = "category-btn px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors";
+            });
+            btnElement.className = "category-btn active px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap bg-blue-600 text-white shadow-sm transition-colors";
+
+            // Reload products grid
+            // We use setTimeout to allow UI to update quickly before heavy rendering
+            setTimeout(() => {
+                // If there's an active manual search, clear it so it doesn't conflict
+                const searchInput = document.getElementById('manual-search-input');
+                if (searchInput.value) {
+                    searchInput.value = '';
+                    handleManualSearch('');
+                } else {
+                    // Reset pagination but do not fetch from DB again
+                    currentMarketPage = 1;
+                    loadMarketProducts(null, true); // true param doesn't exist, we just pass null
+                }
+            }, 50);
         };
 
         function createCompactProductCard(product) {
@@ -3381,7 +3431,7 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        model: "google/gemini-2.0-flash-lite-preview-02-05:free",
+                        model: "nvidia/nemotron-nano-12b-v2-vl:free",
                         messages: [
                             {
                                 role: "system",
@@ -3488,7 +3538,7 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        model: "google/gemini-2.0-flash-lite-preview-02-05:free",
+                        model: "nvidia/nemotron-nano-12b-v2-vl:free",
                         messages: [
                             {
                                 role: "system",
