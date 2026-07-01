@@ -409,13 +409,20 @@
                     </div>
                 </div>
 
-                <!-- Total Pendapatan Bersih -->
-                <div class="bg-emerald-500 text-white p-4 rounded-xl shadow-md flex justify-between items-center">
-                    <div>
-                        <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-100">Total Saldo Penjualan</span>
-                        <h4 id="det-rev-total" class="font-display font-black text-xl mt-0.5">Rp 0</h4>
+                <!-- Rincian Finansial Card -->
+                <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-5 rounded-2xl shadow-lg space-y-3">
+                    <div class="flex justify-between items-center border-b border-white/10 pb-2">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-blue-100">Total Pendapatan (Kotor)</span>
+                        <span id="det-rev-gross" class="text-sm font-black font-mono">Rp 0</span>
                     </div>
-                    <i class="fa-solid fa-wallet text-2xl text-white/30"></i>
+                    <div class="flex justify-between items-center border-b border-white/10 pb-2">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-blue-100">Total Penarikan (Pending/Sukses)</span>
+                        <span id="det-rev-withdrawn" class="text-sm font-black font-mono text-red-200">-Rp 0</span>
+                    </div>
+                    <div class="flex justify-between items-center pt-1">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-blue-100">Saldo Aktif Bersih</span>
+                        <span id="det-rev-net" class="text-lg font-black font-mono">Rp 0</span>
+                    </div>
                 </div>
             </div>
             <!-- Footer -->
@@ -499,6 +506,7 @@
 
         let sellerSales = {};
         let sellerPaymentSales = {};
+        let sellerWd = {};
 
         async function loadUsers() {
             try {
@@ -508,6 +516,17 @@
                 // Fetch order history for revenue statistics
                 const salesRs = await turso.execute("SELECT total_price, payment_method, shipping_method, seller_uid FROM riwayat_pemesanan");
                 
+                // Fetch withdrawal logs to calculate active balances
+                const wdSumRs = await turso.execute("SELECT seller_uid, amount FROM tarik_dana WHERE status IN ('Pending', 'Disetujui')");
+                sellerWd = {};
+                wdSumRs.rows.forEach(row => {
+                    const uid = row.seller_uid;
+                    const amount = parseFloat(row.amount) || 0;
+                    if (!uid) return;
+                    if (!sellerWd[uid]) sellerWd[uid] = 0;
+                    sellerWd[uid] += amount;
+                });
+
                 // Process seller caches
                 sellerSales = {};
                 sellerPaymentSales = {};
@@ -553,6 +572,7 @@
             users.forEach(user => {
                 const isVerified = user.isVerified === 1;
                 const totalSales = sellerSales[user.uid] || 0;
+                const activeBalance = totalSales - (sellerWd[user.uid] || 0);
                 const row = document.createElement('tr');
                 row.className = "hover:bg-slate-50 transition-colors";
                 row.innerHTML = `
@@ -569,7 +589,7 @@
                     <td class="px-6 py-4">
                         <p class="text-xs font-bold text-slate-700"><i class="fa-brands fa-whatsapp text-green-500 mr-1"></i> ${user.phone || '-'}</p>
                     </td>
-                    <td class="px-6 py-4 text-right text-xs font-bold text-emerald-600 font-mono">${formatRupiah(totalSales)}</td>
+                    <td class="px-6 py-4 text-right text-xs font-bold text-emerald-600 font-mono">${formatRupiah(activeBalance)}</td>
                     <td class="px-6 py-4 text-center">
                         <span class="status-badge ${isVerified ? 'status-verified' : 'status-pending'}">
                             ${isVerified ? 'Terverifikasi' : 'Pending'}
@@ -737,12 +757,16 @@
             }
 
             const pSales = sellerPaymentSales[uid] || { QRIS: 0, PayPal: 0, WhatsApp: 0 };
-            const total = sellerSales[uid] || 0;
+            const gross = sellerSales[uid] || 0;
+            const withdrawn = sellerWd[uid] || 0;
+            const net = gross - withdrawn;
 
             document.getElementById('det-rev-qris').textContent = formatRupiah(pSales.QRIS);
             document.getElementById('det-rev-paypal').textContent = formatRupiah(pSales.PayPal);
             document.getElementById('det-rev-wa').textContent = formatRupiah(pSales.WhatsApp);
-            document.getElementById('det-rev-total').textContent = formatRupiah(total);
+            document.getElementById('det-rev-gross').textContent = formatRupiah(gross);
+            document.getElementById('det-rev-withdrawn').textContent = '-' + formatRupiah(withdrawn);
+            document.getElementById('det-rev-net').textContent = formatRupiah(net);
 
             document.getElementById('seller-detail-modal').classList.remove('hidden');
         };

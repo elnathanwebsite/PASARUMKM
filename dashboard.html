@@ -1488,6 +1488,15 @@
                     <h2 class="font-display text-base font-bold text-slate-800 flex items-center gap-2 mb-4">
                         <i class="fa-solid fa-money-bill-transfer text-blue-500"></i> Penarikan Saldo Toko
                     </h2>
+
+                    <!-- Saldo Aktif Alert Block -->
+                    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 rounded-xl mb-4 flex justify-between items-center shadow-md shadow-blue-100/50">
+                        <div>
+                            <span class="text-[9px] uppercase font-bold tracking-wider text-blue-100">Saldo Aktif yang Bisa Ditarik</span>
+                            <h4 id="wd-active-balance" class="font-display font-black text-lg mt-0.5">Rp 0</h4>
+                        </div>
+                        <i class="fa-solid fa-wallet text-xl text-white/30"></i>
+                    </div>
                     
                     <!-- Bank Account Info Form -->
                     <div class="space-y-4">
@@ -3575,6 +3584,20 @@
                     if (currentUserData.bankAccountName) document.getElementById('wd-bank-account-name').value = currentUserData.bankAccountName;
                 }
 
+                // Calculate withdrawals to determine active balance
+                let wdTotal = 0;
+                try {
+                    const wdSumRs = await turso.execute({
+                        sql: "SELECT SUM(amount) as total FROM tarik_dana WHERE seller_uid = ? AND status IN ('Pending', 'Disetujui')",
+                        args: [currentUid]
+                    });
+                    wdTotal = parseFloat(wdSumRs.rows[0].total) || 0;
+                } catch(e) {
+                    console.error("Gagal memuat total penarikan:", e);
+                }
+                const activeBalance = grandTotal - wdTotal;
+                document.getElementById('wd-active-balance').textContent = formatRupiah(activeBalance);
+
                 // Load withdrawal history logs
                 loadWithdrawalHistory();
             } catch (err) {
@@ -3618,12 +3641,60 @@
                 return;
             }
 
-            if (amountVal <= 0) {
-                showToast("Masukkan jumlah penarikan yang valid (di atas Rp 0).", "error");
+            // 1. Minimal penarikan Rp 100.000
+            if (amountVal < 100000) {
+                showToast("Minimal penarikan adalah Rp 100.000.", "error");
+                return;
+            }
+
+            // 2. Maksimal penarikan Rp 500.000
+            if (amountVal > 500000) {
+                showToast("Maksimal penarikan per pengajuan adalah Rp 500.000.", "error");
                 return;
             }
 
             try {
+                // 3. Cek Saldo Aktif Penjual
+                const salesRs = await turso.execute({
+                    sql: "SELECT SUM(total_price) as total FROM riwayat_pemesanan WHERE seller_uid = ?",
+                    args: [currentUid]
+                });
+                const revenueSum = parseFloat(salesRs.rows[0].total) || 0;
+
+                const wdRs = await turso.execute({
+                    sql: "SELECT SUM(amount) as total FROM tarik_dana WHERE seller_uid = ? AND status IN ('Pending', 'Disetujui')",
+                    args: [currentUid]
+                });
+                const wdSum = parseFloat(wdRs.rows[0].total) || 0;
+
+                const activeBalance = revenueSum - wdSum;
+
+                if (amountVal > activeBalance) {
+                    showToast(`Saldo tidak mencukupi. Saldo aktif Anda: Rp ${new Intl.NumberFormat('id-ID').format(activeBalance)}`, "error");
+                    return;
+                }
+
+                // 4. Batasan Limit Harian 2x
+                const historyRs = await turso.execute({
+                    sql: "SELECT created_at FROM tarik_dana WHERE seller_uid = ?",
+                    args: [currentUid]
+                });
+
+                const localDateStr = new Date().toLocaleDateString('en-CA'); // format: YYYY-MM-DD
+                let dailyCount = 0;
+                historyRs.rows.forEach(row => {
+                    const dateObj = new Date(row.created_at + " UTC");
+                    const rowDateStr = dateObj.toLocaleDateString('en-CA');
+                    if (rowDateStr === localDateStr) {
+                        dailyCount++;
+                    }
+                });
+
+                if (dailyCount >= 2) {
+                    showToast("Batas penarikan harian tercapai. Maksimal 2x penarikan per hari.", "error");
+                    return;
+                }
+
                 // Insert request
                 const bName = currentUserData.businessName || currentUserData.username || 'UMKM';
                 await turso.execute({
@@ -3633,7 +3704,9 @@
                 
                 showToast("Pengajuan penarikan dana berhasil dikirim!", "success");
                 document.getElementById('wd-amount').value = '';
-                loadWithdrawalHistory();
+                
+                // Refresh dashboard revenue & active balance
+                loadSellerRevenue();
             } catch (err) {
                 showToast("Gagal mengirim pengajuan: " + err.message, "error");
             }
