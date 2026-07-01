@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Riwayat Pemesanan - Pasar UMKM</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Firebase SDK (HANYA AUTENTIKASI) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        display: ['Outfit', 'sans-serif'],
+                        body: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --bg: #F8FAFC; /* Sedikit off-white agar nyaman di mata */
+            --fg: #0F172A;
+            --muted: #64748B;
+            --accent: #1E3A8A;
+            --card: #FFFFFF;
+            --border: #F1F5F9;
+            --shadow: 0 4px 20px rgba(0,0,0,0.03);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body, html {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            min-height: 100vh;
+        }
+
+        /* Header Sticky */
+        .app-header {
+            position: sticky; top: 0; left: 0; right: 0; height: 64px;
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border); z-index: 100;
+            display: flex; align-items: center; padding: 0 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        }
+
+        .glass-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            padding: 16px; margin-bottom: 16px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+        }
+
+        .tab-btn {
+            flex: 1; text-align: center; padding: 10px 0; font-size: 14px; font-weight: 600; color: var(--muted);
+            border-bottom: 2px solid transparent; transition: all 0.3s ease; cursor: pointer;
+        }
+        .tab-btn.active { 
+            color: var(--accent); 
+            border-bottom-color: var(--accent); 
+        }
+
+        .loader { width: 30px; height: 30px; border: 3px solid rgba(30, 58, 138, 0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Scrollbar halus */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+
+        /* Responsive Container Layout */
+        .page-container {
+            width: 100%;
+            max-width: 800px; /* Lebar konten maksimal di desktop */
+            margin: 0 auto;
+            padding-bottom: 40px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- App Header -->
+    <header class="app-header">
+        <div class="w-full max-w-[800px] mx-auto flex items-center">
+            <button onclick="window.location.href='dashboard.html'" class="w-9 h-9 flex items-center justify-center rounded-full bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 transition-colors">
+                <i class="fa-solid fa-chevron-left text-sm"></i>
+            </button>
+            <h1 class="font-display text-lg font-bold tracking-tight text-slate-800 ml-4">Riwayat Pesanan</h1>
+        </div>
+    </header>
+
+    <main class="relative z-10 page-container px-4">
+        <!-- Control Bar: Tabs & Actions -->
+        <div class="mt-6 mb-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
+            <!-- Tabs -->
+            <div class="flex w-full sm:w-auto bg-slate-50 rounded-xl p-1">
+                <button onclick="switchTab('beli')" id="tab-beli" class="tab-btn active rounded-lg w-full sm:w-32 text-xs font-bold">
+                    Pembelian
+                </button>
+                <button onclick="switchTab('jual')" id="tab-jual" class="tab-btn rounded-lg w-full sm:w-32 text-xs font-bold">
+                    Pesanan Masuk
+                </button>
+                <button onclick="switchTab('resi')" id="tab-resi" class="tab-btn rounded-lg w-full sm:w-32 text-xs font-bold">
+                    Cek Resi
+                </button>
+            </div>
+
+            <!-- Delete Button -->
+            <button onclick="clearHistory()" class="w-full sm:w-auto flex items-center justify-center gap-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 px-4 py-2.5 rounded-xl border border-red-100 transition-all active:scale-95">
+                <i class="fa-solid fa-trash-can"></i> 
+                <span>Hapus Riwayat</span>
+            </button>
+        </div>
+
+        <!-- Orders List -->
+        <div id="orders-container" class="min-h-[300px]">
+            <div class="flex flex-col items-center justify-center py-16 text-center">
+                <div class="loader mb-4"></div>
+                <p class="text-sm text-slate-400 font-medium">Memuat data pesanan...</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Lacak Resi (Timeline) -->
+    <div id="lacak-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden border border-slate-100 animate-[fadeIn_0.2s_ease-out]">
+            <!-- Header -->
+            <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+                <div>
+                    <h3 class="font-display font-bold text-base text-slate-800">Lacak Kiriman</h3>
+                    <p id="lacak-modal-resi" class="text-[10px] font-mono font-bold text-slate-400 mt-0.5">RESI-XXXXX</p>
+                </div>
+                <button onclick="closeModal('lacak-modal')" class="w-8 h-8 rounded-full bg-slate-200/50 flex items-center justify-center hover:bg-slate-200 transition-colors">
+                    <i class="fa-solid fa-xmark text-slate-600"></i>
+                </button>
+            </div>
+            <!-- Timeline Body -->
+            <div id="lacak-timeline" class="p-6 max-h-[350px] overflow-y-auto space-y-6">
+                <!-- Timeline items loaded dynamically -->
+            </div>
+            <!-- Footer -->
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 text-right">
+                <button onclick="closeModal('lacak-modal')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition-all">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Update Status Resi (Penjual) -->
+    <div id="update-resi-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden border border-slate-100 animate-[fadeIn_0.2s_ease-out]">
+            <!-- Header -->
+            <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+                <div>
+                    <h3 class="font-display font-bold text-base text-slate-800">Update Status Resi</h3>
+                    <p id="update-modal-resi" class="text-[10px] font-mono font-bold text-slate-400 mt-0.5">RESI-XXXXX</p>
+                </div>
+                <button onclick="closeModal('update-resi-modal')" class="w-8 h-8 rounded-full bg-slate-200/50 flex items-center justify-center hover:bg-slate-200 transition-colors">
+                    <i class="fa-solid fa-xmark text-slate-600"></i>
+                </button>
+            </div>
+            <!-- Body -->
+            <div class="p-6 space-y-4">
+                <input type="hidden" id="update-order-id">
+                
+                <div>
+                    <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-1.5 block">Pilih Status Cepat</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="selectQuickStatus('Paket sedang disiapkan oleh penjual')" class="py-2 px-3 border border-slate-200 rounded-xl text-left text-xs font-medium hover:border-blue-500 hover:bg-blue-50/50 transition-all text-slate-700">📦 Sedang Disiapkan</button>
+                        <button onclick="selectQuickStatus('Paket sudah diserahkan ke pihak kurir')" class="py-2 px-3 border border-slate-200 rounded-xl text-left text-xs font-medium hover:border-blue-500 hover:bg-blue-50/50 transition-all text-slate-700">🚚 Kurir Mengambil</button>
+                        <button onclick="selectQuickStatus('Paket sedang dalam perjalanan ke tujuan')" class="py-2 px-3 border border-slate-200 rounded-xl text-left text-xs font-medium hover:border-blue-500 hover:bg-blue-50/50 transition-all text-slate-700">🛣️ Dalam Perjalanan</button>
+                        <button onclick="selectQuickStatus('Paket sudah sampai di alamat pembeli')" class="py-2 px-3 border border-slate-200 rounded-xl text-left text-xs font-medium hover:border-blue-500 hover:bg-blue-50/50 transition-all text-slate-700">🏡 Paket Sampai</button>
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-100 pt-3">
+                    <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-1.5 block">Keterangan Manual</label>
+                    <textarea id="resi-status-text" rows="3" placeholder="Masukkan laporan status pengiriman manual..." class="w-full p-3 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-slate-800"></textarea>
+                </div>
+            </div>
+            <!-- Footer -->
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
+                <button onclick="closeModal('update-resi-modal')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition-all">Batal</button>
+                <button onclick="saveResiStatus()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-200 transition-all">Kirim Laporan</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://esm.sh/@libsql/client/web';
+
+        // Konfigurasi Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDjtYr8Wsb9WAtfxM3UfDMFL_oFaMYM2Yg",
+            authDomain: "umkm-75e22.firebaseapp.com",
+            projectId: "umkm-75e22",
+            storageBucket: "umkm-75e22.firebasestorage.app",
+            messagingSenderId: "1042010063344",
+            appId: "1:1042010063344:web:c7be3bbedcd8f79c2c5d35"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        // Konfigurasi Turso
+        // PERINGATAN: Token ini diekspos di sisi klien. Untuk produksi, gunakan API backend Anda sendiri.
+        const turso = createClient({
+            url: 'libsql://umkm-elnathanwebsite.aws-ap-northeast-1.turso.io',
+            authToken: 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzgyOTg4OTgsImlkIjoiMDE5ZTA5MmItNWEwMS03ZDE0LWE2M2EtZTg0YTBhODIzMmVjIiwicmlkIjoiMjUxYTliYzctYjA0NC00YzY3LTlmZWItYzBmNzQwMjczNTQxIn0.K_pVVV7lZDUOuz7s3TljfqC-VPiMtIpW2RoAaYlBFmqu-HTc6ueuw3B6kBbUBx8TTy5-g_E-H7zoqpLHLFLQDQ'
+        });
+
+        // Database Healing: Ensure Lacak Pesanan exists
+        (async () => {
+            try {
+                await turso.execute(`
+                    CREATE TABLE IF NOT EXISTS lacak_pesanan (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        order_id INTEGER NOT NULL,
+                        status_info TEXT NOT NULL,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    )
+                `);
+            } catch(e) {
+                console.error("Database healing lacak_pesanan error:", e);
+            }
+        })();
+
+        let currentUid = null;
+        let currentTab = 'beli';
+        const formatRupiah = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                currentUid = user.uid;
+                localStorage.removeItem('hasNewOrder');
+                loadOrders();
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+
+        window.switchTab = function(tab) {
+            currentTab = tab;
+            
+            // Style update for tabs
+            const btnBeli = document.getElementById('tab-beli');
+            const btnJual = document.getElementById('tab-jual');
+            const btnResi = document.getElementById('tab-resi');
+            
+            btnBeli.classList.remove('active', 'bg-white', 'shadow-sm');
+            btnJual.classList.remove('active', 'bg-white', 'shadow-sm');
+            btnResi.classList.remove('active', 'bg-white', 'shadow-sm');
+
+            if (tab === 'beli') {
+                btnBeli.classList.add('active', 'bg-white', 'shadow-sm');
+            } else if (tab === 'jual') {
+                btnJual.classList.add('active', 'bg-white', 'shadow-sm');
+            } else if (tab === 'resi') {
+                btnResi.classList.add('active', 'bg-white', 'shadow-sm');
+            }
+            
+            if (tab === 'resi') {
+                renderResiChecker();
+            } else {
+                loadOrders();
+            }
+        }
+
+        async function loadOrders() {
+            if(!currentUid) return;
+            const container = document.getElementById('orders-container');
+            // Menampilkan loading state (skeleton loader)
+            let skeletonHtml = '';
+            for (let i = 0; i < 3; i++) {
+                skeletonHtml += `
+                    <div class="glass-card p-5 mb-4 animate-pulse border border-slate-100 bg-white rounded-2xl shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="h-4 bg-slate-200 rounded w-1/4"></div>
+                            <div class="h-6 bg-slate-200 rounded-md w-20"></div>
+                        </div>
+                        <div class="flex gap-4 mb-4">
+                            <div class="w-16 h-16 bg-slate-200 rounded-xl"></div>
+                            <div class="flex-grow space-y-2 py-1">
+                                <div class="h-4 bg-slate-200 rounded w-1/2"></div>
+                                <div class="h-3 bg-slate-200 rounded w-1/3"></div>
+                            </div>
+                        </div>
+                        <div class="border-t border-slate-100 pt-3 flex justify-between">
+                            <div class="h-3 bg-slate-200 rounded w-1/5"></div>
+                            <div class="h-4 bg-slate-200 rounded w-1/4"></div>
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = skeletonHtml;
+
+            try {
+                let sqlQuery = "";
+                if(currentTab === 'beli') {
+                    sqlQuery = "SELECT * FROM riwayat_pemesanan WHERE buyer_uid = ? ORDER BY created_at DESC";
+                } else {
+                    sqlQuery = "SELECT * FROM riwayat_pemesanan WHERE seller_uid = ? ORDER BY created_at DESC";
+                }
+
+                const rs = await turso.execute({ sql: sqlQuery, args: [currentUid] });
+                
+                // Logic batasan 10 riwayat & auto delete
+                let rowsToDisplay = rs.rows;
+                if (rs.rows.length > 10) {
+                    rowsToDisplay = rs.rows.slice(0, 10);
+                    const rowsToDelete = rs.rows.slice(10);
+                    for (const row of rowsToDelete) {
+                        await turso.execute({ sql: "DELETE FROM riwayat_pemesanan WHERE id = ?", args: [row.id] });
+                    }
+                }
+
+                if (rowsToDisplay.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-16 border-2 border-dashed border-slate-200 rounded-2xl bg-white">
+                            <div class="w-16 h-16 mx-auto bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                                <i class="fa-solid fa-box-open text-3xl text-slate-300"></i>
+                            </div>
+                            <h3 class="text-base font-bold text-slate-700 mb-1">Belum ada pesanan</h3>
+                            <p class="text-sm text-slate-400">Riwayat ${currentTab === 'beli' ? 'pembelian' : 'penjualan'} Anda kosong.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = '';
+                
+                // Fragment untuk optimasi rendering
+                const fragment = document.createDocumentFragment();
+
+                rowsToDisplay.forEach(row => {
+                    const dateObj = new Date(row.created_at + " UTC");
+                    const dateStr = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+                    const timeStr = dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+                    const isBeli = currentTab === 'beli';
+                    const personName = isBeli ? `Penjual` : `Pembeli: ${row.buyer_name}`;
+                    const phoneToShow = isBeli ? row.seller_phone : row.buyer_phone;
+                    // Sanitasi nomor HP untuk link WA
+                    const cleanPhone = phoneToShow ? phoneToShow.replace(/[^0-9]/g, '').replace(/^0/, '62') : '';
+                    const waLink = cleanPhone ? `https://wa.me/${cleanPhone}` : '#';
+
+                    // Badge Metode Pembayaran
+                    let paymentBadge = '';
+                    if (row.payment_method === 'QRIS') {
+                        paymentBadge = `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-blue-50 text-blue-700 text-[10px] font-bold uppercase tracking-wide border border-blue-100"><i class="fa-solid fa-qrcode"></i> QRIS</span>`;
+                    } else if (row.payment_method === 'PayPal') {
+                        paymentBadge = `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-sky-50 text-sky-700 text-[10px] font-bold uppercase tracking-wide border border-sky-100"><i class="fa-brands fa-paypal"></i> PayPal</span>`;
+                    } else if (row.payment_method === 'WhatsApp') {
+                        paymentBadge = `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-green-50 text-green-700 text-[10px] font-bold uppercase tracking-wide border border-green-100"><i class="fa-brands fa-whatsapp"></i> Manual WA</span>`;
+                    } else {
+                        paymentBadge = `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wide border border-slate-200">${row.payment_method || 'Lainnya'}</span>`;
+                    }
+
+const locationText = row.location ? `<div class="text-xs text-slate-500 mt-2 flex items-start gap-2 bg-slate-50 p-2 rounded-lg"><i class="fa-solid fa-location-dot mt-0.5 text-red-400 shrink-0"></i> <span class="leading-snug break-words">${row.location}</span></div>` : '';
+                    const notesText = row.notes ? `<div class="text-xs text-slate-500 mt-2 flex items-start gap-2 bg-blue-50/50 p-2 rounded-lg border border-blue-50"><i class="fa-regular fa-comment-dots mt-0.5 text-blue-400 shrink-0"></i> <span class="leading-snug break-words">"${row.notes}"</span></div>` : '';
+
+                    const card = document.createElement('div');
+                    card.className = 'glass-card relative group';
+                    const resiCode = `RESI-${String(row.id).padStart(5, '0')}`;
+                    
+                    // HTML Structure Kartu
+                    card.innerHTML = `
+                        <!-- Header Kartu -->
+                        <div class="flex flex-wrap justify-between items-center gap-2 mb-4 pb-3 border-b border-slate-100">
+                            <div class="flex items-center gap-2 text-xs text-slate-400 font-semibold uppercase tracking-wider">
+                                <i class="fa-regular fa-clock"></i> 
+                                <span>${dateStr} • ${timeStr}</span>
+                            </div>
+                             <div class="flex items-center gap-2">
+                                 ${paymentBadge}
+                                 ${row.shipping_method ? `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-purple-50 text-purple-700 text-[10px] font-bold uppercase tracking-wide border border-purple-100"><i class="fa-solid fa-truck"></i> ${row.shipping_method}</span>` : ''}
+                                 <span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wide border border-emerald-100"><i class="fa-solid fa-check-circle"></i> Lunas</span>
+                             </div>
+                        </div>
+                        
+                        <div class="text-[11px] font-mono font-black text-indigo-600 bg-indigo-50/70 px-2 py-0.5 rounded border border-indigo-100/50 inline-block mb-3">No. Resi: ${resiCode}</div>
+
+                        <!-- Detail Produk -->
+                        <div class="flex gap-4 mb-4">
+                            <div class="w-14 h-14 shrink-0 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center text-blue-600 border border-blue-100 shadow-sm">
+                                <i class="fa-solid fa-box-open text-2xl"></i>
+                            </div>
+                            <div class="flex-grow min-w-0">
+                                <h3 class="font-display font-bold text-lg text-slate-800 leading-tight mb-1 truncate">${row.product_name}</h3>
+                                <div class="flex items-center gap-2 text-sm text-slate-500 font-medium">
+                                    <span class="bg-slate-100 px-1.5 py-0.5 rounded text-xs text-slate-600 font-bold">${row.qty}x</span>
+                                    <span>${formatRupiah(row.product_price)}</span>
+                                </div>
+                                ${locationText}
+                                ${notesText}
+                            </div>
+                        </div>
+
+                        <!-- Footer / Total & Kontak -->
+                        <div class="bg-slate-50/80 rounded-xl p-4 border border-white/60">
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="text-xs font-bold text-slate-500 uppercase tracking-wide">Total Bayar</span>
+                                <span class="text-lg font-display font-black text-blue-700">${formatRupiah(row.total_price)}</span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4 text-xs text-slate-600 pt-2 border-t border-slate-200">
+                                <div class="flex items-center gap-2 overflow-hidden">
+                                    <i class="fa-solid fa-user-tie text-slate-400 w-4 text-center"></i>
+                                    <span class="truncate font-medium">${personName}</span>
+                                </div>
+                                <div class="flex items-center gap-2 overflow-hidden">
+                                    <i class="fa-brands fa-whatsapp text-green-500 w-4 text-center"></i>
+                                    <span class="truncate font-mono">${phoneToShow || '-'}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tombol Aksi -->
+                        ${isBeli ? `
+                            <div class="mt-4 flex gap-2">
+                                <button onclick="lacakKiriman(${row.id}, '${resiCode}')" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all border border-slate-200/50 flex items-center justify-center gap-1.5 active:scale-95">
+                                    <i class="fa-solid fa-truck-fast"></i> Lacak Kiriman
+                                </button>
+                                <a href="${waLink}" target="_blank" class="flex-1 text-center py-2.5 rounded-xl font-bold text-white text-xs transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.98] shadow-lg shadow-green-900/10 flex items-center justify-center gap-1.5" style="background: linear-gradient(135deg, #10B981, #059669);">
+                                    <i class="fa-brands fa-whatsapp text-base"></i> Hubungi Penjual
+                                </a>
+                            </div>
+                        ` : `
+                            <div class="mt-4 flex flex-wrap gap-2">
+                                <button onclick="lacakKiriman(${row.id}, '${resiCode}')" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all border border-slate-200/50 flex items-center justify-center gap-1 active:scale-95">
+                                    <i class="fa-solid fa-truck-fast"></i> Lacak
+                                </button>
+                                <button onclick="openUpdateResiModal(${row.id}, '${resiCode}')" class="flex-1 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl transition-all border border-indigo-100/50 flex items-center justify-center gap-1 active:scale-95">
+                                    <i class="fa-solid fa-pen-to-square"></i> Update Resi
+                                </button>
+                                <a href="${waLink}" target="_blank" class="flex-1 text-center py-2.5 rounded-xl font-bold text-white text-xs transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.98] shadow-lg shadow-green-900/10 flex items-center justify-center gap-1" style="background: linear-gradient(135deg, #10B981, #059669);">
+                                    <i class="fa-brands fa-whatsapp text-base"></i> Hubungi Pembeli
+                                </a>
+                            </div>
+                        `}
+                    `;
+                    fragment.appendChild(card);
+                });
+
+                container.appendChild(fragment);
+
+            } catch (error) {
+                console.error("Error loading orders:", error);
+                container.innerHTML = `
+                    <div class="glass-card p-6 text-center border-red-200 bg-red-50 text-red-600 mt-4">
+                        <div class="w-12 h-12 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-3">
+                            <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                        </div>
+                        <p class="text-sm font-bold mb-1">Gagal memuat data</p>
+                        <p class="text-xs opacity-80">${error.message}</p>
+                        <button onclick="loadOrders()" class="mt-4 px-4 py-2 bg-white text-red-600 text-xs font-bold rounded-lg border border-red-200 shadow-sm hover:bg-red-50">Coba Lagi</button>
+                    </div>
+                `;
+            }
+        }
+        
+        window.clearHistory = async function() {
+            if(!currentUid) return;
+            const targetName = currentTab === 'beli' ? 'pembelian' : 'pesanan masuk';
+            // Konfirmasi yang lebih ramah (bisa diganti modal jika ingin lebih advance)
+            if(confirm(`Apakah Anda yakin ingin menghapus semua riwayat ${targetName}?`)) {
+                try {
+                    const btn = document.querySelector('button[onclick="clearHistory()"]');
+                    const originalContent = btn.innerHTML;
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
+                    btn.disabled = true;
+
+                    const colName = currentTab === 'beli' ? 'buyer_uid' : 'seller_uid';
+                    await turso.execute({ sql: `DELETE FROM riwayat_pemesanan WHERE ${colName} = ?`, args: [currentUid] });
+                    
+                    // Reset tombol dan refresh
+                    btn.innerHTML = originalContent;
+                    btn.disabled = false;
+                    loadOrders();
+                } catch (e) {
+                    alert('Gagal menghapus riwayat: ' + e.message);
+                    // Reset tombol jika error
+                    const btn = document.querySelector('button[onclick="clearHistory()"]');
+                    btn.disabled = false;
+                }
+            }
+        };
+
+        function renderResiChecker() {
+            const container = document.getElementById('orders-container');
+            container.innerHTML = `
+                <div class="glass-card p-6 bg-white shadow-sm border border-slate-100 rounded-2xl mb-6">
+                    <h2 class="font-display text-base font-bold text-slate-800 flex items-center gap-2 mb-2">
+                        <i class="fa-solid fa-magnifying-glass text-indigo-500"></i> Lacak Pengiriman / Cek Resi
+                    </h2>
+                    <p class="text-xs text-slate-500 mb-4">Masukkan Nomor Resi Pesanan Anda untuk melacak riwayat pengiriman.</p>
+                    
+                    <div class="flex gap-2">
+                        <input type="text" id="resi-search-input" placeholder="Contoh: RESI-00012 atau 12" class="flex-grow p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 transition-all font-mono font-bold text-slate-700">
+                        <button onclick="searchResi()" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-all shadow-md shadow-indigo-100 flex items-center gap-1.5 active:scale-95">
+                            <i class="fa-solid fa-paper-plane"></i> Lacak
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="resi-result" class="min-h-[100px]"></div>
+            `;
+        }
+        window.renderResiChecker = renderResiChecker;
+
+        window.searchResi = async function() {
+            const inputVal = document.getElementById('resi-search-input').value.trim();
+            const resultDiv = document.getElementById('resi-result');
+            if (!inputVal) {
+                resultDiv.innerHTML = `<div class="text-center py-6 text-amber-600 text-xs font-bold">Silakan masukkan nomor resi terlebih dahulu.</div>`;
+                return;
+            }
+
+            // Extract numeric ID
+            const numericId = inputVal.replace(/[^0-9]/g, '');
+            if (!numericId) {
+                resultDiv.innerHTML = `<div class="text-center py-6 text-red-500 text-xs font-bold">Format nomor resi tidak valid.</div>`;
+                return;
+            }
+
+            resultDiv.innerHTML = `
+                <div class="flex justify-center py-8">
+                    <div class="loader"></div>
+                </div>
+            `;
+
+            try {
+                // Fetch the order
+                const orderRs = await turso.execute({
+                    sql: "SELECT * FROM riwayat_pemesanan WHERE id = ?",
+                    args: [numericId]
+                });
+
+                if (orderRs.rows.length === 0) {
+                    resultDiv.innerHTML = `
+                        <div class="glass-card p-6 text-center border-red-100 bg-red-50 text-red-600">
+                            <i class="fa-solid fa-circle-exclamation text-2xl mb-2"></i>
+                            <p class="text-xs font-bold">Nomor Resi RESI-${numericId.padStart(5, '0')} Tidak Ditemukan</p>
+                            <p class="text-[10px] text-slate-400 mt-1">Pastikan Anda memasukkan kode resi yang tertera pada riwayat pesanan dengan benar.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const order = orderRs.rows[0];
+                
+                // Fetch timeline logs
+                const logsRs = await turso.execute({
+                    sql: "SELECT status_info, created_at FROM lacak_pesanan WHERE order_id = ? ORDER BY created_at DESC",
+                    args: [order.id]
+                });
+
+                let timelineHtml = '';
+                if (logsRs.rows.length === 0) {
+                    timelineHtml = `
+                        <div class="flex gap-4 items-start">
+                            <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 border-2 border-white shadow">
+                                <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+                            </div>
+                            <div class="flex-grow">
+                                <p class="text-xs font-bold text-slate-700">Pesanan Dibuat</p>
+                                <p class="text-[10px] text-slate-400 mt-0.5">Menunggu konfirmasi penjual untuk memperbarui status resi.</p>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    logsRs.rows.forEach((log, idx) => {
+                        const dateObj = new Date(log.created_at + " UTC");
+                        const dateStr = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+                        const timeStr = dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                        
+                        const isLatest = idx === 0;
+                        timelineHtml += `
+                            <div class="flex gap-4 items-start relative pb-6 last:pb-0">
+                                ${idx !== logsRs.rows.length - 1 ? `<div class="absolute left-4 top-8 bottom-0 w-[2px] bg-slate-100"></div>` : ''}
+                                <div class="w-8 h-8 rounded-full ${isLatest ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'} flex items-center justify-center shrink-0 border-2 border-white shadow">
+                                    <i class="fa-solid ${isLatest ? 'fa-circle-dot animate-pulse' : 'fa-check'} text-xs"></i>
+                                </div>
+                                <div class="flex-grow">
+                                    <div class="flex justify-between items-start gap-2">
+                                        <p class="text-xs font-bold ${isLatest ? 'text-slate-800' : 'text-slate-500'}">${log.status_info}</p>
+                                        <span class="text-[9px] text-slate-400 shrink-0 font-medium">${dateStr} ${timeStr}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                resultDiv.innerHTML = `
+                    <div class="glass-card p-6 bg-white shadow-sm border border-slate-100 rounded-2xl mb-4">
+                        <div class="flex flex-wrap justify-between items-center gap-2 pb-3 mb-4 border-b border-slate-100">
+                            <div>
+                                <span class="text-[9px] font-bold text-indigo-600 uppercase bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded font-mono">RESI-${String(order.id).padStart(5, '0')}</span>
+                                <h3 class="font-display font-bold text-sm text-slate-800 mt-1">${order.product_name}</h3>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-[10px] text-slate-400 block font-medium">Status Pesanan</span>
+                                <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 uppercase tracking-wide">${order.status || 'Berhasil'}</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 rounded-xl p-4 mb-6 border border-slate-100/50 flex justify-between items-center">
+                            <div>
+                                <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wide">Penerima</p>
+                                <p class="text-xs font-black text-slate-700 mt-0.5">${order.buyer_name}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wide">Pengiriman</p>
+                                <p class="text-xs font-black text-indigo-700 mt-0.5"><i class="fa-solid fa-truck"></i> ${order.shipping_method || 'JNE'}</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-6 relative pl-2">
+                            ${timelineHtml}
+                        </div>
+                    </div>
+                `;
+
+            } catch (err) {
+                resultDiv.innerHTML = `<div class="text-center py-6 text-red-500 text-xs font-bold">Gagal melacak resi: ${err.message}</div>`;
+            }
+        };
+
+        window.lacakKiriman = async function(orderId, resiCode) {
+            const modal = document.getElementById('lacak-modal');
+            const resiText = document.getElementById('lacak-modal-resi');
+            const timelineDiv = document.getElementById('lacak-timeline');
+            
+            resiText.textContent = resiCode;
+            timelineDiv.innerHTML = `
+                <div class="flex justify-center py-8">
+                    <div class="loader"></div>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+
+            try {
+                const logsRs = await turso.execute({
+                    sql: "SELECT status_info, created_at FROM lacak_pesanan WHERE order_id = ? ORDER BY created_at DESC",
+                    args: [orderId]
+                });
+
+                if (logsRs.rows.length === 0) {
+                    timelineDiv.innerHTML = `
+                        <div class="flex gap-4 items-start">
+                            <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 border-2 border-white shadow">
+                                <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+                            </div>
+                            <div class="flex-grow">
+                                <p class="text-xs font-bold text-slate-700">Pesanan Dibuat</p>
+                                <p class="text-[10px] text-slate-400 mt-0.5">Menunggu konfirmasi penjual untuk memperbarui status resi.</p>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                logsRs.rows.forEach((log, idx) => {
+                    const dateObj = new Date(log.created_at + " UTC");
+                    const dateStr = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+                    const timeStr = dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                    const isLatest = idx === 0;
+
+                    html += `
+                        <div class="flex gap-4 items-start relative pb-6 last:pb-0">
+                            ${idx !== logsRs.rows.length - 1 ? `<div class="absolute left-4 top-8 bottom-0 w-[2px] bg-slate-100"></div>` : ''}
+                            <div class="w-8 h-8 rounded-full ${isLatest ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'} flex items-center justify-center shrink-0 border-2 border-white shadow">
+                                <i class="fa-solid ${isLatest ? 'fa-circle-dot animate-pulse' : 'fa-check'} text-xs"></i>
+                            </div>
+                            <div class="flex-grow">
+                                <div class="flex justify-between items-start gap-2">
+                                    <p class="text-xs font-bold ${isLatest ? 'text-slate-800' : 'text-slate-500'}">${log.status_info}</p>
+                                    <span class="text-[9px] text-slate-400 shrink-0 font-medium">${dateStr} ${timeStr}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                timelineDiv.innerHTML = html;
+            } catch (err) {
+                timelineDiv.innerHTML = `<div class="text-red-500 text-xs py-4 text-center">Gagal memuat status: ${err.message}</div>`;
+            }
+        };
+
+        window.openUpdateResiModal = function(orderId, resiCode) {
+            document.getElementById('update-order-id').value = orderId;
+            document.getElementById('update-modal-resi').textContent = resiCode;
+            document.getElementById('resi-status-text').value = '';
+            document.getElementById('update-resi-modal').classList.remove('hidden');
+        };
+
+        window.selectQuickStatus = function(statusText) {
+            document.getElementById('resi-status-text').value = statusText;
+        };
+
+        window.saveResiStatus = async function() {
+            const orderId = document.getElementById('update-order-id').value;
+            const statusText = document.getElementById('resi-status-text').value.trim();
+            if (!statusText) {
+                alert('Silakan pilih atau ketik status laporan pengiriman.');
+                return;
+            }
+
+            try {
+                let mainStatus = 'Berhasil';
+                if (statusText.includes('sampai') || statusText.includes('diterima')) {
+                    mainStatus = 'Selesai';
+                }
+
+                await turso.execute({
+                    sql: "INSERT INTO lacak_pesanan (order_id, status_info) VALUES (?, ?)",
+                    args: [orderId, statusText]
+                });
+
+                if (mainStatus === 'Selesai') {
+                    await turso.execute({
+                        sql: "UPDATE riwayat_pemesanan SET status = 'Selesai' WHERE id = ?",
+                        args: [orderId]
+                    });
+                }
+
+                closeModal('update-resi-modal');
+                alert('Laporan status resi berhasil dikirim!');
+                loadOrders();
+            } catch (err) {
+                alert('Gagal mengirim laporan status: ' + err.message);
+            }
+        };
+
+        window.closeModal = function(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        };
+
+        // Inisialisasi awal styling tab
+        switchTab('beli');
+    </script>
+</body>
+</html>

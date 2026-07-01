@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Riwayat Pendaftaran - Pasar UMKM</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        display: ['Outfit', 'sans-serif'],
+                        body: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --bg: #F8FAFC;
+            --fg: #0F172A;
+            --muted: #64748B;
+            --accent: #1E3A8A;
+            --card: rgba(255, 255, 255, 0.7);
+            --border: rgba(255, 255, 255, 0.6);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body,
+        html {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            height: 100%;
+        }
+
+        #bg-layer {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.2;
+            animation: orbFloat 25s ease-in-out infinite;
+        }
+
+        .orb-1 {
+            width: 600px;
+            height: 600px;
+            background: #1E3A8A;
+            top: -10%;
+            left: -5%;
+        }
+
+        .orb-2 {
+            width: 500px;
+            height: 500px;
+            background: #3B82F6;
+            bottom: -10%;
+            right: -5%;
+            animation-delay: -8s;
+        }
+
+        @keyframes orbFloat {
+
+            0%,
+            100% {
+                transform: translate(0, 0);
+            }
+
+            50% {
+                transform: translate(30px, -30px);
+            }
+        }
+
+        .app-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: rgba(248, 250, 252, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+        }
+
+        .glass-card {
+            background: var(--card);
+            backdrop-filter: blur(30px) saturate(180%);
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.05);
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 100px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-aktif {
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .loader {
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(30, 58, 138, 0.2);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+<style> *:not(.fa-spin):not(.loader):not(.btn-spinner) { animation: none !important; transition: none !important; } </style>
+<style>
+@media (min-width: 768px) {
+    html {
+        background: #e2e8f0 !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        min-height: 100vh !important;
+    }
+    body {
+        width: 100% !important;
+        max-width: 480px !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        position: relative !important;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.2) !important;
+        transform: translateZ(0) !important;
+        overflow: hidden !important;
+        background: #ffffff !important;
+    }
+}
+</style>
+</head>
+
+<body>
+    <div id="bg-layer">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+    </div>
+
+    <!-- App Header -->
+    <header class="app-header">
+        <button onclick="window.history.back()"
+            class="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow-sm border border-slate-200 text-slate-700 mr-4">
+            <i class="fa-solid fa-chevron-left text-sm"></i>
+        </button>
+        <h1 class="font-display text-lg font-bold tracking-tight text-slate-800">Riwayat Pendaftaran</h1>
+    </header>
+
+    <main class="relative z-10 pt-20 px-4 pb-12 h-full overflow-y-auto">
+        <div class="flex justify-between items-end mb-4">
+            <div>
+                <h2 class="font-display text-xl font-bold text-slate-800">Data Pendaftar</h2>
+                <p class="text-xs text-slate-500">Daftar pengguna yang telah bergabung</p>
+            </div>
+            <button onclick="loadHistory()"
+                class="text-xs text-blue-600 font-bold bg-white px-3 py-1.5 rounded-lg shadow-sm border border-slate-200">
+                <i class="fa-solid fa-rotate-right mr-1"></i> Refresh
+            </button>
+        </div>
+
+        <div id="history-container">
+            <div class="text-center py-10">
+                <div class="loader mb-3"></div>
+                <p class="text-xs text-slate-500">Memuat riwayat...</p>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { createClient } from 'https://esm.sh/@libsql/client/web';
+
+        const turso = createClient({
+            url: 'libsql://umkm-elnathanwebsite.aws-ap-northeast-1.turso.io',
+            authToken: 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzgyOTg4OTgsImlkIjoiMDE5ZTA5MmItNWEwMS03ZDE0LWE2M2EtZTg0YTBhODIzMmVjIiwicmlkIjoiMjUxYTliYzctYjA0NC00YzY3LTlmZWItYzBmNzQwMjczNTQxIn0.K_pVVV7lZDUOuz7s3TljfqC-VPiMtIpW2RoAaYlBFmqu-HTc6ueuw3B6kBbUBx8TTy5-g_E-H7zoqpLHLFLQDQ'
+        });
+
+        async function loadHistory() {
+            const container = document.getElementById('history-container');
+            let skeletonHtml = '';
+            for (let i = 0; i < 3; i++) {
+                skeletonHtml += `
+                    <div class="bg-white/80 backdrop-blur-md rounded-2xl p-4 border border-slate-100 shadow-sm animate-pulse mb-3">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="h-4 bg-slate-200 rounded w-1/3"></div>
+                            <div class="h-5 bg-slate-200 rounded w-16"></div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="h-3 bg-slate-200 rounded w-1/2"></div>
+                            <div class="h-3 bg-slate-200 rounded w-2/3"></div>
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = skeletonHtml;
+
+            try {
+                // Fetch data from registration_history table
+                const rs = await turso.execute("SELECT * FROM registration_history ORDER BY registered_at DESC");
+
+                if (rs.rows.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-12 glass-card">
+                            <i class="fa-solid fa-users-slash text-4xl mb-3 text-slate-300"></i>
+                            <p class="text-sm text-slate-500">Belum ada riwayat pendaftaran.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = '';
+                rs.rows.forEach(row => {
+                    const dateObj = new Date(row.registered_at + " UTC");
+                    // Handle timezone/format manually
+                    const dateStr = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+                    const timeStr = dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+                    const card = document.createElement('div');
+                    card.className = 'glass-card flex flex-col gap-2 relative';
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start mb-1">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-lg shadow-sm border border-white">
+                                    ${row.business_name ? row.business_name.charAt(0).toUpperCase() : 'U'}
+                                </div>
+                                <div>
+                                    <h3 class="font-display font-bold text-sm text-slate-800 leading-tight">${row.business_name || 'UMKM Tanpa Nama'}</h3>
+                                    <p class="text-[11px] text-slate-500">${row.username || 'User'}</p>
+                                </div>
+                            </div>
+                            <span class="status-badge status-aktif">${row.status || 'Aktif'}</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-2 mt-2 bg-white/40 p-2.5 rounded-xl border border-white/50">
+                            <div>
+                                <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Email</p>
+                                <p class="text-[11px] text-slate-700 truncate font-medium">${row.email || '-'}</p>
+                            </div>
+                            <div>
+                                <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Waktu Daftar</p>
+                                <p class="text-[11px] text-slate-700 font-medium">${dateStr} • ${timeStr}</p>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+
+            } catch (error) {
+                container.innerHTML = `
+                    <div class="glass-card p-4 text-center border-red-200 bg-red-50/50 text-red-600">
+                        <i class="fa-solid fa-circle-exclamation mb-2 text-xl"></i>
+                        <p class="text-xs font-semibold">Gagal memuat data:</p>
+                        <p class="text-[10px] mt-1">${error.message}</p>
+                        <p class="text-[10px] mt-3 text-slate-500">Pastikan tabel 'registration_history' sudah dibuat di Turso.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize
+        loadHistory();
+        window.loadHistory = loadHistory;
+    </script>
+</body>
+
+</html>

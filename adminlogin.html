@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal - Login | PASAR UMKM</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        display: ['Outfit', 'sans-serif'],
+                        body: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --primary: #1E293B;
+            --accent: #3B82F6;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #0F172A;
+            color: #F8FAFC;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Background Animation */
+        .bg-glow {
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+            z-index: -1;
+            filter: blur(60px);
+            animation: pulse 10s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: translate(-10%, -10%) scale(1);
+            }
+
+            100% {
+                transform: translate(10%, 10%) scale(1.2);
+            }
+        }
+
+        .login-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 32px;
+            padding: 3rem;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .glass-input {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            color: white;
+            padding: 14px 20px 14px 48px;
+            width: 100%;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .glass-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+
+        .btn-admin {
+            background: linear-gradient(135deg, #3B82F6, #2563EB);
+            color: white;
+            font-weight: 700;
+            padding: 14px;
+            border-radius: 16px;
+            width: 100%;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-admin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px -5px rgba(37, 99, 235, 0.5);
+        }
+
+        /* Toast */
+        #toast-container {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 9999;
+        }
+
+        .toast {
+            background: #1E293B;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            animation: slideIn 0.3s ease forwards;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .loader {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+<style> *:not(.fa-spin):not(.loader):not(.btn-spinner) { animation: none !important; transition: none !important; } </style>
+<style>
+@media (min-width: 768px) {
+    html {
+        background: #e2e8f0 !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        min-height: 100vh !important;
+    }
+    body {
+        width: 100% !important;
+        max-width: 480px !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        position: relative !important;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.2) !important;
+        transform: translateZ(0) !important;
+        overflow: hidden !important;
+        background: #ffffff !important;
+    }
+}
+</style>
+</head>
+
+<body>
+    <div class="bg-glow"></div>
+    <div id="toast-container"></div>
+
+    <div class="login-card">
+        <div class="text-center mb-8">
+            <div
+                class="w-16 h-16 bg-blue-600/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-blue-500/30">
+                <i class="fa-solid fa-shield-halved text-3xl text-blue-500"></i>
+            </div>
+            <h1 class="font-display text-2xl font-black mb-1">Admin Portal</h1>
+            <p class="text-slate-400 text-xs font-medium">Pusat Kendali Sistem Pasar UMKM</p>
+        </div>
+
+        <!-- Tab Toggle -->
+        <div class="flex bg-slate-900/50 p-1 rounded-xl mb-8 border border-white/5">
+            <button onclick="switchTab('login')" id="tab-login"
+                class="flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-blue-600 text-white shadow-lg shadow-blue-500/20">Masuk</button>
+            <button onclick="switchTab('register')" id="tab-register"
+                class="flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white">Daftar</button>
+        </div>
+
+        <!-- Form Login -->
+        <form id="login-panel" onsubmit="handleAdminLogin(event)">
+            <div class="relative mb-4">
+                <i class="fa-regular fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                <input type="email" id="login-email" class="glass-input" placeholder="Email Admin" required>
+            </div>
+            <div class="relative mb-8">
+                <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                <input type="password" id="login-password" class="glass-input" placeholder="Password" required>
+            </div>
+            <button type="submit" id="login-btn" class="btn-admin">Masuk Sekarang</button>
+        </form>
+
+        <!-- Form Daftar -->
+        <form id="register-panel" class="hidden" onsubmit="handleAdminRegister(event)">
+            <div class="relative mb-4">
+                <i class="fa-regular fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                <input type="email" id="reg-email" class="glass-input" placeholder="Email Admin (admin@pasarumkm.com)"
+                    required>
+            </div>
+            <div class="relative mb-4">
+                <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                <input type="password" id="reg-password" class="glass-input" placeholder="Password Baru" required>
+            </div>
+            <div class="relative mb-8">
+                <i class="fa-solid fa-check-double absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                <input type="password" id="reg-confirm" class="glass-input" placeholder="Konfirmasi Password" required>
+            </div>
+            <button type="submit" id="reg-btn" class="btn-admin">Daftar Admin</button>
+        </form>
+
+        <p class="mt-8 text-center text-[10px] text-slate-600 font-medium tracking-widest uppercase">
+            &copy; 2025 PASAR UMKM. Restricted Access.
+        </p>
+
+        <div class="mt-4 text-center">
+            <a href="index.html"
+                class="text-[10px] text-blue-400/60 font-bold hover:text-blue-400 transition-colors">Kembali ke Halaman
+                User</a>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Config (Session Terpisah untuk Admin)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDjtYr8Wsb9WAtfxM3UfDMFL_oFaMYM2Yg",
+            authDomain: "umkm-75e22.firebaseapp.com",
+            projectId: "umkm-75e22",
+            storageBucket: "umkm-75e22.firebasestorage.app",
+            messagingSenderId: "1042010063344",
+            appId: "1:1042010063344:web:c7be3bbedcd8f79c2c5d35"
+        };
+
+        // Gunakan nama aplikasi khusus "AdminPortal" agar tidak menimpa sesi user biasa
+        const adminApp = firebase.initializeApp(firebaseConfig, "AdminPortal");
+        const auth = adminApp.auth();
+
+        const ADMIN_EMAIL = 'admin@pasarumkm.com';
+
+        function switchTab(tab) {
+            const loginBtn = document.getElementById('tab-login');
+            const regBtn = document.getElementById('tab-register');
+            const loginPanel = document.getElementById('login-panel');
+            const regPanel = document.getElementById('register-panel');
+
+            if (tab === 'login') {
+                loginBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-blue-600 text-white shadow-lg shadow-blue-500/20';
+                regBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white';
+                loginPanel.classList.remove('hidden');
+                regPanel.classList.add('hidden');
+            } else {
+                regBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-blue-600 text-white shadow-lg shadow-blue-500/20';
+                loginBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white';
+                regPanel.classList.remove('hidden');
+                loginPanel.classList.add('hidden');
+            }
+        }
+
+        async function handleAdminLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+            const btn = document.getElementById('login-btn');
+
+            if (email !== ADMIN_EMAIL) {
+                showToast("Akses Ditolak! Hanya Admin yang diizinkan.", "error");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loader"></span>';
+
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                showToast("Berhasil! Masuk ke sistem...", "success");
+                setTimeout(() => window.location.href = 'adminverifikasi.html', 1000);
+            } catch (error) {
+                showToast("Login gagal. Periksa password Anda.", "error");
+                btn.disabled = false;
+                btn.innerHTML = "Masuk Sekarang";
+            }
+        }
+
+        async function handleAdminRegister(e) {
+            e.preventDefault();
+            const email = document.getElementById('reg-email').value.trim();
+            const password = document.getElementById('reg-password').value;
+            const confirm = document.getElementById('reg-confirm').value;
+            const btn = document.getElementById('reg-btn');
+
+            if (email !== ADMIN_EMAIL) {
+                showToast("Gagal! Anda hanya bisa mendaftar dengan email Admin.", "error");
+                return;
+            }
+
+            if (password !== confirm) {
+                showToast("Password tidak cocok!", "error");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loader"></span>';
+
+            try {
+                await auth.createUserWithEmailAndPassword(email, password);
+                showToast("Akun Admin Berhasil Dibuat!", "success");
+                setTimeout(() => window.location.href = 'adminverifikasi.html', 1500);
+            } catch (error) {
+                showToast("Gagal mendaftar: " + error.message, "error");
+                btn.disabled = false;
+                btn.innerHTML = "Daftar Admin";
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            let icon = 'fa-circle-info text-blue-500';
+            if (type === 'success') icon = 'fa-circle-check text-emerald-500';
+            if (type === 'error') icon = 'fa-circle-xmark text-red-500';
+            toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        auth.onAuthStateChanged(user => {
+            if (user && user.email === ADMIN_EMAIL) {
+                window.location.href = 'adminverifikasi.html';
+            }
+        });
+    </script>
+</body>
+
+</html>

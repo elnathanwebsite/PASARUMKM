@@ -1,0 +1,3784 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <script src="https://nathansecurity.vercel.app/security.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pasar UMKM - Dashboard</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Firebase SDK (HANYA AUTENTIKASI) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        display: ['Outfit', 'sans-serif'],
+                        body: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --bg: #FFFFFF;
+            --fg: #0F172A;
+            --muted: #64748B;
+            --accent: #1E3A8A;
+            --accent-warm: #3B82F6;
+            --card: #FFFFFF;
+            --border: #F1F5F9;
+            --border-focus: #E2E8F0;
+            --glow: rgba(30, 58, 138, 0.05);
+            --shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        *:not(.fa-spin):not(.loader):not(.btn-spinner) {
+            animation: none !important;
+            transition: none !important;
+        }
+
+        body,
+        html {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            height: 100%;
+            overflow: hidden;
+            /* Prevent body scroll, we scroll inside pages */
+            overscroll-behavior-y: none;
+        }
+
+        #bg-layer {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.2;
+            /* animation removed for performance */
+        }
+
+        .orb-1 {
+            width: 600px;
+            height: 600px;
+            background: #1E3A8A;
+            top: -10%;
+            left: -5%;
+        }
+
+        .orb-2 {
+            width: 500px;
+            height: 500px;
+            background: #3B82F6;
+            bottom: -10%;
+            right: -5%;
+            animation-delay: -8s;
+        }
+
+        @keyframes orbFloat {
+
+            0%,
+            100% {
+                transform: translate(0, 0);
+            }
+
+            50% {
+                transform: translate(30px, -30px);
+            }
+        }
+
+        .glass-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.8) 0%, transparent 100%);
+            pointer-events: none;
+        }
+
+        .glass-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: var(--fg);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .glass-input:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px var(--glow);
+        }
+
+        select.glass-input {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394A3B8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+        }
+
+        /* App Layout Styles */
+        .app-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: rgba(248, 250, 252, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+        }
+
+        .swipe-viewport {
+            position: fixed;
+            top: 60px;
+            bottom: 60px;
+            left: 0;
+            width: 100vw;
+            overflow: hidden;
+            z-index: 10;
+        }
+
+        .swipe-container {
+            display: flex;
+            width: 400%;
+            height: 100%;
+            transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+            will-change: transform;
+            transform: translate3d(-50%, 0, 0);
+            /* Force GPU acceleration */
+        }
+
+        .seller-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .seller-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+        }
+
+        .seller-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 15px;
+            object-fit: cover;
+            border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .swipe-page {
+            width: 25%;
+            height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 16px;
+            padding-bottom: 40px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-top: 1px solid var(--border);
+            z-index: 100;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .nav-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 600;
+            background: none;
+            border: none;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            height: 100%;
+        }
+
+        .nav-btn i {
+            font-size: 20px;
+            transition: transform 0.2s ease, color 0.2s;
+        }
+
+        .nav-icon {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+            opacity: 0.5;
+            transition: transform 0.2s ease, opacity 0.2s;
+        }
+
+        .nav-btn.active {
+            color: var(--accent);
+        }
+
+        .nav-btn.active i {
+            transform: scale(1.15);
+            color: var(--accent);
+        }
+
+        .nav-btn.active .nav-icon {
+            transform: scale(1.15);
+            opacity: 1;
+        }
+
+        /* Top Carousel */
+        .top-carousel {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            scroll-snap-type: x mandatory;
+        }
+
+        .top-carousel::-webkit-scrollbar {
+            display: none;
+        }
+
+        .carousel-card {
+            min-width: 280px;
+            width: 85vw;
+            max-width: 320px;
+            border-radius: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #1E3A8A, #3B82F6);
+            color: white;
+            box-shadow: 0 8px 24px rgba(30, 58, 138, 0.25);
+            flex-shrink: 0;
+            position: relative;
+            overflow: hidden;
+            scroll-snap-align: center;
+        }
+
+        .carousel-card::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 150px;
+            height: 150px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+
+        /* Product Grid adjustments for Mobile */
+        .product-img {
+            width: 100%;
+            height: 140px;
+            object-fit: cover;
+            border-radius: 20px 20px 0 0;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(12px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(40px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.1);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-overlay.visible .modal-content {
+            transform: scale(1);
+        }
+
+        /* Buttons */
+        .btn-primary {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #1E3A8A, #3B82F6);
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 8px 24px rgba(30, 58, 138, 0.35);
+            transform: translateY(-1px);
+        }
+
+        .btn-warning {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #3B82F6, #60A5FA);
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline {
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.5);
+            color: var(--fg);
+            font-weight: 500;
+            font-size: 14px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        /* Full Page Modal */
+        .full-page-modal {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .full-page-modal.visible {
+            transform: translateX(0);
+        }
+
+        .fpm-header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            border-bottom: 1px solid var(--border);
+            padding-top: calc(16px + env(safe-area-inset-top));
+        }
+
+        .fpm-back-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: var(--fg);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .fpm-back-btn:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .fpm-title {
+            font-family: var(--font-display);
+            font-size: 18px;
+            font-weight: 700;
+            flex-grow: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* ===== TOAST NOTIFICATIONS ===== */
+        #toast-container {
+            position: fixed;
+            top: 76px;
+            right: 16px;
+            left: 16px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        .toast {
+            padding: 14px 18px;
+            border-radius: 16px;
+            font-size: 13.5px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: toastIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            background: rgba(255, 255, 255, 0.97);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            pointer-events: all;
+            max-width: 420px;
+            margin-left: auto;
+        }
+
+        .toast i {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .toast.success {
+            border-left: 4px solid #10B981;
+            color: #065F46;
+        }
+
+        .toast.success i {
+            color: #10B981;
+        }
+
+        .toast.error {
+            border-left: 4px solid #EF4444;
+            color: #7F1D1D;
+        }
+
+        .toast.error i {
+            color: #EF4444;
+        }
+
+        .toast.info {
+            border-left: 4px solid #3B82F6;
+            color: #1E3A8A;
+        }
+
+        .toast.info i {
+            color: #3B82F6;
+        }
+
+        .toast.warning {
+            border-left: 4px solid #F59E0B;
+            color: #78350F;
+        }
+
+        .toast.warning i {
+            color: #F59E0B;
+        }
+
+        .toast-exit {
+            animation: toastOut 0.35s ease forwards;
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateX(60px) scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+        }
+
+        @keyframes toastOut {
+            from {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateX(60px) scale(0.9);
+            }
+        }
+
+        /* ===== CONFIRM DIALOG MODAL ===== */
+        #confirm-dialog-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+            padding: 20px;
+        }
+
+        #confirm-dialog-overlay.visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        #confirm-dialog-box {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 24px;
+            padding: 28px 24px 24px;
+            max-width: 360px;
+            width: 100%;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(241, 245, 249, 0.8);
+            transform: scale(0.88) translateY(20px);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            text-align: center;
+        }
+
+        #confirm-dialog-overlay.visible #confirm-dialog-box {
+            transform: scale(1) translateY(0);
+        }
+
+        #confirm-dialog-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 26px;
+        }
+
+        #confirm-dialog-icon.danger {
+            background: linear-gradient(135deg, #FEE2E2, #FECACA);
+            color: #DC2626;
+        }
+
+        #confirm-dialog-icon.warning {
+            background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+            color: #D97706;
+        }
+
+        #confirm-dialog-icon.info {
+            background: linear-gradient(135deg, #DBEAFE, #BFDBFE);
+            color: #2563EB;
+        }
+
+        #confirm-dialog-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 18px;
+            font-weight: 800;
+            color: #0F172A;
+            margin-bottom: 8px;
+        }
+
+        #confirm-dialog-message {
+            font-size: 13.5px;
+            color: #64748B;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .confirm-dialog-btns {
+            display: flex;
+            gap: 10px;
+        }
+
+        #confirm-cancel-btn {
+            flex: 1;
+            padding: 13px;
+            border-radius: 14px;
+            font-weight: 700;
+            font-size: 14px;
+            border: 1.5px solid #E2E8F0;
+            background: #F8FAFC;
+            color: #64748B;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        #confirm-cancel-btn:hover {
+            background: #F1F5F9;
+            border-color: #CBD5E1;
+        }
+
+        #confirm-ok-btn {
+            flex: 1;
+            padding: 13px;
+            border-radius: 14px;
+            font-weight: 700;
+            font-size: 14px;
+            border: none;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        #confirm-ok-btn.danger {
+            background: linear-gradient(135deg, #DC2626, #EF4444);
+        }
+
+        #confirm-ok-btn.danger:hover {
+            box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
+            transform: translateY(-1px);
+        }
+
+        #confirm-ok-btn.warning {
+            background: linear-gradient(135deg, #D97706, #F59E0B);
+        }
+
+        #confirm-ok-btn.info {
+            background: linear-gradient(135deg, #1E3A8A, #3B82F6);
+        }
+
+        #confirm-ok-btn.info:hover {
+            box-shadow: 0 6px 20px rgba(30, 58, 138, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        #loading-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9998;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            transition: opacity 0.5s ease;
+        }
+
+        #loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loader {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(30, 58, 138, 0.2);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        /* Desktop Responsive Sidebar */
+        @media (min-width: 768px) {
+            .bottom-nav {
+                top: 0 !important;
+                bottom: auto !important;
+                left: 0 !important;
+                width: 250px !important;
+                height: 100vh !important;
+                flex-direction: column !important;
+                justify-content: flex-start !important;
+                padding-top: 80px !important;
+                border-top: none !important;
+                border-right: 1px solid var(--border) !important;
+                align-items: stretch !important;
+            }
+            .nav-btn {
+                flex: 0 0 auto !important;
+                width: 100% !important;
+                height: auto !important;
+                padding: 15px 24px !important;
+                flex-direction: row !important;
+                gap: 15px !important;
+                justify-content: flex-start !important;
+            }
+            .nav-btn i {
+                font-size: 18px !important;
+                margin-bottom: 0 !important;
+            }
+            .nav-btn span {
+                font-size: 15px !important;
+            }
+            .app-header {
+                left: 250px !important;
+                width: calc(100% - 250px) !important;
+            }
+            .swipe-viewport {
+                left: 250px !important;
+                width: calc(100% - 250px) !important;
+                bottom: 0 !important; /* no bottom nav on desktop */
+            }
+            .desktop-ai-chat {
+                display: flex;
+                flex-direction: column;
+                margin-top: auto;
+                padding: 16px;
+                border-top: 1px solid var(--border);
+                background: #f8fafc;
+                border-radius: 12px;
+                margin: 16px;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            }
+            .chat-header {
+                font-weight: bold;
+                font-size: 13px;
+                margin-bottom: 8px;
+                color: var(--fg);
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+            .chat-history {
+                flex-grow: 1;
+                overflow-y: auto;
+                font-size: 11px;
+                margin-bottom: 8px;
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                max-height: 200px;
+                padding-right: 4px;
+            }
+            .chat-history::-webkit-scrollbar {
+                width: 4px;
+            }
+            .chat-history::-webkit-scrollbar-thumb {
+                background-color: #cbd5e1;
+                border-radius: 4px;
+            }
+            .ai-msg {
+                background: white;
+                padding: 8px;
+                border-radius: 8px 8px 8px 0;
+                border: 1px solid var(--border);
+                color: var(--muted);
+                line-height: 1.4;
+                align-self: flex-start;
+                max-width: 90%;
+            }
+            .user-msg {
+                background: var(--accent);
+                color: white;
+                padding: 8px;
+                border-radius: 8px 8px 0 8px;
+                line-height: 1.4;
+                align-self: flex-end;
+                max-width: 90%;
+            }
+            #desktop-chat-form {
+                display: flex;
+                gap: 6px;
+            }
+            #desktop-chat-input {
+                flex-grow: 1;
+                padding: 8px 12px;
+                border: 1px solid var(--border);
+                border-radius: 20px;
+                font-size: 11px;
+                outline: none;
+                transition: border-color 0.2s;
+            }
+            #desktop-chat-input:focus {
+                border-color: var(--accent);
+            }
+            #desktop-chat-form button {
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                background: var(--accent);
+                color: white;
+                border: none;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+                transition: transform 0.2s;
+            }
+            #desktop-chat-form button:hover {
+                transform: scale(1.1);
+            }
+        }
+        
+        .desktop-ai-chat {
+            display: none;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <div id="loading-overlay">
+        <div class="loader"></div>
+        <div style="color: var(--muted); font-size: 14px;">Memuat Aplikasi...</div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <!-- Custom Confirm Dialog -->
+    <div id="confirm-dialog-overlay">
+        <div id="confirm-dialog-box">
+            <div id="confirm-dialog-icon" class="danger"><i id="confirm-dialog-icon-i"
+                    class="fa-solid fa-trash-can"></i></div>
+            <div id="confirm-dialog-title">Konfirmasi</div>
+            <p id="confirm-dialog-message">Apakah Anda yakin?</p>
+            <div class="confirm-dialog-btns">
+                <button id="confirm-cancel-btn" onclick="_confirmResolve(false)">Batal</button>
+                <button id="confirm-ok-btn" class="danger" onclick="_confirmResolve(true)">Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Header Fixed -->
+    <header class="app-header">
+        <div class="flex items-center gap-3 cursor-pointer" onclick="changePage(0)">
+            <img id="header-profile-photo" src="https://ui-avatars.com/api/?background=1E3A8A&color=fff&name=U"
+                alt="Profile" class="w-9 h-9 rounded-full border-2 border-white shadow-sm object-cover bg-white">
+            <div class="flex flex-col">
+                <span
+                    class="text-[10px] text-slate-500 font-bold uppercase tracking-wider leading-none mb-0.5">Halo,</span>
+                <span id="header-profile-name" class="font-display text-sm font-bold leading-tight"
+                    style="color: var(--accent);">UMKM</span>
+                <div class="flex items-center gap-1">
+                    <span id="header-profile-julukan"
+                        class="text-[8px] font-bold text-blue-500 uppercase tracking-tighter leading-none mt-0.5"></span>
+                    <div id="trial-badge"
+                        class="hidden flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-orange-50 text-orange-600 border border-orange-100">
+                        <i class="fa-solid fa-clock text-[7px]"></i>
+                        <span id="trial-countdown" class="text-[7px] font-black uppercase">Trial: 0 Hari</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <!-- Tombol Riwayat Pemesanan -->
+            <button onclick="window.location.href='riwayat_pemesanan.html'"
+                class="relative w-9 h-9 rounded-xl flex items-center justify-center bg-white border border-slate-200 text-blue-800 shadow-sm transition-transform hover:scale-105 active:scale-95">
+                <i class="fa-solid fa-receipt text-sm"></i>
+                <span id="notif-red-dot"
+                    class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white hidden"></span>
+            </button>
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-md"
+                style="background: linear-gradient(135deg, #1E3A8A, #3B82F6);"><i class="fa-solid fa-store text-sm"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- Swipe Viewport -->
+    <main class="swipe-viewport">
+        <div id="swipe-container" class="swipe-container">
+
+            <!-- PAGE 0: PROFIL -->
+            <section class="swipe-page" id="page-profile">
+                <div class="glass-card p-6 text-center mb-6">
+                    <div class="w-24 h-24 rounded-full mx-auto mb-4 border-2 overflow-hidden shadow-sm"
+                        style="border-color: var(--accent); background: rgba(255,255,255,0.8);"><img id="profile-photo"
+                            src="https://ui-avatars.com/api/?background=1E3A8A&color=fff&name=U" alt="Avatar"
+                            class="w-full h-full object-cover"></div>
+                    <h2 id="profile-name" class="font-display text-xl font-bold mb-1">Memuat...</h2>
+                    <p id="profile-business" class="text-sm mb-2 font-medium" style="color: var(--accent);">UMKM</p>
+                    <div id="profile-julukan-badge"
+                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-bold mb-2 border border-indigo-100 hidden">
+                        <i class="fa-solid fa-wand-magic-sparkles text-[9px]"></i> <span
+                            id="profile-julukan"></span>
+                    </div>
+                    <div id="profile-ai-rating-container" class="hidden mb-2"></div>
+                    <!-- Subscription Badge -->
+                    <div class="flex justify-center mb-4">
+                        <div id="subscription-badge"
+                            class="text-[10px] font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-200 flex items-center gap-1.5 cursor-pointer hover:bg-blue-100 transition-colors"
+                            onclick="openSubscriptionModal()">
+                            <i class="fa-solid fa-store text-blue-500"></i> Gratis (Maks 7 Produk)
+                        </div>
+                    </div>
+                    <div class="text-left space-y-3 mb-6 text-sm">
+                        <div class="flex items-center gap-3 p-3 rounded-xl" style="background: rgba(0,0,0,0.02);"><i
+                                class="fa-regular fa-envelope w-5 text-center" style="color: var(--accent);"></i><span
+                                id="profile-email" style="color: var(--muted); word-break: break-all;">-</span></div>
+                        <div class="flex items-center gap-3 p-3 rounded-xl" style="background: rgba(0,0,0,0.02);"><i
+                                class="fa-brands fa-whatsapp w-5 text-center" style="color: var(--accent);"></i><span
+                                id="profile-phone" style="color: var(--muted);">-</span></div>
+                    </div>
+                    <button onclick="openEditProfileModal()"
+                        class="btn-outline w-full text-sm flex items-center justify-center gap-2 mb-3"><i
+                            class="fa-solid fa-pen-to-square"></i> Edit Profil</button>
+                    <button onclick="window.location.href='riwayat_pendaftaran.html'"
+                        class="btn-outline w-full text-sm flex items-center justify-center gap-2 mb-3"><img src="https://img.icons8.com/?size=100&id=DAlMfQAICxOZ&format=png&color=000000" alt="Riwayat" style="width: 16px; height: 16px;"> Riwayat Pendaftaran</button>
+                    <button onclick="handleLogout()"
+                        class="btn-outline w-full text-sm flex items-center justify-center gap-2"
+                        style="color: #DC2626; border-color: rgba(220,38,38,0.3);"><i
+                            class="fa-solid fa-right-from-bracket"></i> Keluar Akun</button>
+                </div>
+            </section>
+
+            <!-- PAGE 1: PUBLIC (UMKM LAIN) -->
+            <section class="swipe-page" id="page-public">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="font-display text-lg font-bold">UMKM Terdaftar</h2>
+                    <button onclick="loadOtherSellers()" class="text-xs flex items-center gap-1 font-semibold"
+                        style="color: var(--accent); background: none; border: none;">
+                        <i class="fa-solid fa-arrows-rotate"></i> Segarkan
+                    </button>
+                </div>
+
+                <!-- AI Market Insight Banner -->
+                <div class="mb-4 p-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-md">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
+                            <i class="fa-solid fa-magnifying-glass-chart text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold">Analisis Pasar AI</p>
+                            <p class="text-[9px] opacity-90">Klik produk apa saja untuk melihat perbandingan harga &
+                                fitur dengan pesaingnya!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <select id="public-category-filter" onchange="loadOtherSellers(this.value)"
+                        class="glass-input text-xs py-2 px-3 w-full bg-white/50">
+                        <option value="Semua">Semua Kategori UMKM</option>
+                        <option value="Makanan">Makanan</option>
+                        <option value="Minuman">Minuman</option>
+                        <option value="Fashion">Fashion</option>
+                        <option value="Kerajinan">Kerajinan</option>
+                        <option value="Pertanian">Pertanian</option>
+                        <option value="Jasa">Jasa</option>
+                        <option value="Lainnya">Lainnya</option>
+                    </select>
+                </div>
+
+                <div id="sellers-list" class="space-y-3 pb-8">
+                    <!-- Sellers will be loaded here -->
+                </div>
+            </section>
+
+            <!-- PAGE 2: DASHBOARD -->
+            <section class="swipe-page" id="page-dashboard">
+
+                <!-- Horizontal Scroll Cards (Promo/Info) -->
+                <div class="top-carousel">
+                    <!-- HERO CARD: AI ECHOOMRCHE -->
+                    <div class="carousel-card"
+                        style="background: linear-gradient(135deg, #1E3A8A, #7C3AED, #DB2777); min-width: 85%;">
+                        <div class="flex justify-between items-start mb-2">
+                            <span
+                                class="text-[10px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-full backdrop-blur-md border border-white/30">Next-Gen
+                                UMKM</span>
+                            <i class="fa-solid fa-wand-magic-sparkles text-white/50 text-xl"></i>
+                        </div>
+                        <h3 class="font-display text-xl font-black text-white leading-tight mb-2 italic">AI ECHOOMRCHE
+                        </h3>
+                        <p class="text-xs text-white/90 leading-relaxed mb-4">Aplikasi Marketplace UMKM pertama yang
+                            terintegrasi penuh dengan kecerdasan buatan untuk masa depan bisnis Anda.</p>
+                        <div class="flex items-center gap-2">
+                            <div class="flex -space-x-2">
+                                <div
+                                    class="w-6 h-6 rounded-full border-2 border-white bg-blue-500 flex items-center justify-center text-[8px] text-white font-bold">
+                                    AI</div>
+                                <div
+                                    class="w-6 h-6 rounded-full border-2 border-white bg-purple-500 flex items-center justify-center text-[8px] text-white font-bold">
+                                    PRO</div>
+                            </div>
+                            <span class="text-[10px] font-bold text-white/80">Powered by Advanced LLM</span>
+                        </div>
+                    </div>
+
+                    <!-- FEATURE CARD: AI SEARCH -->
+                    <div class="carousel-card"
+                        style="background: linear-gradient(135deg, #3B82F6, #1E40AF); min-width: 75%;">
+                        <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center mb-3">
+                            <i class="fa-solid fa-magnifying-glass-sparkles text-white text-lg"></i>
+                        </div>
+                        <h3 class="font-display text-base font-bold text-white mb-1">Pencarian Cerdas AI</h3>
+                        <p class="text-[11px] text-white/80 leading-snug">Cukup bercerita tentang apa yang Anda
+                            butuhkan, AI Echoomrche akan menemukannya untuk Anda.</p>
+                    </div>
+
+                    <!-- FEATURE CARD: AI DESC -->
+                    <div class="carousel-card"
+                        style="background: linear-gradient(135deg, #8B5CF6, #5B21B6); min-width: 75%;">
+                        <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center mb-3">
+                            <i class="fa-solid fa-pen-nib text-white text-lg"></i>
+                        </div>
+                        <h3 class="font-display text-base font-bold text-white mb-1">Copywriter AI</h3>
+                        <p class="text-[11px] text-white/80 leading-snug">Buat deskripsi produk profesional dan
+                            persuasif secara otomatis hanya dari judul produk saja.</p>
+                    </div>
+
+                    <!-- TIPS CARD -->
+                    <div class="carousel-card"
+                        style="background: linear-gradient(135deg, #0D9488, #14B8A6); min-width: 75%;">
+                        <h3 class="font-display text-lg font-bold mb-1">Tips UMKM</h3>
+                        <p class="text-sm opacity-90 mb-3">Gunakan foto produk yang terang & jelas agar menarik pembeli.
+                        </p>
+                        <button class="text-xs bg-white text-teal-800 px-3 py-1.5 rounded-lg font-bold shadow-sm">Baca
+                            Tips</button>
+                    </div>
+                </div>
+
+                <!-- Pencarian Produk (Manual) -->
+                <div class="mb-5 px-1">
+                    <div class="relative">
+                        <i
+                            class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="manual-search-input" oninput="handleManualSearch(this.value)"
+                            class="w-full bg-slate-50 border-none rounded-2xl py-3.5 pl-11 pr-4 text-sm font-medium focus:ring-2 focus:ring-blue-100 placeholder:text-slate-400 shadow-sm"
+                            placeholder="Cari nama produk...">
+                    </div>
+                </div>
+
+                <!-- Asisten AI -->
+                <div class="glass-card p-4 mb-5 border-blue-50"
+                    style="background: linear-gradient(135deg, #ffffff, #f0f9ff);">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center text-white shadow-sm"
+                                style="background: linear-gradient(135deg, #3B82F6, #8B5CF6);">
+                                <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+                            </div>
+                            <h3 class="font-display font-bold text-sm text-slate-800">Asisten Belanja AI</h3>
+                        </div>
+                        <span id="ai-usage-badge"
+                            class="text-[9px] font-bold bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">Kuota:
+                            ?/7</span>
+                    </div>
+                    <form onsubmit="handleAISearch(event)" class="relative">
+                        <textarea id="ai-search-input" rows="2"
+                            class="glass-input w-full text-sm pl-3 pr-12 py-2 resize-none shadow-inner border-blue-100"
+                            placeholder="Ceritakan produk yang Anda cari..." required
+                            style="background: rgba(255,255,255,0.7);"></textarea>
+                        <button type="submit" id="ai-search-btn"
+                            class="absolute right-2 bottom-2 w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center hover:bg-blue-700 transition-colors shadow-sm">
+                            <i class="fa-solid fa-paper-plane text-xs"></i>
+                        </button>
+                    </form>
+                    <div id="ai-loading" class="hidden mt-3 text-center">
+                        <div class="loader mx-auto mb-1" style="width: 20px; height: 20px; border-width: 2px;"></div>
+                        <p class="text-[10px] text-slate-500 font-semibold">AI sedang mencari produk
+                            terbaik...</p>
+                    </div>
+                </div>
+
+                <!-- Produk Saya (Horizontal Drawer) -->
+                <div id="my-products-section" class="mb-6 hidden">
+                    <div class="flex items-center justify-between mb-3 px-1">
+                        <h2 class="font-display text-base font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-box-archive text-blue-500"></i> Produk Saya
+                        </h2>
+                        <span id="my-products-count"
+                            class="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-bold">0</span>
+                    </div>
+                    <div id="my-products-list" class="flex gap-3 overflow-x-auto pb-2 px-1 scrollbar-hide"
+                        style="scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;">
+                        <!-- Compact product cards will be loaded here -->
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="font-display text-lg font-bold">Produk UMKM Lain</h2>
+                    <button onclick="resetMarket()" id="refresh-btn-text"
+                        class="text-xs flex items-center gap-1 font-semibold"
+                        style="color: var(--accent); cursor: pointer; background: none; border: none;"><i
+                            class="fa-solid fa-arrows-rotate"></i> Segarkan</button>
+                </div>
+
+                <!-- Grid Produk 2 Kolom -->
+                <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 pb-8"></div>
+
+                <div id="empty-state" class="text-center py-12 hidden">
+                    <i class="fa-solid fa-shop text-4xl mb-3" style="color: var(--muted); opacity: 0.3;"></i>
+                    <p class="text-sm" style="color: var(--muted);">Belum ada produk di pasar</p>
+                </div>
+            </section>
+
+            <!-- PAGE 3: TOKO SAYA (MANAJEMEN TOKO) -->
+            <section class="swipe-page" id="page-my-shop">
+                <!-- Header Toko -->
+                <div class="flex items-center justify-between mb-6 px-1">
+                    <h2 class="font-display text-xl font-bold text-slate-800">Toko Saya</h2>
+                    <div class="flex gap-2">
+                        <button onclick="showHelp()"
+                            class="w-10 h-10 rounded-xl bg-white border border-slate-200 text-blue-600 flex items-center justify-center shadow-sm hover:bg-blue-50 transition-colors">
+                            <i class="fa-solid fa-circle-question"></i>
+                        </button>
+                        <button onclick="openSubscriptionModal()"
+                            class="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-600 text-white font-bold text-xs shadow-md hover:scale-105 transition-transform">
+                            <i class="fa-solid fa-gem"></i> Langganan
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Form Tambah Produk (Default Visible) -->
+                <div id="add-product-form-container" class="mb-8">
+                    <div class="glass-card p-5 shadow-lg border-blue-200" id="add-product-card-container">
+                        <h2 class="font-display text-base font-bold flex items-center gap-2 mb-4">
+                            <i class="fa-solid fa-box-open text-blue-500"></i> Jual Produk Baru
+                        </h2>
+                        <form id="add-product-form" onsubmit="handleAddProduct(event)">
+                            <div class="mb-3"><label class="text-xs font-semibold block mb-1"
+                                    style="color: var(--muted);">Nama Produk</label><input type="text" id="prod-name"
+                                    class="glass-input" required onblur="autoGenerateDescription('add')"></div>
+                            <div class="grid grid-cols-2 gap-3 mb-3">
+                                <div><label class="text-xs font-semibold block mb-1" style="color: var(--muted);">Harga
+                                        (Rp)</label><input type="number" id="prod-price" class="glass-input" required
+                                        min="0"></div>
+                                <div><label class="text-xs font-semibold block mb-1"
+                                        style="color: var(--muted);">Kategori</label>
+                                    <select id="prod-category" class="glass-input" required>
+                                        <option value="Makanan">Makanan</option>
+                                        <option value="Minuman">Minuman</option>
+                                        <option value="Fashion">Fashion</option>
+                                        <option value="Kerajinan">Kerajinan</option>
+                                        <option value="Pertanian">Pertanian</option>
+                                        <option value="Jasa">Jasa</option>
+                                        <option value="Lainnya">Lainnya</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="flex justify-between items-center mb-1">
+                                    <label class="text-xs font-semibold" style="color: var(--muted);">Deskripsi</label>
+                                    <button type="button" id="ai-gen-desc-add"
+                                        onclick="handleGenerateAIDescription('add')"
+                                        class="text-[9px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors">
+                                        <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Gunakan AI
+                                    </button>
+                                </div>
+                                <textarea id="prod-desc" class="glass-input" rows="3" required
+                                    style="resize: none;"></textarea>
+                            </div>
+
+                            <!-- Metode Pembayaran -->
+                            <div class="mb-4">
+                                <label class="text-xs font-semibold block mb-2" style="color: var(--muted);">Metode
+                                    Pembayaran Tersedia</label>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <label
+                                        class="flex items-center justify-between p-2 rounded-lg border border-slate-200 bg-white/50 cursor-pointer hover:border-blue-300 transition-colors">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fa-brands fa-whatsapp text-green-500"></i>
+                                            <span class="text-[10px] font-bold">WhatsApp</span>
+                                        </div>
+                                        <input type="checkbox" checked disabled class="accent-blue-600 w-3 h-3">
+                                    </label>
+                                    <label
+                                        class="flex items-center justify-between p-2 rounded-lg border border-slate-200 bg-white/50 cursor-pointer hover:border-blue-300 transition-colors">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fa-solid fa-qrcode text-blue-500"></i>
+                                            <span class="text-[10px] font-bold">QRIS Otomatis</span>
+                                        </div>
+                                        <input type="checkbox" id="prod-pay-qris" checked
+                                            class="accent-blue-600 w-3 h-3">
+                                    </label>
+                                    <label
+                                        class="flex items-center justify-between p-2 rounded-lg border border-slate-200 bg-white/50 cursor-pointer hover:border-blue-300 transition-colors">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fa-brands fa-paypal text-indigo-600"></i>
+                                            <span class="text-[10px] font-bold">PayPal</span>
+                                        </div>
+                                        <input type="checkbox" id="prod-pay-paypal" checked
+                                            class="accent-blue-600 w-3 h-3">
+                                    </label>
+                                </div>
+                                <p class="text-[8px] text-slate-400 mt-1">*WhatsApp selalu aktif sebagai metode
+                                    cadangan.</p>
+                            </div>
+
+                            <!-- Metode Pengiriman -->
+                            <div class="mb-4">
+                                <label class="text-xs font-semibold block mb-2" style="color: var(--muted);">Metode Pengiriman Tersedia</label>
+                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                    <label class="flex items-center justify-between p-2 rounded-lg border border-slate-200 bg-white/50 cursor-pointer hover:border-blue-300 transition-colors">
+                                        <span class="text-[10px] font-bold">JNE</span>
+                                        <input type="checkbox" id="prod-ship-jne" checked class="accent-blue-600 w-3 h-3">
+                                    </label>
+                                    <label class="flex items-center justify-between p-2 rounded-lg border border-slate-200 bg-white/50 cursor-pointer hover:border-blue-300 transition-colors">
+                                        <span class="text-[10px] font-bold">J&T</span>
+                                        <input type="checkbox" id="prod-ship-jnt" checked class="accent-blue-600 w-3 h-3">
+                                    </label>
+                                    <label class="flex items-center justify-between p-2 rounded-lg border border-slate-200 bg-white/50 cursor-pointer hover:border-blue-300 transition-colors">
+                                        <span class="text-[10px] font-bold">SiCepat</span>
+                                        <input type="checkbox" id="prod-ship-sicepat" checked class="accent-blue-600 w-3 h-3">
+                                    </label>
+                                    <label class="flex items-center justify-between p-2 rounded-lg border border-slate-200 bg-white/50 cursor-pointer hover:border-blue-300 transition-colors">
+                                        <span class="text-[10px] font-bold">POS</span>
+                                        <input type="checkbox" id="prod-ship-pos" checked class="accent-blue-600 w-3 h-3">
+                                    </label>
+                                    <label class="flex items-center justify-between p-2 rounded-lg border border-slate-200 bg-white/50 cursor-pointer hover:border-blue-300 transition-colors">
+                                        <span class="text-[10px] font-bold">Instan</span>
+                                        <input type="checkbox" id="prod-ship-instant" checked class="accent-blue-600 w-3 h-3">
+                                    </label>
+                                    <label class="flex items-center justify-between p-2 rounded-lg border border-slate-200 bg-white/50 cursor-pointer hover:border-blue-300 transition-colors">
+                                        <span class="text-[10px] font-bold">Ambil Sendiri</span>
+                                        <input type="checkbox" id="prod-ship-pickup" checked class="accent-blue-600 w-3 h-3">
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="mb-5">
+                                <label class="text-xs font-semibold block mb-2" style="color: var(--muted);">Foto
+                                    Produk</label>
+                                <div class="relative border-2 border-dashed border-blue-300 rounded-xl p-6 text-center hover:bg-blue-50 transition-colors cursor-pointer mb-3 bg-white/50"
+                                    onclick="document.getElementById('prod-image').click()">
+                                    <i class="fa-solid fa-cloud-arrow-up text-3xl text-blue-500 mb-2"></i>
+                                    <p class="text-xs font-semibold text-blue-800 mb-1">Klik untuk Upload Gambar</p>
+                                    <p class="text-[10px] text-slate-500" id="upload-filename">Format: JPG, PNG (Maks
+                                        5MB)</p>
+                                    <input type="file" id="prod-image" accept="image/*" class="hidden"
+                                        onchange="previewAddImage(this)">
+                                </div>
+                                <div class="text-center mb-3 relative">
+                                    <hr class="border-t border-slate-200 absolute w-full top-1/2 left-0 -z-10">
+                                    <span class="text-[10px] font-bold text-slate-400 bg-white px-2 rounded">ATAU</span>
+                                </div>
+                                <div class="relative mb-3">
+                                    <label class="text-xs font-semibold block mb-1" style="color: var(--muted);">Via
+                                        Link Gambar</label>
+                                    <input type="url" id="prod-image-url" class="glass-input"
+                                        placeholder="https://contoh.com/gambar.jpg"
+                                        oninput="previewAddImageUrl(this.value)">
+                                </div>
+                                <div id="add-prod-preview-container" class="hidden mt-3">
+                                    <label class="text-xs font-semibold block mb-1" style="color: var(--muted);">Preview Gambar</label>
+                                    <img id="add-prod-preview-img" src=""
+                                        class="rounded-xl w-full h-32 object-cover shadow-sm border border-slate-200 bg-white">
+                                </div>
+                            </div>
+                            <button type="submit" id="add-prod-btn"
+                                class="w-full btn-primary py-3 text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> Upload & Jual Produk
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Manajemen Produk User (Laci di dalam Toko) -->
+                <div class="mb-4">
+                    <h2 class="font-display text-base font-bold text-slate-800 flex items-center gap-2 mb-3">
+                        <i class="fa-solid fa-boxes-stacked text-blue-500"></i> Inventaris Produk
+                    </h2>
+
+                    <div id="my-shop-products-laci" class="flex gap-3 overflow-x-auto pb-4 px-1 scrollbar-hide"
+                        style="scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;">
+                        <!-- User products horizontal scroll -->
+                    </div>
+
+                    <div id="my-shop-empty"
+                        class="hidden text-center py-8 bg-white/30 rounded-2xl border border-dashed border-slate-300">
+                        <p class="text-xs text-slate-400 font-medium italic">Belum ada produk untuk dikelola</p>
+                    </div>
+                </div>
+
+                <!-- AI Store Analysis & Rating Section -->
+                <div class="glass-card p-5 border border-indigo-100 bg-indigo-50/10 rounded-2xl mb-6">
+                    <h2 class="font-display text-base font-bold text-slate-800 flex items-center gap-2 mb-3">
+                        <i class="fa-solid fa-robot text-indigo-500"></i> Analisis & Rating Toko AI
+                    </h2>
+                    
+                    <div id="ai-store-status" class="mb-4">
+                        <p class="text-xs text-slate-500 mb-3">
+                            Biarkan AI menganalisis toko Anda berdasarkan produk-produk yang Anda jual dan profil toko Anda untuk memberikan kesimpulan performa serta rating utama toko Anda.
+                        </p>
+                        
+                        <!-- AI Analysis & Rating Output -->
+                        <div id="ai-store-result-container" class="hidden bg-white p-4 rounded-xl border border-indigo-100 shadow-sm mb-4">
+                            <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
+                                <span class="text-xs font-bold text-slate-600">Hasil Analisis AI</span>
+                                <div class="flex items-center gap-1 px-2.5 py-1 rounded bg-amber-50 text-amber-600 border border-amber-200 text-xs font-black">
+                                    <i class="fa-solid fa-star"></i> AI Rating: <span id="ai-store-rating-text">0.0</span> / 5.0
+                                </div>
+                            </div>
+                            <p id="ai-store-analysis-text" class="text-xs text-slate-600 leading-relaxed font-medium"></p>
+                        </div>
+                    </div>
+                    
+                    <button type="button" id="run-ai-store-analysis-btn" onclick="handleRunAIStoreAnalysis()" 
+                        class="w-full text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/10 border-0 transition-colors">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Analisis & Update Rating Toko
+                    </button>
+                </div>
+
+                <!-- Statistik Pendapatan Toko -->
+                <div class="glass-card p-5 border border-emerald-100 bg-emerald-50/10 rounded-2xl mb-6">
+                    <h2 class="font-display text-base font-bold text-slate-800 flex items-center gap-2 mb-4">
+                        <i class="fa-solid fa-chart-line text-emerald-500"></i> Laporan Pendapatan Toko
+                    </h2>
+                    
+                    <!-- Grand Total Card -->
+                    <div class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white p-4 rounded-xl shadow-md mb-4 flex items-center justify-between">
+                        <div>
+                            <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-100">Total Pendapatan Bersih</span>
+                            <h3 id="seller-revenue-total" class="font-display font-black text-2xl mt-0.5">Rp 0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-money-bill-trend-up"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment Methods Title -->
+                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Metode Pembayaran</div>
+                    <div class="grid grid-cols-3 gap-2 mb-4">
+                        <!-- QRIS -->
+                        <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wide">QRIS</span>
+                            <span id="seller-revenue-qris" class="text-[10px] font-black text-blue-600 mt-1">Rp 0</span>
+                        </div>
+                        <!-- PayPal -->
+                        <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wide">PayPal</span>
+                            <span id="seller-revenue-paypal" class="text-[10px] font-black text-sky-600 mt-1">Rp 0</span>
+                        </div>
+                        <!-- Manual WA -->
+                        <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Manual WA</span>
+                            <span id="seller-revenue-wa" class="text-[10px] font-black text-green-600 mt-1">Rp 0</span>
+                        </div>
+                    </div>
+
+                    <!-- Shipping Methods Title -->
+                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Metode Pengiriman</div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <!-- JNE -->
+                        <div class="bg-white p-2.5 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wide">JNE</span>
+                            <span id="seller-revenue-jne" class="text-[10px] font-black text-slate-700 mt-0.5">Rp 0</span>
+                        </div>
+                        <!-- J&T -->
+                        <div class="bg-white p-2.5 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wide">J&T</span>
+                            <span id="seller-revenue-jnt" class="text-[10px] font-black text-slate-700 mt-0.5">Rp 0</span>
+                        </div>
+                        <!-- SiCepat -->
+                        <div class="bg-white p-2.5 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wide">SiCepat</span>
+                            <span id="seller-revenue-sicepat" class="text-[10px] font-black text-slate-700 mt-0.5">Rp 0</span>
+                        </div>
+                        <!-- POS -->
+                        <div class="bg-white p-2.5 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wide">POS Indo</span>
+                            <span id="seller-revenue-pos" class="text-[10px] font-black text-slate-700 mt-0.5">Rp 0</span>
+                        </div>
+                        <!-- Instan -->
+                        <div class="bg-white p-2.5 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Instan</span>
+                            <span id="seller-revenue-instant" class="text-[10px] font-black text-slate-700 mt-0.5">Rp 0</span>
+                        </div>
+                        <!-- Ambil Sendiri -->
+                        <div class="bg-white p-2.5 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Ambil Sendiri</span>
+                            <span id="seller-revenue-pickup" class="text-[10px] font-black text-slate-700 mt-0.5">Rp 0</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Bottom Navigation Footer -->
+    <nav class="bottom-nav">
+        <button onclick="changePage(0)" id="nav-btn-0" class="nav-btn">
+            <img src="https://img.icons8.com/?size=100&id=111473&format=png&color=000000" alt="Profil" class="nav-icon">
+            <span>Profil</span>
+        </button>
+        <button onclick="changePage(1)" id="nav-btn-1" class="nav-btn">
+            <img src="https://img.icons8.com/?size=100&id=Kv2Y3rREoDGR&format=png&color=000000" alt="Public" class="nav-icon">
+            <span>Public</span>
+        </button>
+        <button onclick="changePage(2)" id="nav-btn-2" class="nav-btn active">
+            <img src="https://img.icons8.com/?size=100&id=OXVih02dFZ53&format=png&color=000000" alt="Beranda" class="nav-icon">
+            <span>Beranda</span>
+        </button>
+        <button onclick="changePage(3)" id="nav-btn-3" class="nav-btn">
+            <img id="nav-store-icon" src="https://img.icons8.com/?size=100&id=undefined&format=png&color=000000" alt="Toko Saya" class="nav-icon rounded-full object-cover">
+            <span>Toko Saya</span>
+        </button>
+
+        <!-- Desktop AI Chat -->
+        <div id="desktop-ai-chat" class="desktop-ai-chat">
+            <div class="chat-header">
+                <i class="fa-solid fa-robot text-blue-500"></i> AI Asisten
+            </div>
+            <div id="desktop-chat-history" class="chat-history">
+                <div class="ai-msg">Halo! Ada yang bisa saya bantu?</div>
+            </div>
+            <form id="desktop-chat-form" onsubmit="handleDesktopAIChat(event)">
+                <input type="text" id="desktop-chat-input" placeholder="Tanya sesuatu..." required>
+                <button type="submit"><i class="fa-solid fa-paper-plane"></i></button>
+            </form>
+        </div>
+    </nav>
+
+    <!-- Modal Edit Profil -->
+    <div id="edit-profile-modal" class="modal-overlay" role="dialog">
+        <div class="modal-content">
+            <h3 class="font-display text-lg font-bold mb-4">Edit Profil</h3>
+            <form id="edit-profile-form" onsubmit="handleUpdateProfile(event)">
+                <div class="mb-3"><label class="text-xs font-semibold block mb-1" style="color: var(--muted);">Nama
+                        Usaha</label><input type="text" id="edit-business" class="glass-input" required></div>
+                <div class="mb-3"><label class="text-xs font-semibold block mb-1" style="color: var(--muted);">No.
+                        WhatsApp</label><input type="tel" id="edit-phone" class="glass-input" required></div>
+                <div class="mb-5"><label class="text-xs font-semibold block mb-1" style="color: var(--muted);">URL Foto
+                        Profil</label><input type="url" id="edit-photo" class="glass-input" placeholder="https://...">
+                </div>
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeModal('edit-profile-modal')"
+                        class="btn-outline flex-1 py-2.5 text-sm">Batal</button>
+                    <button type="submit" id="update-profile-btn"
+                        class="btn-primary flex-1 py-2.5 text-sm">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Edit Produk (Tetap sebagai Modal) -->
+    <div id="edit-product-modal" class="modal-overlay" role="dialog">
+        <div class="modal-content">
+            <h3 class="font-display text-lg font-bold mb-4">Edit Produk</h3>
+            <form id="edit-product-form" onsubmit="handleUpdateProduct(event)">
+                <input type="hidden" id="edit-prod-id">
+                <div class="mb-3"><label class="text-xs font-semibold block mb-1" style="color: var(--muted);">Nama
+                        Produk</label><input type="text" id="edit-prod-name" class="glass-input" required onblur="autoGenerateDescription('edit')"></div>
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div><label class="text-xs font-semibold block mb-1" style="color: var(--muted);">Harga
+                            (Rp)</label><input type="number" id="edit-prod-price" class="glass-input" required min="0">
+                    </div>
+                    <div><label class="text-xs font-semibold block mb-1" style="color: var(--muted);">Kategori</label>
+                        <select id="edit-prod-category" class="glass-input" required>
+                            <option value="Makanan">Makanan</option>
+                            <option value="Minuman">Minuman</option>
+                            <option value="Fashion">Fashion</option>
+                            <option value="Kerajinan">Kerajinan</option>
+                            <option value="Pertanian">Pertanian</option>
+                            <option value="Jasa">Jasa</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-xs font-semibold" style="color: var(--muted);">Deskripsi</label>
+                        <button type="button" id="ai-gen-desc-edit" onclick="handleGenerateAIDescription('edit')"
+                            class="text-[9px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors">
+                            <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Gunakan AI
+                        </button>
+                    </div>
+                    <textarea id="edit-prod-desc" class="glass-input" rows="3" required
+                        style="resize: none;"></textarea>
+                </div>
+
+                <!-- Metode Pembayaran Edit -->
+                <div class="mb-4">
+                    <label class="text-xs font-semibold block mb-2" style="color: var(--muted);">Metode Pembayaran
+                        Tersedia</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label
+                            class="flex items-center justify-between p-2 rounded-lg border border-slate-200 bg-slate-50 opacity-60">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-brands fa-whatsapp text-green-500"></i>
+                                <span class="text-[10px] font-bold">WhatsApp</span>
+                            </div>
+                            <input type="checkbox" checked disabled class="accent-blue-600 w-3 h-3">
+                        </label>
+                        <label
+                            class="flex items-center justify-between p-2 rounded-lg border border-slate-200 bg-white cursor-pointer hover:border-blue-300 transition-colors">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-qrcode text-blue-500"></i>
+                                <span class="text-[10px] font-bold">QRIS</span>
+                            </div>
+                            <input type="checkbox" id="edit-prod-pay-qris" class="accent-blue-600 w-3 h-3">
+                        </label>
+                        <label
+                            class="flex items-center justify-between p-2 rounded-lg border border-slate-200 bg-white cursor-pointer hover:border-blue-300 transition-colors">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-brands fa-paypal text-indigo-600"></i>
+                                <span class="text-[10px] font-bold">PayPal</span>
+                            </div>
+                            <input type="checkbox" id="edit-prod-pay-paypal" class="accent-blue-600 w-3 h-3">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="text-xs font-semibold block mb-2" style="color: var(--muted);">Metode Pengiriman Tersedia</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <label class="flex items-center justify-between p-2 rounded-lg border border-slate-200 bg-white cursor-pointer hover:border-blue-300 transition-colors">
+                            <span class="text-[10px] font-bold">JNE</span>
+                            <input type="checkbox" id="edit-prod-ship-jne" class="accent-blue-600 w-3 h-3">
+                        </label>
+                        <label class="flex items-center justify-between p-2 rounded-lg border border-slate-200 bg-white cursor-pointer hover:border-blue-300 transition-colors">
+                            <span class="text-[10px] font-bold">J&T</span>
+                            <input type="checkbox" id="edit-prod-ship-jnt" class="accent-blue-600 w-3 h-3">
+                        </label>
+                        <label class="flex items-center justify-between p-2 rounded-lg border border-slate-200 bg-white cursor-pointer hover:border-blue-300 transition-colors">
+                            <span class="text-[10px] font-bold">SiCepat</span>
+                            <input type="checkbox" id="edit-prod-ship-sicepat" class="accent-blue-600 w-3 h-3">
+                        </label>
+                        <label class="flex items-center justify-between p-2 rounded-lg border border-slate-200 bg-white cursor-pointer hover:border-blue-300 transition-colors">
+                            <span class="text-[10px] font-bold">POS</span>
+                            <input type="checkbox" id="edit-prod-ship-pos" class="accent-blue-600 w-3 h-3">
+                        </label>
+                        <label class="flex items-center justify-between p-2 rounded-lg border border-slate-200 bg-white cursor-pointer hover:border-blue-300 transition-colors">
+                            <span class="text-[10px] font-bold">Instan</span>
+                            <input type="checkbox" id="edit-prod-ship-instant" class="accent-blue-600 w-3 h-3">
+                        </label>
+                        <label class="flex items-center justify-between p-2 rounded-lg border border-slate-200 bg-white cursor-pointer hover:border-blue-300 transition-colors">
+                            <span class="text-[10px] font-bold">Ambil Sendiri</span>
+                            <input type="checkbox" id="edit-prod-ship-pickup" class="accent-blue-600 w-3 h-3">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="text-xs font-semibold block mb-2" style="color: var(--muted);">Ganti Foto
+                        (Opsional)</label>
+                    <div class="relative border-2 border-dashed border-blue-300 rounded-xl p-4 text-center hover:bg-blue-50 transition-colors cursor-pointer mb-3 bg-white/50"
+                        onclick="document.getElementById('edit-prod-image').click()">
+                        <i class="fa-solid fa-cloud-arrow-up text-2xl text-blue-500 mb-1"></i>
+                        <p class="text-[10px] font-semibold text-blue-800">Klik untuk Ganti Gambar</p>
+                        <p class="text-[9px] text-slate-500" id="edit-upload-filename">Format: JPG, PNG</p>
+                        <input type="file" id="edit-prod-image" accept="image/*" class="hidden"
+                            onchange="previewEditImage(this)">
+                    </div>
+
+                    <div class="text-center mb-3 relative">
+                        <hr class="border-t border-slate-200 absolute w-full top-1/2 left-0 -z-10">
+                        <span class="text-[9px] font-bold text-slate-400 bg-white px-2 rounded">ATAU LINK</span>
+                    </div>
+
+                    <input type="url" id="edit-prod-image-url" class="glass-input mb-3"
+                        placeholder="https://contoh.com/gambar.jpg" oninput="previewEditImageUrl(this.value)">
+
+                    <label id="edit-prod-preview-label" class="text-xs font-semibold block mb-1 hidden"
+                        style="color: var(--muted);">Preview Gambar</label>
+                    <img id="edit-prod-current-img" src=""
+                        class="rounded-xl w-full h-32 object-cover hidden shadow-sm border border-slate-200 bg-white">
+                </div>
+                <div class="flex flex-wrap gap-3">
+                    <button type="button" onclick="closeModal('edit-product-modal')"
+                        class="btn-outline flex-1 py-2.5 text-sm">Batal</button>
+                    <button type="button" onclick="handleDeleteProduct(document.getElementById('edit-prod-id').value)"
+                        class="flex-1 py-2.5 text-sm font-bold text-red-600 border border-red-200 bg-red-50 rounded-xl hover:bg-red-100 transition-colors">Hapus</button>
+                    <button type="submit" id="update-prod-btn" class="btn-warning flex-1 py-2.5 text-sm">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Full Page Modal: Detail Produk -->
+    <div id="product-detail-modal" class="full-page-modal">
+        <div class="fpm-header">
+            <button onclick="closeProductDetail()" class="fpm-back-btn"><i class="fa-solid fa-arrow-left"></i></button>
+            <h2 class="fpm-title">Detail Produk</h2>
+        </div>
+        <div class="p-0 pb-24">
+            <!-- Product Image -->
+            <div class="w-full h-72 bg-slate-100 relative">
+                <img id="detail-img" src="" class="w-full h-full object-cover">
+                <div class="absolute top-4 right-4 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-full text-xs font-bold text-blue-800 shadow-sm"
+                    id="detail-category">Kategori</div>
+            </div>
+
+            <!-- Info Section -->
+            <div
+                class="p-6 -mt-6 relative bg-white/90 backdrop-blur-xl rounded-t-3xl shadow-[0_-8px_30px_rgba(0,0,0,0.05)] border-t border-white">
+                <div class="flex justify-between items-start gap-4 mb-2">
+                    <h1 id="detail-name" class="font-display text-2xl font-bold leading-tight text-slate-800">Nama
+                        Produk</h1>
+                    <button id="detail-share-btn"
+                        class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors flex-shrink-0">
+                        <i class="fa-solid fa-share-nodes"></i>
+                    </button>
+                </div>
+                <div id="detail-price" class="text-2xl font-bold mb-6" style="color: var(--accent);">Rp0</div>
+
+                <div class="flex items-center gap-3 p-4 rounded-2xl mb-6 bg-blue-50 border border-blue-100">
+                    <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center text-blue-800 shadow-sm font-bold text-xl uppercase"
+                        id="detail-seller-initial">U</div>
+                    <div>
+                        <p class="text-xs text-slate-500 mb-0.5">Dijual oleh</p>
+                        <p id="detail-seller-business" class="font-bold text-sm text-slate-800">Nama Usaha</p>
+                    </div>
+                </div>
+
+                <h3 class="font-bold text-slate-800 mb-2 flex items-center gap-2"><i
+                        class="fa-solid fa-align-left text-slate-400"></i> Deskripsi Produk</h3>
+                <p id="detail-desc" class="text-sm text-slate-600 leading-relaxed mb-8 whitespace-pre-wrap">Deskripsi
+                    produk...</p>
+
+                <!-- AI Competitor Analysis Section -->
+                <div id="ai-analysis-section" class="mb-8 p-4 rounded-2xl bg-slate-50 border border-slate-100 hidden">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-xs font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-robot text-blue-600"></i> Analisis Pesaing AI
+                        </h4>
+                        <span id="ai-analysis-quota"
+                            class="text-[9px] font-bold bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full">Kuota:
+                            ?/5</span>
+                    </div>
+                    <div id="ai-analysis-content" class="text-xs text-slate-600 leading-relaxed italic mb-4">
+                        <!-- AI Analysis text goes here -->
+                    </div>
+                    <div id="ai-competitors-container">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-wider">Produk Pesaing
+                            Terkait</p>
+                        <div id="ai-competitors-list" class="grid grid-cols-2 gap-3">
+                            <!-- Competitor cards go here -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="ai-analysis-btn-container" class="mb-8 hidden">
+                    <button id="btn-run-ai-analysis" onclick="handleRunAIAnalysis()"
+                        class="w-full py-3 px-4 bg-white border border-blue-200 text-blue-600 rounded-xl text-xs font-bold shadow-sm hover:bg-blue-50 transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-magnifying-glass-chart"></i> Analisis Pesaing dengan AI Echoomrche
+                    </button>
+                </div>
+
+                <div id="detail-action-container">
+                    <!-- Dynamic button: Buy or Edit -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="module">
+        import { createClient } from 'https://esm.sh/@libsql/client/web';
+
+        // ================================================================
+        // NAVIGASI APLIKASI (SLIDE)
+        // ================================================================
+        async function handleDesktopAIChat(event) {
+            event.preventDefault();
+            const inputEl = document.getElementById('desktop-chat-input');
+            const message = inputEl.value.trim();
+            if(!message) return;
+
+            inputEl.value = '';
+            
+            const historyEl = document.getElementById('desktop-chat-history');
+            
+            // Add user message
+            const userDiv = document.createElement('div');
+            userDiv.className = 'user-msg';
+            userDiv.textContent = message;
+            historyEl.appendChild(userDiv);
+            historyEl.scrollTop = historyEl.scrollHeight;
+
+            // Add loading AI message
+            const aiDiv = document.createElement('div');
+            aiDiv.className = 'ai-msg';
+            aiDiv.innerHTML = '<i class="fa-solid fa-ellipsis fa-fade"></i>';
+            historyEl.appendChild(aiDiv);
+            historyEl.scrollTop = historyEl.scrollHeight;
+
+            try {
+                // Use OpenRouter SDK
+                const stream = await openrouter.chat.send({
+                    model: "nvidia/nemotron-nano-12b-v2-vl:free",
+                    messages: [
+                        {
+                            role: "system",
+                            content: "Kamu adalah AI Asisten untuk aplikasi e-commerce Pasar UMKM. Jawab dengan sangat singkat, padat, ramah, dan gunakan bahasa Indonesia santai. Jika teks di kurung dengan **text** maka jadikan bold."
+                        },
+                        {
+                            role: "user",
+                            content: message
+                        }
+                    ],
+                    stream: true
+                });
+
+                let response = "";
+                for await (const chunk of stream) {
+                    const content = chunk.choices[0]?.delta?.content;
+                    if (content) {
+                        if (response === "") aiDiv.innerHTML = ""; // clear loading
+                        response += content;
+                        
+                        // Parse bold logic
+                        let formatted = response.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+                        aiDiv.innerHTML = formatted;
+                        historyEl.scrollTop = historyEl.scrollHeight;
+                    }
+                }
+            } catch(e) {
+                console.error("AI Chat Error:", e);
+                aiDiv.innerHTML = "<i>Koneksi ke AI gagal. Coba lagi.</i>";
+            }
+        }
+
+        // --- PAGE MANAGEMENT ---
+        let currentPageIndex = 2; // Default to Dashboard (Beranda)
+        window.changePage = function (index) {
+            // Pembatasan: Jika akun dinonaktifkan (isVerified !== 1)
+            if (index === 3 && currentUserData && currentUserData.isVerified !== 1) {
+                showToast("Akun Anda telah dinonaktifkan izinnya karena melakukan pelanggaran. Harap melakukan banding melalui situs resmi atau hubungi Customer Service: 083802453336", "error");
+                return;
+            }
+
+            currentPageIndex = index;
+            const container = document.getElementById('swipe-container');
+            container.style.transform = `translate3d(-${index * 25}%, 0, 0)`;
+
+            document.querySelectorAll('.nav-btn').forEach((btn, i) => {
+                if (i === index) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+
+            if (index === 1) loadOtherSellers();
+            if (index === 3) loadSellerRevenue();
+        };
+
+        // Touch Swipe Logic
+        let touchStartX = 0;
+        let touchEndX = 0;
+        let isCarouselTouch = false;
+        const swipeViewport = document.querySelector('.swipe-viewport');
+
+        swipeViewport.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+            // Optimasi: Jangan geser halaman jika sedang menyentuh elemen horizontal scroll
+            isCarouselTouch = e.target.closest('.top-carousel') !== null ||
+                e.target.closest('#my-products-list') !== null ||
+                e.target.closest('.overflow-x-auto') !== null;
+        }, { passive: true });
+
+        swipeViewport.addEventListener('touchend', e => {
+            if (isCarouselTouch) return; // Jangan geser halaman jika sedang menggeser carousel
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, { passive: true });
+
+        function handleSwipe() {
+            const threshold = 60; // minimum distance to trigger swipe
+            if (touchEndX < touchStartX - threshold) {
+                // swiped left (next page)
+                if (currentPageIndex < 3) changePage(currentPageIndex + 1);
+            }
+            if (touchEndX > touchStartX + threshold) {
+                // swiped right (prev page)
+                if (currentPageIndex > 0) changePage(currentPageIndex - 1);
+            }
+        }
+
+        // ================================================================
+        // KONFIGURASI FIREBASE & TURSO
+        // ================================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyDjtYr8Wsb9WAtfxM3UfDMFL_oFaMYM2Yg",
+            authDomain: "umkm-75e22.firebaseapp.com",
+            projectId: "umkm-75e22",
+            storageBucket: "umkm-75e22.firebasestorage.app",
+            messagingSenderId: "1042010063344",
+            appId: "1:1042010063344:web:c7be3bbedcd8f79c2c5d35"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        const turso = createClient({
+            url: 'libsql://umkm-elnathanwebsite.aws-ap-northeast-1.turso.io',
+            authToken: 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzgyOTg4OTgsImlkIjoiMDE5ZTA5MmItNWEwMS03ZDE0LWE2M2EtZTg0YTBhODIzMmVjIiwicmlkIjoiMjUxYTliYzctYjA0NC00YzY3LTlmZWItYzBmNzQwMjczNTQxIn0.K_pVVV7lZDUOuz7s3TljfqC-VPiMtIpW2RoAaYlBFmqu-HTc6ueuw3B6kBbUBx8TTy5-g_E-H7zoqpLHLFLQDQ'
+        });
+
+        // Database Healing: Ensure Payment & AI Columns Exist
+        (async () => {
+            try {
+                await turso.execute("ALTER TABLE products ADD COLUMN isQrisActive INTEGER DEFAULT 1");
+            } catch (e) { }
+            try {
+                await turso.execute("ALTER TABLE products ADD COLUMN isPaypalActive INTEGER DEFAULT 1");
+            } catch (e) { }
+            try {
+                await turso.execute("ALTER TABLE products ADD COLUMN shippingJNE INTEGER DEFAULT 1");
+            } catch (e) { }
+            try {
+                await turso.execute("ALTER TABLE products ADD COLUMN shippingJNT INTEGER DEFAULT 1");
+            } catch (e) { }
+            try {
+                await turso.execute("ALTER TABLE products ADD COLUMN shippingSicepat INTEGER DEFAULT 1");
+            } catch (e) { }
+            try {
+                await turso.execute("ALTER TABLE products ADD COLUMN shippingPos INTEGER DEFAULT 1");
+            } catch (e) { }
+            try {
+                await turso.execute("ALTER TABLE products ADD COLUMN shippingInstant INTEGER DEFAULT 1");
+            } catch (e) { }
+            try {
+                await turso.execute("ALTER TABLE products ADD COLUMN shippingPickup INTEGER DEFAULT 1");
+            } catch (e) { }
+            try {
+                await turso.execute("ALTER TABLE users ADD COLUMN aiSearchCount INTEGER DEFAULT 0");
+            } catch (e) { }
+            try {
+                await turso.execute("ALTER TABLE users ADD COLUMN isSubscribed INTEGER DEFAULT 0");
+            } catch (e) { }
+            try {
+                await turso.execute("ALTER TABLE users ADD COLUMN subscriptionExpiry TEXT");
+            } catch (e) { }
+            try {
+                await turso.execute("ALTER TABLE users ADD COLUMN trialStartedAt TEXT");
+            } catch (e) { }
+            try {
+                await turso.execute("ALTER TABLE users ADD COLUMN aiAnalysisCount INTEGER DEFAULT 0");
+            } catch (e) { }
+            try {
+                await turso.execute("ALTER TABLE users ADD COLUMN lastAnalysisMonth TEXT");
+            } catch (e) { }
+            try {
+                await turso.execute("ALTER TABLE users ADD COLUMN isVerified INTEGER DEFAULT 0");
+            } catch (e) { }
+            try {
+                await turso.execute("ALTER TABLE users ADD COLUMN aiStoreRating REAL DEFAULT 0.0");
+            } catch (e) { }
+            try {
+                await turso.execute("ALTER TABLE users ADD COLUMN aiStoreAnalysis TEXT DEFAULT ''");
+            } catch (e) { }
+        })();
+
+        let currentUserData = null;
+        let currentUid = null;
+        let productsCache = [];
+
+        // ================================================================
+        // AUTENTIKASI
+        // ================================================================
+        auth.onAuthStateChanged((user) => {
+            const overlay = document.getElementById('loading-overlay');
+            if (user) {
+                // PROTEKSI ADMIN: Jika admin masuk ke dashboard, arahkan ke panel admin
+                if (user.email === 'admin@pasarumkm.com') {
+                    window.location.href = 'adminverifikasi.html';
+                    return;
+                }
+
+                currentUid = user.uid;
+                overlay.classList.add('hidden');
+                syncUserProfileToTurso(user);
+                loadMarketProducts();
+
+                // Cek notifikasi pesanan baru
+                if (localStorage.getItem('hasNewOrder') === 'true') {
+                    document.getElementById('notif-red-dot').classList.remove('hidden');
+                }
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+
+        // ================================================================
+        // FUNGSI PROFIL
+        // ================================================================
+        async function syncUserProfileToTurso(firebaseUser) {
+            try {
+                const rs = await turso.execute({ sql: "SELECT * FROM users WHERE uid = ?", args: [firebaseUser.uid] });
+                if (rs.rows.length > 0) {
+                    currentUserData = rs.rows[0];
+                } else {
+                    currentUserData = {
+                        uid: firebaseUser.uid,
+                        username: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+                        email: firebaseUser.email,
+                        phone: '-',
+                        businessName: 'UMKM Baru',
+                        photoURL: firebaseUser.photoURL || '',
+                        trialStartedAt: null
+                    };
+                    await turso.execute({
+                        sql: "INSERT INTO users (uid, username, email, phone, businessName, photoURL, trialStartedAt, isVerified) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                        args: [currentUserData.uid, currentUserData.username, currentUserData.email, currentUserData.phone, currentUserData.businessName, currentUserData.photoURL, null, 0]
+                    });
+
+                    // Buat tabel jika belum ada
+                    await turso.execute(`
+                        CREATE TABLE IF NOT EXISTS registration_history (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            user_uid TEXT NOT NULL,
+                            username TEXT,
+                            email TEXT,
+                            business_name TEXT,
+                            status TEXT DEFAULT 'Aktif',
+                            registered_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                        )
+                    `);
+
+                    // Tambahkan ke riwayat pendaftaran
+                    await turso.execute({ sql: "INSERT INTO registration_history (user_uid, username, email, business_name, status) VALUES (?, ?, ?, ?, ?)", args: [currentUserData.uid, currentUserData.username, currentUserData.email, currentUserData.businessName, 'Aktif'] });
+                }
+                renderProfileUI();
+                renderAIStoreSection();
+            } catch (error) { showToast("Gagal sinkronisasi profil: " + error.message, "error"); }
+        }
+
+        async function renderProfileUI() {
+            if (!currentUserData) return;
+            const bName = currentUserData.businessName || currentUserData.username || 'UMKM';
+            const photo = currentUserData.photoURL || `https://ui-avatars.com/api/?background=1E3A8A&color=fff&name=${encodeURIComponent(bName)}`;
+
+            document.getElementById('profile-name').textContent = bName;
+            document.getElementById('profile-email').textContent = currentUserData.email || '-';
+            document.getElementById('profile-phone').textContent = currentUserData.phone || '-';
+            document.getElementById('profile-photo').src = photo;
+
+            // Status Verifikasi di Profil
+            const isVerified = currentUserData.isVerified === 1;
+            const profileStatus = document.getElementById('profile-business');
+            if (isVerified) {
+                profileStatus.innerHTML = `${bName} <i class="fa-solid fa-circle-check text-blue-500 ml-1" title="Terverifikasi"></i>`;
+            } else {
+                profileStatus.innerHTML = `${bName} <span class="text-[9px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full ml-1 font-bold">Izin Dinonaktifkan</span>`;
+                // Tambahkan catatan banding kecil di bawah nama bisnis
+                document.getElementById('profile-name').innerHTML += `<p class="text-[9px] text-red-500 mt-1 font-bold uppercase"><i class="fa-solid fa-circle-exclamation mr-1"></i> Hubungi CS: 083802453336 untuk banding</p>`;
+            }
+
+            // Pembatasan Navigasi Bottom
+            const storeBtn = document.getElementById('nav-btn-3');
+            if (storeBtn) {
+                if (!isVerified) {
+                    storeBtn.style.opacity = '0.5';
+                    storeBtn.style.filter = 'grayscale(1)';
+                    storeBtn.title = "Akun belum terverifikasi";
+                } else {
+                    storeBtn.style.opacity = '1';
+                    storeBtn.style.filter = 'none';
+                    storeBtn.title = "Toko Saya";
+                }
+            }
+
+            document.getElementById('header-profile-name').textContent = bName;
+            document.getElementById('header-profile-photo').src = photo;
+            
+            const navStoreIcon = document.getElementById('nav-store-icon');
+            if (navStoreIcon) navStoreIcon.src = photo;
+
+            document.getElementById('edit-business').value = bName;
+            document.getElementById('edit-phone').value = currentUserData.phone || '';
+            document.getElementById('edit-photo').value = currentUserData.photoURL || '';
+
+            // Hitung Julukan AI
+            try {
+                const rs = await turso.execute({
+                    sql: "SELECT category FROM products WHERE sellerId = ? GROUP BY category ORDER BY COUNT(*) DESC LIMIT 1",
+                    args: [currentUid]
+                });
+                if (rs.rows.length > 0) {
+                    const julukan = getAIJulukan(rs.rows[0].category);
+                    document.getElementById('profile-julukan').textContent = julukan;
+                    document.getElementById('profile-julukan-badge').classList.remove('hidden');
+                    document.getElementById('header-profile-julukan').textContent = julukan;
+                }
+            } catch (err) { console.error("Error julukan:", err); }
+
+            // Display AI Store Rating in Profile
+            const ratingVal = currentUserData.aiStoreRating !== null && currentUserData.aiStoreRating !== undefined 
+                ? parseFloat(currentUserData.aiStoreRating).toFixed(1) 
+                : "0.0";
+            
+            const profileRatingDiv = document.getElementById('profile-ai-rating-container');
+            if (profileRatingDiv) {
+                profileRatingDiv.innerHTML = `
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-600 border border-amber-200 text-[10px] font-bold shadow-sm">
+                        <i class="fa-solid fa-star"></i> AI Rating: ${ratingVal} / 5.0
+                    </span>
+                `;
+                profileRatingDiv.classList.remove('hidden');
+            }
+
+            // Update AI Usage Badge
+            const badge = document.getElementById('ai-usage-badge');
+            if (badge) {
+                const count = currentUserData.aiSearchCount || 0;
+                badge.textContent = `Kuota: ${count}/7`;
+                if (count >= 7) badge.className = "text-[9px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full";
+            }
+
+            // Update Subscription Status in Profile
+            const isSub = currentUserData.isSubscribed === 1;
+            const subBadge = document.getElementById('subscription-badge');
+
+            // Trial Calculation
+            const trialStart = currentUserData.trialStartedAt ? new Date(currentUserData.trialStartedAt) : null;
+            const trialEnd = trialStart ? new Date(trialStart.getTime() + 7 * 24 * 60 * 60 * 1000) : null;
+            const now = new Date();
+            const isTrialActive = trialStart && now < trialEnd && !isSub;
+            const hasUsedTrial = currentUserData.trialStartedAt !== null;
+
+            if (subBadge) {
+                if (isSub) {
+                    subBadge.innerHTML = '<i class="fa-solid fa-crown text-yellow-500"></i> Akun Pro (Maks 50 Produk)';
+                    subBadge.className = "text-[10px] font-bold text-amber-700 bg-amber-50 px-3 py-1 rounded-full border border-amber-200 flex items-center gap-1.5 shadow-sm";
+                } else if (isTrialActive) {
+                    subBadge.innerHTML = '<i class="fa-solid fa-flask text-orange-500"></i> Uji Coba (Maks 15 Produk)';
+                    subBadge.className = "text-[10px] font-bold text-orange-600 bg-orange-50 px-3 py-1 rounded-full border border-orange-200 flex items-center gap-1.5 shadow-sm";
+                } else if (!hasUsedTrial) {
+                    subBadge.innerHTML = '<i class="fa-solid fa-gift text-blue-500"></i> Ambil Uji Coba Gratis 7 Hari';
+                    subBadge.className = "text-[10px] font-bold text-white bg-blue-600 px-3 py-1 rounded-full shadow-md flex items-center gap-1.5 cursor-pointer hover:bg-blue-700";
+                    subBadge.onclick = handleActivateTrial;
+                } else {
+                    subBadge.innerHTML = '<i class="fa-solid fa-store text-blue-500"></i> Gratis (Maks 10 Produk)';
+                    subBadge.className = "text-[10px] font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-200 flex items-center gap-1.5";
+                    subBadge.onclick = openSubscriptionModal;
+                }
+            }
+
+            // Stylist Gold Effects (Pro OR Trial Active)
+            if (isSub || isTrialActive) {
+                document.getElementById('profile-photo').parentElement.style.borderColor = '#D4AF37';
+                document.getElementById('profile-photo').parentElement.style.boxShadow = '0 0 15px rgba(212, 175, 55, 0.4)';
+                document.getElementById('add-product-card-container').classList.add('border-amber-400', 'bg-amber-50/30');
+                document.getElementById('add-product-card-container').style.borderColor = '#D4AF37';
+
+                // Add crown to header name if missing
+                if (!document.getElementById('header-profile-name').innerHTML.includes('fa-crown')) {
+                    document.getElementById('header-profile-name').innerHTML += ' <i class="fa-solid fa-crown text-amber-500 text-[10px]"></i>';
+                }
+            } else {
+                document.getElementById('profile-photo').parentElement.style.borderColor = 'var(--accent)';
+                document.getElementById('profile-photo').parentElement.style.boxShadow = 'none';
+                document.getElementById('add-product-card-container').classList.remove('border-amber-400', 'bg-amber-50/30');
+                document.getElementById('add-product-card-container').style.borderColor = '';
+                document.getElementById('header-profile-name').innerHTML = document.getElementById('header-profile-name').innerText.replace(' ', '');
+                // Clean up crown from header
+                const headerName = document.getElementById('header-profile-name');
+                const crown = headerName.querySelector('.fa-crown');
+                if (crown) crown.remove();
+            }
+
+            // Header Trial Countdown
+            const trialBadge = document.getElementById('trial-badge');
+            const trialText = document.getElementById('trial-countdown');
+            if (isTrialActive) {
+                const diff = trialEnd - now;
+                const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+                const hours = Math.floor((diff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+                trialText.textContent = `TRIAL: ${days}H ${hours}J LAGI`;
+                trialBadge.classList.remove('hidden');
+            } else {
+                trialBadge.classList.add('hidden');
+            }
+        }
+
+        function getAIJulukan(category) {
+            const map = {
+                'Makanan': 'Si Paling Foodie',
+                'Minuman': 'Si Paling Segar',
+                'Fashion': 'Si Paling Stylist',
+                'Kerajinan': 'Si Paling Kreatif',
+                'Pertanian': 'Si Paling Agraris',
+                'Jasa': 'Si Paling Solutif',
+                'Lainnya': 'Si Paling UMKM'
+            };
+            return map[category] || 'Si Paling UMKM';
+        }
+
+        window.handleManualSearch = function (query) {
+            const q = query.toLowerCase().trim();
+            if (!q) {
+                loadMarketProducts();
+                return;
+            }
+            const filteredIds = productsCache
+                .filter(p => p.name.toLowerCase().includes(q) || (p.category && p.category.toLowerCase().includes(q)))
+                .map(p => p.id);
+
+            loadMarketProducts(filteredIds);
+        };
+
+        function openEditProfileModal() { document.getElementById('edit-profile-modal').classList.add('visible'); }
+
+        async function handleUpdateProfile(e) {
+            e.preventDefault();
+            const btn = document.getElementById('update-profile-btn');
+            btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span> Menyimpan...';
+            try {
+                await turso.execute({ sql: "UPDATE users SET businessName = ?, phone = ?, photoURL = ? WHERE uid = ?", args: [document.getElementById('edit-business').value.trim(), document.getElementById('edit-phone').value.trim(), document.getElementById('edit-photo').value.trim(), currentUid] });
+                currentUserData.businessName = document.getElementById('edit-business').value.trim();
+                currentUserData.phone = document.getElementById('edit-phone').value.trim();
+                currentUserData.photoURL = document.getElementById('edit-photo').value.trim();
+                renderProfileUI();
+                showToast('Profil berhasil diperbarui!', 'success');
+                closeModal('edit-profile-modal');
+            } catch (error) { showToast('Gagal: ' + error.message, 'error'); } finally { btn.disabled = false; btn.innerHTML = 'Simpan'; }
+        }
+
+        // ================================================================
+        // PREVIEW GAMBAR PRODUK
+        // ================================================================
+        window.previewAddImage = function (input) {
+            const file = input.files[0];
+            const previewContainer = document.getElementById('add-prod-preview-container');
+            const previewImg = document.getElementById('add-prod-preview-img');
+            const filenameText = document.getElementById('upload-filename');
+            const urlInput = document.getElementById('prod-image-url');
+
+            if (file) {
+                filenameText.innerText = file.name;
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    previewImg.src = e.target.result;
+                    previewContainer.classList.remove('hidden');
+                    urlInput.value = ''; // Reset URL if file is selected
+                }
+                reader.readAsDataURL(file);
+            }
+        };
+
+        window.previewAddImageUrl = function (url) {
+            const previewContainer = document.getElementById('add-prod-preview-container');
+            const previewImg = document.getElementById('add-prod-preview-img');
+            const fileInput = document.getElementById('prod-image');
+            const filenameText = document.getElementById('upload-filename');
+
+            if (url.trim() !== '') {
+                previewImg.src = url;
+                previewContainer.classList.remove('hidden');
+
+                // Reset file input if URL is provided
+                fileInput.value = '';
+                filenameText.innerText = 'Format: JPG, PNG (Maks 5MB)';
+            } else {
+                if (fileInput.files.length === 0) {
+                    previewContainer.classList.add('hidden');
+                    previewImg.src = '';
+                }
+            }
+        };
+
+        window.clearAddImagePreview = function () {
+            document.getElementById('prod-image').value = '';
+            document.getElementById('upload-filename').innerText = 'Format: JPG, PNG (Maks 5MB)';
+            document.getElementById('prod-image-url').value = '';
+            document.getElementById('add-prod-preview-container').classList.add('hidden');
+            document.getElementById('add-prod-preview-img').src = '';
+        };
+
+        window.previewEditImage = function (input) {
+            const file = input.files[0];
+            const previewImg = document.getElementById('edit-prod-current-img');
+            const previewLabel = document.getElementById('edit-prod-preview-label');
+            const filenameText = document.getElementById('edit-upload-filename');
+            const urlInput = document.getElementById('edit-prod-image-url');
+
+            if (file) {
+                filenameText.innerText = file.name;
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    previewImg.src = e.target.result;
+                    previewImg.classList.remove('hidden');
+                    previewLabel.classList.remove('hidden');
+                    urlInput.value = ''; // Reset URL if file is selected
+                }
+                reader.readAsDataURL(file);
+            }
+        };
+
+        window.previewEditImageUrl = function (url) {
+            const previewImg = document.getElementById('edit-prod-current-img');
+            const previewLabel = document.getElementById('edit-prod-preview-label');
+            const fileInput = document.getElementById('edit-prod-image');
+            const filenameText = document.getElementById('edit-upload-filename');
+
+            if (url.trim() !== '') {
+                previewImg.src = url;
+                previewImg.classList.remove('hidden');
+                previewLabel.classList.remove('hidden');
+
+                // Reset file input if URL is provided
+                fileInput.value = '';
+                filenameText.innerText = 'Format: JPG, PNG';
+            }
+        };
+
+        // ================================================================
+        // FUNGSI KOMPRESI GAMBAR (CANVAS)
+        // ================================================================
+        function processImage(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 600;
+                        const MAX_HEIGHT = 600;
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height) {
+                            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                        } else {
+                            if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.6)); // Lebih terkompresi
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // ================================================================
+        // FUNGSI ASISTEN AI (OPENROUTER)
+        // ================================================================
+        window.handleAISearch = async function (e) {
+            e.preventDefault();
+            const input = document.getElementById('ai-search-input');
+            const btn = document.getElementById('ai-search-btn');
+            const loading = document.getElementById('ai-loading');
+            const query = input.value.trim();
+
+            if (!query) return;
+
+            // Cek Kuota AI (Maks 7x per user)
+            try {
+                const rsCount = await turso.execute({
+                    sql: "SELECT aiSearchCount FROM users WHERE uid = ?",
+                    args: [currentUid]
+                });
+                const count = rsCount.rows[0]?.aiSearchCount || 0;
+
+                if (count >= 7) {
+                    showToast("Kuota AI Anda sudah habis (Maks 7x). Silakan gunakan pencarian manual.", "error");
+                    return;
+                }
+
+                if (productsCache.length === 0) {
+                    showToast("Belum ada produk untuk dicari.", "error");
+                    return;
+                }
+
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i>';
+                loading.classList.remove('hidden');
+
+                // Prune data to save tokens
+                const simplifiedProducts = productsCache.map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    category: p.category,
+                    price: p.price,
+                    description: p.description
+                }));
+
+                const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer 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',
+                        'HTTP-Referer': window.location.href,
+                        'X-Title': 'Pasar UMKM',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: "nvidia/nemotron-nano-12b-v2-vl:free",
+                        messages: [
+                            {
+                                role: "system",
+                                content: "Anda adalah asisten belanja AI untuk Pasar UMKM. Anda akan menerima cerita/keinginan pengguna dan daftar produk dalam format JSON.\nTugas Anda:\n1. Pikirkan dan analisis kebutuhan pengguna berdasarkan ceritanya.\n2. Cocokkan dengan produk yang tersedia.\n3. Di akhir jawaban Anda, Anda WAJIB memberikan array JSON berisi ID produk (integer) yang direkomendasikan. Formatnya harus tepat seperti ini: [id1, id2, ...].\nContoh respons:\nPengguna mencari makanan pedas. Saya menemukan Seblak (ID: 5) dan Keripik Kaca (ID: 8).\n[5, 8]"
+                            },
+                            {
+                                role: "user",
+                                content: `Cerita/Keinginan pengguna: "${query}"\n\nDaftar Produk:\n${JSON.stringify(simplifiedProducts)}`
+                            }
+                        ]
+                    })
+                });
+
+                if (!response.ok) throw new Error("Gagal terhubung ke AI");
+                const data = await response.json();
+                const aiReply = data.choices[0].message.content.trim();
+
+                const match = aiReply.match(/\[(.*?)\]/s);
+                let recommendedIds = [];
+                if (match) {
+                    try {
+                        recommendedIds = JSON.parse(match[0]);
+                    } catch (e) {
+                        recommendedIds = match[1].split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+                    }
+                } else {
+                    try {
+                        recommendedIds = JSON.parse(aiReply);
+                    } catch (e) {
+                        recommendedIds = [];
+                    }
+                }
+
+                // Pastikan semua id berbentuk integer
+                if (Array.isArray(recommendedIds)) {
+                    recommendedIds = recommendedIds.map(id => parseInt(id)).filter(id => !isNaN(id));
+                    loadMarketProducts(recommendedIds);
+
+                    // Update AI Count di DB
+                    await turso.execute({
+                        sql: "UPDATE users SET aiSearchCount = aiSearchCount + 1 WHERE uid = ?",
+                        args: [currentUid]
+                    });
+
+                    // Update UI Badge
+                    const newCount = count + 1;
+                    const badge = document.getElementById('ai-usage-badge');
+                    if (badge) {
+                        badge.textContent = `Kuota: ${newCount}/7`;
+                        if (newCount >= 7) badge.className = "text-[9px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full";
+                    }
+
+                    showToast(`AI menemukan ${recommendedIds.length} produk!`, "success");
+                    document.getElementById('refresh-btn-text').innerHTML = '<i class="fa-solid fa-xmark text-red-500"></i> Hapus Filter AI';
+                }
+
+            } catch (error) {
+                console.error("AI Search Error:", error);
+                showToast("Kesalahan sistem AI: " + error.message, "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane text-xs"></i>';
+                loading.classList.add('hidden');
+            }
+        };
+
+        window.handleGenerateAIDescription = async function (type) {
+            const nameId = type === 'add' ? 'prod-name' : 'edit-prod-name';
+            const descId = type === 'add' ? 'prod-desc' : 'edit-prod-desc';
+            const btnId = type === 'add' ? 'ai-gen-desc-add' : 'ai-gen-desc-edit';
+
+            const name = document.getElementById(nameId).value.trim();
+            const descArea = document.getElementById(descId);
+            const btn = document.getElementById(btnId);
+
+            if (!name) {
+                showToast("Silakan isi Nama Produk terlebih dahulu!", "error");
+                return;
+            }
+
+            btn.disabled = true;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Sedang Membuat...';
+
+            try {
+                const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer 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',
+                        'HTTP-Referer': window.location.href,
+                        'X-Title': 'Pasar UMKM',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: "nvidia/nemotron-nano-12b-v2-vl:free",
+                        messages: [
+                            {
+                                role: "system",
+                                content: "Anda adalah asisten pembuat deskripsi produk UMKM yang kreatif dan persuasif. Tugas Anda adalah membuat deskripsi singkat (maksimal 150 kata) berdasarkan nama produk yang diberikan. Gunakan gaya bahasa yang menarik bagi pembeli, sebutkan keunggulan produk secara umum, dan berikan kesan ramah. HANYA kembalikan teks deskripsinya saja tanpa embel-embel seperti 'Berikut adalah deskripsinya:'."
+                            },
+                            {
+                                role: "user",
+                                content: `Buatkan deskripsi untuk produk bernama: "${name}"`
+                            }
+                        ]
+                    })
+                });
+
+                if (!response.ok) throw new Error("Gagal terhubung ke AI");
+                const data = await response.json();
+                const aiDesc = data.choices[0].message.content.trim();
+
+                descArea.value = aiDesc;
+                showToast("Deskripsi berhasil dibuat oleh AI!", "success");
+            } catch (error) {
+                console.error(error);
+                showToast("Gagal membuat deskripsi: " + error.message, "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        };
+
+        window.autoGenerateDescription = function (type) {
+            const nameId = type === 'add' ? 'prod-name' : 'edit-prod-name';
+            const descId = type === 'add' ? 'prod-desc' : 'edit-prod-desc';
+            const name = document.getElementById(nameId).value.trim();
+            const desc = document.getElementById(descId).value.trim();
+            if (name && !desc) {
+                handleGenerateAIDescription(type);
+            }
+        };
+
+        window.resetMarket = function () {
+            document.getElementById('ai-search-input').value = '';
+            document.getElementById('refresh-btn-text').innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Segarkan';
+            loadMarketProducts();
+        };
+
+        // ================================================================
+        // FUNGSI PASAR PRODUK
+        // ================================================================
+        async function loadMarketProducts(filteredIds = null) {
+            const grid = document.getElementById('product-grid');
+            const emptyState = document.getElementById('empty-state');
+            const emptyStateText = emptyState.querySelector('p');
+
+            if (!filteredIds) {
+                let skeletonHtml = '';
+                for (let i = 0; i < 6; i++) {
+                    skeletonHtml += `
+                        <div class="glass-card flex flex-col p-3 animate-pulse border border-slate-100 bg-white">
+                            <div class="w-full h-44 bg-slate-200 rounded-xl mb-3"></div>
+                            <div class="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
+                            <div class="h-3 bg-slate-200 rounded w-1/2 mb-4"></div>
+                            <div class="mt-auto h-8 bg-slate-200 rounded-xl w-full"></div>
+                        </div>
+                    `;
+                }
+                grid.innerHTML = skeletonHtml;
+            }
+
+            try {
+                if (!filteredIds) {
+                    const rs = await turso.execute({
+                        sql: "SELECT p.*, u.photoURL as sellerPhoto, u.isSubscribed as sellerIsSubscribed, u.aiStoreRating as sellerAiRating FROM products p LEFT JOIN users u ON p.sellerId = u.uid ORDER BY p.createdAt DESC",
+                        args: []
+                    });
+                    productsCache = rs.rows;
+                }
+
+                grid.innerHTML = '';
+                const myProductsList = document.getElementById('my-products-list');
+                const myProductsSection = document.getElementById('my-products-section');
+                const myProductsCount = document.getElementById('my-products-count');
+                const myShopProducts = document.getElementById('my-shop-products-laci');
+                const myShopEmpty = document.getElementById('my-shop-empty');
+
+                myProductsList.innerHTML = '';
+                myShopProducts.innerHTML = '';
+
+                let myProducts = [];
+                let otherProducts = [];
+
+                if (filteredIds) {
+                    const filtered = productsCache.filter(p => filteredIds.includes(p.id));
+                    myProducts = filtered.filter(p => p.sellerId === currentUid);
+                    otherProducts = filtered.filter(p => p.sellerId !== currentUid);
+                } else {
+                    myProducts = productsCache.filter(p => p.sellerId === currentUid);
+                    otherProducts = productsCache.filter(p => p.sellerId !== currentUid);
+                }
+
+                // Render Produk Saya (Dua Laci: Beranda & Toko)
+                if (myProducts.length > 0) {
+                    myProductsSection.classList.remove('hidden');
+                    myProductsCount.textContent = `${myProducts.length} Produk`;
+                    myShopEmpty.classList.add('hidden');
+
+                    myProducts.forEach(prod => {
+                        // Di Laci Beranda
+                        myProductsList.appendChild(createCompactProductCard(prod));
+                        // Di Laci Toko Saya (Kompak juga agar konsisten laci)
+                        myShopProducts.appendChild(createCompactProductCard(prod));
+                    });
+                } else {
+                    myProductsSection.classList.add('hidden');
+                    myShopEmpty.classList.remove('hidden');
+                }
+
+                // Render Produk Lain
+                if (otherProducts.length > 0) {
+                    emptyState.classList.add('hidden');
+                    otherProducts.forEach(row => {
+                        grid.appendChild(createProductCard(row, filteredIds !== null));
+                    });
+                } else {
+                    if (myProducts.length === 0) {
+                        emptyState.classList.remove('hidden');
+                        emptyStateText.textContent = filteredIds ? "Maaf, AI tidak menemukan produk yang sesuai." : "Belum ada produk di pasar";
+                    } else {
+                        emptyState.classList.add('hidden');
+                    }
+                }
+            } catch (error) {
+                grid.innerHTML = '';
+                showToast("Gagal memuat produk: " + error.message, "error");
+            }
+        }
+
+        function createCompactProductCard(product) {
+            const div = document.createElement('div');
+            div.className = 'flex-shrink-0 w-32 glass-card overflow-hidden shadow-sm border-blue-100 flex flex-col';
+            div.style.scrollSnapAlign = 'start';
+
+            const formatRupiah = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+
+            div.innerHTML = `
+                <div class="relative h-24 overflow-hidden cursor-pointer" onclick="openProductDetail(${product.id})">
+                    <img src="${product.imageData || 'https://placehold.co/200x150/F8FAFC/94A3B8?text=Produk'}" class="w-full h-full object-cover" loading="lazy">
+                    <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-1.5">
+                         <span class="text-[9px] font-bold text-white">${formatRupiah(product.price)}</span>
+                    </div>
+                </div>
+                <div class="p-2 flex-grow flex flex-col justify-between cursor-pointer" onclick="openProductDetail(${product.id})">
+                    <h4 class="text-[10px] font-bold text-slate-800 truncate mb-2">${product.name}</h4>
+                    <div class="flex gap-1.5" onclick="event.stopPropagation()">
+                        <button onclick="openEditProductModal(${product.id})" class="flex-grow py-1 bg-blue-50 text-blue-600 rounded text-[8px] font-bold border border-blue-200 hover:bg-blue-100 transition-colors">
+                            Kelola
+                        </button>
+                    </div>
+                </div>
+            `;
+            return div;
+        }
+
+        function createProductCard(product, isAiRecommended = false) {
+            const isPro = product.sellerIsSubscribed === 1;
+            const div = document.createElement('div');
+            div.className = `glass-card flex flex-col transition-transform hover:scale-[1.02] duration-300 relative ${isPro ? 'border-amber-400 shadow-amber-100 shadow-md bg-amber-50/20' : ''}`;
+            if (isPro) div.style.borderColor = '#D4AF37';
+
+            const formatRupiah = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+            const isOwner = product.sellerId === currentUid;
+
+            let actionHtml = '';
+            if (isOwner) {
+                actionHtml = `
+                    <div class="mt-auto flex flex-col pt-2">
+                        <span class="font-bold text-sm mb-2" style="color: var(--accent);">${formatRupiah(product.price)}</span>
+                        <div class="flex items-center gap-2">
+                            <button onclick="openEditProductModal(${product.id})" class="btn-outline flex-1 text-[10px] py-1.5 flex items-center justify-center gap-1 border-yellow-400 text-yellow-600 bg-yellow-50">
+                                <i class="fa-solid fa-pen"></i> Edit
+                            </button>
+                            <button onclick="handleDeleteProduct(${product.id})" class="btn-outline text-[10px] py-1.5 px-3 flex items-center justify-center border-red-400 text-red-600 bg-red-50">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                let checkoutLink = '#';
+                const ph = product.whatsapp;
+                if (ph) {
+                    let phone = ph.replace(/[\s\-()]/g, '');
+                    if (phone.startsWith('08')) phone = '628' + phone.substring(2);
+                    else if (phone.startsWith('+62')) phone = phone.substring(1);
+                    checkoutLink = `checkout.html?sellerPhone=${phone}&prodName=${encodeURIComponent(product.name)}&prodPrice=${encodeURIComponent(product.price)}&sellerId=${product.sellerId}&prodId=${product.id}`;
+                }
+                actionHtml = `
+                    <div class="mt-auto flex flex-col gap-2 pt-2">
+                        <span class="font-bold text-sm" style="color: var(--accent);">${formatRupiah(product.price)}</span>
+                        <a href="${checkoutLink}" class="btn-primary text-[11px] py-1.5 px-2 flex items-center justify-center gap-1 w-full" style="text-decoration: none;">
+                            Buy
+                        </a>
+                    </div>
+                `;
+            }
+
+            let aiBadgeHtml = '';
+            if (isAiRecommended) {
+                aiBadgeHtml = `
+                    <div class="px-3 pt-1 pb-2">
+                        <div class="bg-indigo-50 border border-indigo-100 rounded-lg py-1 px-2 flex items-center justify-center gap-1.5 shadow-sm mt-1">
+                            <i class="fa-solid fa-wand-magic-sparkles text-indigo-500 text-[10px]"></i>
+                            <span class="text-[9px] font-bold text-indigo-700 tracking-wider uppercase">Rekomendasi AI</span>
+                        </div>
+                    </div>
+                `;
+            }
+            const sellerPhoto = product.sellerPhoto || `https://ui-avatars.com/api/?background=1E3A8A&color=fff&name=${encodeURIComponent(product.sellerBusiness || 'U')}`;
+            const sellerRating = product.sellerAiRating !== null && product.sellerAiRating !== undefined
+                ? parseFloat(product.sellerAiRating).toFixed(1)
+                : "0.0";
+
+            div.innerHTML = `
+                <div class="relative cursor-pointer" onclick="openProductDetail(${product.id})">
+                    <img src="${product.imageData || 'https://placehold.co/400x300/F8FAFC/94A3B8?text=Produk'}" alt="${product.name}" class="product-img" loading="lazy" style="width:100%; height:180px; object-cover: cover; border-radius: 12px 12px 0 0;">
+                    
+                    <!-- Seller Overlay Top-Left -->
+                    <div class="absolute top-2 left-2 flex items-center gap-1.5 bg-white/80 backdrop-blur-md py-1 px-1.5 rounded-full border border-white/50 shadow-sm max-w-[85%] overflow-hidden ${isPro ? 'border-amber-400/50' : ''}">
+                        <img src="${sellerPhoto}" class="w-4 h-4 rounded-full object-cover" loading="lazy">
+                        <span class="text-[8px] font-bold text-slate-800 truncate pr-1 flex items-center gap-1">
+                            ${product.sellerBusiness || 'Penjual'}
+                            ${isPro ? '<i class="fa-solid fa-crown text-amber-500 text-[6px]"></i>' : ''}
+                        </span>
+                        <span class="text-[8px] text-amber-600 bg-amber-50 px-1 rounded flex items-center gap-0.5 border border-amber-200/50">
+                            <i class="fa-solid fa-star text-[6px]"></i> ${sellerRating}
+                        </span>
+                    </div>
+
+                    <button onclick="event.stopPropagation(); handleShareProduct('${encodeURIComponent(product.name)}', ${product.price}, '${encodeURIComponent(product.sellerBusiness || product.sellerName || 'Penjual')}')" class="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-slate-700 shadow-sm hover:bg-white transition-colors">
+                        <i class="fa-solid fa-share-nodes text-[10px]"></i>
+                    </button>
+                </div>
+                <div class="p-3 pb-1 flex flex-col flex-grow cursor-pointer" onclick="openProductDetail(${product.id})">
+                    <h3 class="font-display font-bold text-sm mb-1 leading-tight truncate">${product.name}</h3>
+                    <p class="text-[10px] mb-2 flex items-center gap-1.5 truncate" style="color: var(--muted);">
+                        <i class="fa-solid fa-store"></i> ${product.sellerBusiness || 'Penjual'}
+                        <span class="inline-flex items-center gap-0.5 text-amber-600 font-bold bg-amber-50 px-1 rounded border border-amber-200/30 text-[9px]">
+                            <i class="fa-solid fa-star text-[8px]"></i> ${sellerRating}
+                        </span>
+                    </p>
+                    <p class="text-[10px] flex-grow" style="color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${product.description}</p>
+                </div>
+                ${aiBadgeHtml}
+                <div class="px-3 pb-3 pt-1" onclick="event.stopPropagation()">
+                    ${actionHtml}
+                </div>
+            `;
+            return div;
+        }
+
+        // ================================================================
+        // TAMBAH PRODUK
+        // ================================================================
+        async function handleAddProduct(e) {
+            e.preventDefault();
+            const btn = document.getElementById('add-prod-btn');
+            const fileInput = document.getElementById('prod-image');
+            const urlInput = document.getElementById('prod-image-url');
+
+            // Cek Kuota Produk
+            const myProducts = productsCache.filter(p => p.sellerId === currentUid);
+            const isSubscribed = currentUserData.isSubscribed === 1;
+
+            // Trial Logic for Limit
+            const trialStart = currentUserData.trialStartedAt ? new Date(currentUserData.trialStartedAt) : null;
+            const trialEnd = trialStart ? new Date(trialStart.getTime() + 7 * 24 * 60 * 60 * 1000) : null;
+            const isTrialActive = trialStart && new Date() < trialEnd && !isSubscribed;
+
+            let limit = 10;
+            if (isSubscribed) limit = 50;
+            else if (isTrialActive) limit = 15;
+
+            if (myProducts.length >= limit) {
+                openSubscriptionModal();
+                showToast(`Batas produk ${limit} tercapai! Silakan upgrade atau kelola produk Anda.`, 'error');
+                return;
+            }
+
+            if (fileInput.files.length === 0 && !urlInput.value.trim()) {
+                showToast('Pilih foto produk atau masukkan link gambar', 'error');
+                return;
+            }
+
+            btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span> Memproses Gambar...';
+
+            try {
+                let imageData = '';
+                if (fileInput.files.length > 0) {
+                    imageData = await processImage(fileInput.files[0]);
+                } else {
+                    imageData = urlInput.value.trim();
+                }
+
+                btn.innerHTML = '<span class="btn-spinner"></span> Menyimpan ke Database...';
+
+                await turso.execute({
+                    sql: "INSERT INTO products (name, price, category, description, imageData, whatsapp, sellerId, sellerName, sellerBusiness, isQrisActive, isPaypalActive, shippingJNE, shippingJNT, shippingSicepat, shippingPos, shippingInstant, shippingPickup) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    args: [
+                        document.getElementById('prod-name').value.trim(),
+                        parseFloat(document.getElementById('prod-price').value),
+                        document.getElementById('prod-category').value,
+                        document.getElementById('prod-desc').value.trim(),
+                        imageData,
+                        currentUserData.phone || '-',
+                        currentUid,
+                        currentUserData.username || '-',
+                        currentUserData.businessName || '-',
+                        document.getElementById('prod-pay-qris').checked ? 1 : 0,
+                        document.getElementById('prod-pay-paypal').checked ? 1 : 0,
+                        document.getElementById('prod-ship-jne').checked ? 1 : 0,
+                        document.getElementById('prod-ship-jnt').checked ? 1 : 0,
+                        document.getElementById('prod-ship-sicepat').checked ? 1 : 0,
+                        document.getElementById('prod-ship-pos').checked ? 1 : 0,
+                        document.getElementById('prod-ship-instant').checked ? 1 : 0,
+                        document.getElementById('prod-ship-pickup').checked ? 1 : 0
+                    ]
+                });
+
+                showToast('Produk berhasil ditambahkan!', 'success');
+                document.getElementById('add-product-form').reset();
+                clearAddImagePreview();
+                loadMarketProducts();
+                changePage(2); // Kembali ke beranda setelah sukses
+            } catch (error) {
+                console.error(error);
+                showToast('Error: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up mr-2"></i> Upload & Jual Produk';
+            }
+        }
+
+        // ================================================================
+        // EDIT PRODUK
+        // ================================================================
+        function openEditProductModal(productId) {
+            const product = productsCache.find(p => p.id === productId);
+            if (!product) return showToast('Produk tidak ditemukan', 'error');
+
+            document.getElementById('edit-prod-id').value = product.id;
+            document.getElementById('edit-prod-name').value = product.name;
+            document.getElementById('edit-prod-price').value = product.price;
+            document.getElementById('edit-prod-category').value = product.category;
+            document.getElementById('edit-prod-desc').value = product.description;
+            document.getElementById('edit-prod-pay-qris').checked = product.isQrisActive !== 0;
+            document.getElementById('edit-prod-pay-paypal').checked = product.isPaypalActive !== 0;
+            document.getElementById('edit-prod-ship-jne').checked = product.shippingJNE !== 0;
+            document.getElementById('edit-prod-ship-jnt').checked = product.shippingJNT !== 0;
+            document.getElementById('edit-prod-ship-sicepat').checked = product.shippingSicepat !== 0;
+            document.getElementById('edit-prod-ship-pos').checked = product.shippingPos !== 0;
+            document.getElementById('edit-prod-ship-instant').checked = product.shippingInstant !== 0;
+            document.getElementById('edit-prod-ship-pickup').checked = product.shippingPickup !== 0;
+
+            const currentImgEl = document.getElementById('edit-prod-current-img');
+            const currentImgLabel = document.getElementById('edit-prod-preview-label');
+            currentImgEl.src = product.imageData || '';
+            if (product.imageData) {
+                currentImgEl.classList.remove('hidden');
+                currentImgLabel.classList.remove('hidden');
+            } else {
+                currentImgEl.classList.add('hidden');
+                currentImgLabel.classList.add('hidden');
+            }
+
+            document.getElementById('edit-prod-image').value = '';
+            document.getElementById('edit-upload-filename').innerText = 'Format: JPG, PNG';
+            document.getElementById('edit-prod-image-url').value = '';
+            document.getElementById('edit-product-modal').classList.add('visible');
+        }
+
+        async function handleUpdateProduct(e) {
+            e.preventDefault();
+            const btn = document.getElementById('update-prod-btn');
+            btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span> Menyimpan...';
+
+            const prodId = parseInt(document.getElementById('edit-prod-id').value);
+            const fileInput = document.getElementById('edit-prod-image');
+            const urlInput = document.getElementById('edit-prod-image-url');
+
+            try {
+                let imageData = document.getElementById('edit-prod-current-img').src;
+
+                if (fileInput.files.length > 0) {
+                    btn.innerHTML = '<span class="btn-spinner"></span> Memproses Gambar Baru...';
+                    imageData = await processImage(fileInput.files[0]);
+                } else if (urlInput.value.trim()) {
+                    imageData = urlInput.value.trim();
+                }
+
+                btn.innerHTML = '<span class="btn-spinner"></span> Menyimpan...';
+
+                await turso.execute({
+                    sql: "UPDATE products SET name=?, price=?, category=?, description=?, imageData=?, isQrisActive=?, isPaypalActive=?, shippingJNE=?, shippingJNT=?, shippingSicepat=?, shippingPos=?, shippingInstant=?, shippingPickup=? WHERE id=? AND sellerId=?",
+                    args: [
+                        document.getElementById('edit-prod-name').value.trim(),
+                        parseFloat(document.getElementById('edit-prod-price').value),
+                        document.getElementById('edit-prod-category').value,
+                        document.getElementById('edit-prod-desc').value.trim(),
+                        imageData,
+                        document.getElementById('edit-prod-pay-qris').checked ? 1 : 0,
+                        document.getElementById('edit-prod-pay-paypal').checked ? 1 : 0,
+                        document.getElementById('edit-prod-ship-jne').checked ? 1 : 0,
+                        document.getElementById('edit-prod-ship-jnt').checked ? 1 : 0,
+                        document.getElementById('edit-prod-ship-sicepat').checked ? 1 : 0,
+                        document.getElementById('edit-prod-ship-pos').checked ? 1 : 0,
+                        document.getElementById('edit-prod-ship-instant').checked ? 1 : 0,
+                        document.getElementById('edit-prod-ship-pickup').checked ? 1 : 0,
+                        prodId,
+                        currentUid
+                    ]
+                });
+
+                showToast('Produk berhasil diperbarui!', 'success');
+                closeModal('edit-product-modal');
+                document.getElementById('edit-upload-filename').innerText = 'Format: JPG, PNG';
+                loadMarketProducts();
+            } catch (error) {
+                showToast('Gagal memperbarui produk: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false; btn.innerHTML = 'Simpan';
+            }
+        }
+
+        async function handleDeleteProduct(productId) {
+            const confirmed = await showConfirm({
+                title: 'Hapus Produk?',
+                message: 'Produk akan dihapus permanen dari pasar. Tindakan ini tidak dapat dibatalkan.',
+                okText: 'Hapus Produk',
+                cancelText: 'Batal',
+                type: 'danger',
+                icon: 'fa-trash-can'
+            });
+            if (!confirmed) return;
+
+            try {
+                await turso.execute({
+                    sql: "DELETE FROM products WHERE id = ? AND sellerId = ?",
+                    args: [productId, currentUid]
+                });
+                showToast("Produk berhasil dihapus", "success");
+                loadMarketProducts();
+            } catch (error) {
+                showToast("Gagal menghapus produk: " + error.message, "error");
+            }
+        }
+
+        async function handleShareProduct(name, price, seller) {
+            const decodedName = decodeURIComponent(name);
+            const decodedSeller = decodeURIComponent(seller);
+            const formatRupiah = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+
+            const shareData = {
+                title: decodedName,
+                text: `Cek produk ${decodedName} seharga ${formatRupiah(price)} dari ${decodedSeller} di Pasar UMKM!`,
+                url: window.location.href
+            };
+
+            try {
+                if (navigator.share) {
+                    await navigator.share(shareData);
+                } else {
+                    await navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`);
+                    showToast('Link berhasil disalin ke clipboard!', 'success');
+                }
+            } catch (err) {
+                console.log('Error sharing:', err);
+            }
+        }
+
+        // ================================================================
+        // UTILITAS UI
+        // ================================================================
+        function closeModal(modalId) { document.getElementById(modalId).classList.remove('visible'); }
+        function handleLogout() { auth.signOut(); }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast ' + type;
+            const icons = { success: 'fa-circle-check', error: 'fa-circle-xmark', info: 'fa-circle-info', warning: 'fa-triangle-exclamation' };
+            const icon = icons[type] || 'fa-circle-info';
+            toast.innerHTML = `<i class="fa-solid ${icon}"></i><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 350); }, 4500);
+        }
+
+        // Custom Confirm Dialog (pengganti window.confirm())
+        let _confirmResolveCallback = null;
+        window._confirmResolve = function (result) {
+            const overlay = document.getElementById('confirm-dialog-overlay');
+            overlay.classList.remove('visible');
+            if (typeof _confirmResolveCallback === 'function') {
+                _confirmResolveCallback(result);
+                _confirmResolveCallback = null;
+            }
+        };
+
+        function showConfirm({ title, message, okText = 'Ya', cancelText = 'Batal', type = 'danger', icon = 'fa-trash-can' }) {
+            return new Promise((resolve) => {
+                _confirmResolveCallback = resolve;
+                document.getElementById('confirm-dialog-title').textContent = title;
+                document.getElementById('confirm-dialog-message').textContent = message;
+                document.getElementById('confirm-cancel-btn').textContent = cancelText;
+                const okBtn = document.getElementById('confirm-ok-btn');
+                okBtn.textContent = okText;
+                okBtn.className = 'danger';
+                okBtn.classList.remove('danger', 'warning', 'info');
+                okBtn.classList.add(type);
+                const iconEl = document.getElementById('confirm-dialog-icon');
+                iconEl.className = `danger`;
+                iconEl.classList.remove('danger', 'warning', 'info');
+                iconEl.classList.add(type);
+                document.getElementById('confirm-dialog-icon-i').className = `fa-solid ${icon}`;
+                document.getElementById('confirm-dialog-overlay').classList.add('visible');
+            });
+        }
+
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('visible'); });
+        });
+
+        // ================================================================
+        // DETAIL PRODUK (FULL PAGE)
+        // ================================================================
+        window.openProductDetail = function (productId) {
+            const product = productsCache.find(p => p.id === productId);
+            if (!product) return;
+
+            const formatRupiah = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+
+            document.getElementById('detail-img').src = product.imageData || 'https://placehold.co/400x300/F8FAFC/94A3B8?text=Produk';
+            document.getElementById('detail-category').innerText = product.category || 'Lainnya';
+            document.getElementById('detail-name').innerText = product.name;
+            document.getElementById('detail-price').innerText = formatRupiah(product.price);
+
+            const sellerName = product.sellerBusiness || product.sellerName || 'Penjual';
+            document.getElementById('detail-seller-business').innerText = sellerName;
+            document.getElementById('detail-seller-initial').innerText = sellerName.charAt(0);
+            document.getElementById('detail-desc').innerText = product.description || 'Tidak ada deskripsi.';
+
+            document.getElementById('detail-share-btn').onclick = () => {
+                handleShareProduct(encodeURIComponent(product.name), product.price, encodeURIComponent(sellerName));
+            };
+
+            const isOwner = product.sellerId === currentUid;
+            const actionContainer = document.getElementById('detail-action-container');
+
+            let checkoutLink = '#';
+            if (!isOwner) {
+                const ph = product.whatsapp;
+                if (ph) {
+                    let phone = ph.replace(/[\s\-()]/g, '');
+                    if (phone.startsWith('08')) phone = '628' + phone.substring(2);
+                    else if (phone.startsWith('+62')) phone = phone.substring(1);
+                    checkoutLink = `checkout.html?sellerPhone=${phone}&prodName=${encodeURIComponent(product.name)}&prodPrice=${encodeURIComponent(product.price)}&sellerId=${product.sellerId}&prodId=${product.id}`;
+                }
+            }
+
+            actionContainer.innerHTML = isOwner ? `
+                <div class="flex gap-3">
+                    <button onclick="closeProductDetail(); openEditProductModal(${product.id})" class="btn-warning flex-1 py-3 shadow-md flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-pen"></i> Edit Produk
+                    </button>
+                    <button onclick="handleDeleteProduct(${product.id}); closeProductDetail()" class="w-12 h-12 rounded-xl bg-red-50 text-red-600 border border-red-100 flex items-center justify-center shadow-sm">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+            ` : `
+                <a href="${checkoutLink}" class="btn-primary w-full py-3 shadow-md flex items-center justify-center gap-2" style="text-decoration: none;">
+                    Buy
+                </a>
+            `;
+
+            // Always show analysis button for any product in detail view
+            document.getElementById('ai-analysis-btn-container').classList.remove('hidden');
+            document.getElementById('ai-analysis-section').classList.add('hidden'); // Reset section
+            window.currentAnalysisProduct = product; // Save for analysis
+
+            document.getElementById('product-detail-modal').classList.add('visible');
+        };
+
+        window.handleRunAIAnalysis = async function () {
+            if (!window.currentAnalysisProduct) return;
+            const product = window.currentAnalysisProduct; // Competitor Product (Target)
+            const btn = document.getElementById('btn-run-ai-analysis');
+            const section = document.getElementById('ai-analysis-section');
+            const content = document.getElementById('ai-analysis-content');
+            const quotaBadge = document.getElementById('ai-analysis-quota');
+            const compList = document.getElementById('ai-competitors-list');
+
+            // Quota Logic: 5 uses per 10 days
+            const now = new Date();
+            let quotaUsed = currentUserData.aiAnalysisCount || 0;
+            let lastReset = currentUserData.lastAnalysisMonth ? new Date(currentUserData.lastAnalysisMonth) : new Date(0);
+
+            const diffTime = Math.abs(now - lastReset);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays > 10) {
+                quotaUsed = 0;
+                lastReset = now;
+            }
+
+            if (quotaUsed >= 5) {
+                const nextReset = new Date(lastReset.getTime() + 10 * 24 * 60 * 60 * 1000);
+                showToast(`Kuota Analisis Pesaing habis (Maks 5x/10 hari). Reset pada: ${nextReset.toLocaleDateString()}`, "error");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Sedang Menganalisis Pasar...';
+
+            try {
+                // Find User's Products to compare against the target
+                const userProducts = productsCache.filter(p => p.sellerId === currentUid);
+                const userProductsSummary = userProducts.map(p => ({ name: p.name, price: p.price, desc: p.description }));
+
+                // Find other market competitors for context
+                const marketCompetitors = productsCache
+                    .filter(p => p.category === product.category && p.id !== product.id && p.sellerId !== currentUid)
+                    .slice(0, 3);
+
+                const marketSellers = marketCompetitors.map(c => c.sellerBusiness || "UMKM Lain");
+
+                const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer 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',
+                        'HTTP-Referer': window.location.href,
+                        'X-Title': 'Pasar UMKM',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: "nvidia/nemotron-nano-12b-v2-vl:free",
+                        messages: [
+                            {
+                                role: "system",
+                                content: `Anda adalah AI Echoomrche Market Strategist. Tugas Anda:
+                                1. Bandingkan produk User dengan Pesaing. 
+                                2. Sebutkan akun UMKM lain yang mirip secara eksplisit dalam teks analisis: ${marketSellers.join(", ")}.
+                                3. Berikan analisis singkat (maks 4 kalimat) berisi 1 Pujian untuk user dan 1 Roasting pedas. 
+                                Gaya bahasa chat santai.`
+                            },
+                            {
+                                role: "user",
+                                content: `Produk Pesaing: ${product.name} (Rp${product.price}). Deskripsi: ${product.description}\n\nProduk Saya (User): ${JSON.stringify(userProductsSummary)}`
+                            }
+                        ]
+                    })
+                });
+
+                if (!response.ok) throw new Error("Gagal terhubung ke AI");
+                const data = await response.json();
+                let aiAnalysisText = data.choices[0].message.content.trim();
+                
+                // Bold text inside quotes and **
+                aiAnalysisText = aiAnalysisText.replace(/"([^"]+)"/g, '<b>"$1"</b>');
+                aiAnalysisText = aiAnalysisText.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+
+                // Update UI
+                content.innerHTML = aiAnalysisText;
+                section.classList.remove('hidden');
+                document.getElementById('ai-analysis-btn-container').classList.add('hidden');
+
+                // Render Other Market Competitors
+                compList.innerHTML = '';
+                if (marketCompetitors.length === 0) {
+                    compList.innerHTML = '<p class="text-[9px] text-slate-400 italic">Tidak ada produk serupa lainnya di pasar.</p>';
+                }
+                marketCompetitors.forEach(c => {
+                    compList.innerHTML += `
+                        <div class="bg-white p-2 rounded-xl border border-slate-100 shadow-sm">
+                            <img src="${c.imageData || 'https://placehold.co/100'}" class="w-full h-16 object-cover rounded-lg mb-1">
+                            <p class="text-[9px] font-bold text-slate-800 truncate">${c.name}</p>
+                            <p class="text-[9px] font-bold text-blue-600">Rp${c.price}</p>
+                        </div>
+                    `;
+                });
+
+                // Update DB Quota
+                quotaUsed++;
+                await turso.execute({
+                    sql: "UPDATE users SET aiAnalysisCount = ?, lastAnalysisMonth = ? WHERE uid = ?",
+                    args: [quotaUsed, lastReset.toISOString(), currentUid]
+                });
+                currentUserData.aiAnalysisCount = quotaUsed;
+                currentUserData.lastAnalysisMonth = lastReset.toISOString();
+                quotaBadge.innerText = `Kuota: ${quotaUsed}/5`;
+
+                showToast("Analisis Pasar Selesai!", "success");
+            } catch (error) {
+                console.error(error);
+                showToast("Gagal analisis: " + error.message, "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-magnifying-glass-chart"></i> Analisis Pesaing dengan AI Echoomrche';
+            }
+        };
+
+        window.handleRunAIStoreAnalysis = async function () {
+            const btn = document.getElementById('run-ai-store-analysis-btn');
+            const resultContainer = document.getElementById('ai-store-result-container');
+            const ratingText = document.getElementById('ai-store-rating-text');
+            const analysisText = document.getElementById('ai-store-analysis-text');
+
+            if (!currentUserData) return showToast("Sesi aktif tidak ditemukan.", "error");
+
+            // Get all user's products
+            const userProducts = productsCache.filter(p => p.sellerId === currentUid);
+            if (userProducts.length === 0) {
+                showToast("Anda harus memiliki minimal 1 produk di toko Anda untuk dianalisis oleh AI.", "error");
+                return;
+            }
+
+            btn.disabled = true;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Menganalisis Toko dengan AI...';
+
+            try {
+                const userProductsSummary = userProducts.map(p => ({ 
+                    name: p.name, 
+                    price: p.price, 
+                    category: p.category, 
+                    desc: p.description 
+                }));
+
+                const storeProfile = {
+                    businessName: currentUserData.businessName || currentUserData.username || "UMKM Baru",
+                    phone: currentUserData.phone || "-"
+                };
+
+                const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer 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',
+                        'HTTP-Referer': window.location.href,
+                        'X-Title': 'Pasar UMKM',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: "nvidia/nemotron-nano-12b-v2-vl:free",
+                        messages: [
+                            {
+                                role: "system",
+                                content: `Anda adalah AI Konsultan Bisnis UMKM. Tugas Anda adalah menganalisis toko berdasarkan profil dan daftar produknya, lalu memberikan kesimpulan evaluasi bisnis (maksimal 4 kalimat) beserta rating kelengkapan/kualitas toko dari skala 1.0 hingga 5.0.
+                                Anda WAJIB memberikan respons dalam format JSON valid tanpa penambahan teks markdown apa pun.
+                                Format JSON:
+                                {
+                                  "rating": 4.5,
+                                  "kesimpulan": "Toko Anda memiliki..."
+                                }`
+                            },
+                            {
+                                role: "user",
+                                content: `Profil Toko: ${JSON.stringify(storeProfile)}\n\nDaftar Produk Toko:\n${JSON.stringify(userProductsSummary)}`
+                            }
+                        ]
+                    })
+                });
+
+                if (!response.ok) throw new Error("Gagal terhubung ke AI");
+                const data = await response.json();
+                const aiReply = data.choices[0].message.content.trim();
+                
+                let parsedResult;
+                try {
+                    const cleanReply = aiReply.replace(/```json|```/g, '').trim();
+                    parsedResult = JSON.parse(cleanReply);
+                } catch (e) {
+                    console.error("Failed to parse JSON response:", aiReply);
+                    throw new Error("Respons AI tidak valid. Silakan coba lagi.");
+                }
+
+                if (parsedResult.rating === undefined || !parsedResult.kesimpulan) {
+                    throw new Error("Respons AI tidak lengkap.");
+                }
+
+                const ratingVal = parseFloat(parsedResult.rating) || 0.0;
+                const ratingFormatted = ratingVal.toFixed(1);
+                const kesimpulanVal = parsedResult.kesimpulan;
+
+                // Update Turso database
+                await turso.execute({
+                    sql: "UPDATE users SET aiStoreRating = ?, aiStoreAnalysis = ? WHERE uid = ?",
+                    args: [ratingVal, kesimpulanVal, currentUid]
+                });
+
+                // Update current user cache
+                currentUserData.aiStoreRating = ratingVal;
+                currentUserData.aiStoreAnalysis = kesimpulanVal;
+
+                // Update UI elements
+                if (ratingText) ratingText.textContent = ratingFormatted;
+                if (analysisText) analysisText.textContent = kesimpulanVal;
+                if (resultContainer) resultContainer.classList.remove('hidden');
+
+                // Render other areas that depend on rating
+                renderProfileUI();
+                renderAIStoreSection();
+
+                showToast("Analisis & Rating Toko berhasil diperbarui!", "success");
+            } catch (error) {
+                console.error(error);
+                showToast("Gagal analisis toko: " + error.message, "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        };
+
+        window.renderAIStoreSection = function () {
+            if (!currentUserData) return;
+            const resultContainer = document.getElementById('ai-store-result-container');
+            const ratingText = document.getElementById('ai-store-rating-text');
+            const analysisText = document.getElementById('ai-store-analysis-text');
+
+            if (currentUserData.aiStoreRating || currentUserData.aiStoreAnalysis) {
+                const rVal = currentUserData.aiStoreRating !== null && currentUserData.aiStoreRating !== undefined 
+                    ? parseFloat(currentUserData.aiStoreRating).toFixed(1) 
+                    : "0.0";
+                const cVal = currentUserData.aiStoreAnalysis || '';
+                
+                if (ratingText) ratingText.textContent = rVal;
+                if (analysisText) analysisText.textContent = cVal;
+                if (resultContainer) resultContainer.classList.remove('hidden');
+            } else {
+                if (resultContainer) resultContainer.classList.add('hidden');
+            }
+        };
+
+        window.closeProductDetail = function () {
+            document.getElementById('product-detail-modal').classList.remove('visible');
+        };
+
+        // Global Exports
+        window.openEditProfileModal = openEditProfileModal;
+        window.openEditProductModal = openEditProductModal;
+        window.closeModal = closeModal;
+        window.handleLogout = handleLogout;
+        window.handleUpdateProfile = handleUpdateProfile;
+        window.handleAddProduct = handleAddProduct;
+        window.handleUpdateProduct = handleUpdateProduct;
+        window.handleDeleteProduct = handleDeleteProduct;
+        window.handleShareProduct = handleShareProduct;
+        window.loadMarketProducts = loadMarketProducts;
+
+        // ================================================================
+        // FUNGSI PUBLIC (UMKM LAIN)
+        // ================================================================
+        async function loadOtherSellers(categoryFilter = 'Semua') {
+            const list = document.getElementById('sellers-list');
+            let skeletonHtml = '';
+            for (let i = 0; i < 4; i++) {
+                skeletonHtml += `
+                    <div class="flex items-center gap-3 p-3 bg-white rounded-2xl border border-slate-100 shadow-sm animate-pulse mb-3">
+                        <div class="w-10 h-10 rounded-full bg-slate-200"></div>
+                        <div class="flex-grow">
+                            <div class="h-3.5 bg-slate-200 rounded w-1/3 mb-2"></div>
+                            <div class="h-2.5 bg-slate-200 rounded w-1/4"></div>
+                        </div>
+                        <div class="w-20 h-8 bg-slate-200 rounded-xl"></div>
+                    </div>
+                `;
+            }
+            list.innerHTML = skeletonHtml;
+
+            try {
+                let sql = `
+                    SELECT u.*, 
+                    (SELECT category FROM products WHERE sellerId = u.uid GROUP BY category ORDER BY COUNT(*) DESC LIMIT 1) as dominantCategory 
+                    FROM users u 
+                    WHERE u.uid != ?
+                `;
+                let args = [currentUid];
+
+                if (categoryFilter !== 'Semua') {
+                    sql = `
+                        SELECT u.*, 
+                        (SELECT category FROM products WHERE sellerId = u.uid GROUP BY category ORDER BY COUNT(*) DESC LIMIT 1) as dominantCategory 
+                        FROM users u 
+                        WHERE u.uid != ? 
+                        AND EXISTS (SELECT 1 FROM products WHERE sellerId = u.uid AND category = ?)
+                    `;
+                    args.push(categoryFilter);
+                }
+
+                const rs = await turso.execute({ sql, args });
+
+                list.innerHTML = '';
+                if (rs.rows.length === 0) {
+                    list.innerHTML = '<div class="text-center py-12"><i class="fa-solid fa-users-slash text-4xl mb-3 opacity-20"></i><p class="text-sm" style="color:var(--muted)">Belum ada UMKM ' + (categoryFilter !== 'Semua' ? categoryFilter : '') + ' terdaftar</p></div>';
+                    return;
+                }
+
+                rs.rows.forEach(seller => {
+                    const bName = seller.businessName || seller.username || 'UMKM';
+                    const photo = seller.photoURL || `https://ui-avatars.com/api/?background=1E3A8A&color=fff&name=${encodeURIComponent(bName)}`;
+                    const julukan = seller.dominantCategory ? getAIJulukan(seller.dominantCategory) : null;
+                    const sRating = seller.aiStoreRating !== null && seller.aiStoreRating !== undefined 
+                        ? parseFloat(seller.aiStoreRating).toFixed(1) 
+                        : "0.0";
+
+                    const div = document.createElement('div');
+                    div.className = 'seller-card';
+                    div.innerHTML = `
+                        <img src="${photo}" class="seller-avatar" alt="${bName}">
+                        <div class="flex-grow">
+                            <h4 class="font-bold text-sm text-slate-800 leading-tight">${bName}</h4>
+                            <div class="flex flex-col gap-0.5 mt-1">
+                                ${julukan ? `<p class="text-[9px] font-bold text-indigo-600 uppercase tracking-tighter"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> ${julukan}</p>` : ''}
+                                <div class="flex items-center gap-1.5 mt-0.5">
+                                    <span class="inline-flex items-center gap-0.5 text-amber-600 font-bold bg-amber-50 px-1 rounded border border-amber-200/30 text-[9px]">
+                                        <i class="fa-solid fa-star text-[8px]"></i> ${sRating}
+                                    </span>
+                                    <p class="text-[9px] text-slate-500 font-medium"><i class="fa-solid fa-circle-check text-blue-500 mr-1"></i> UMKM Terverifikasi</p>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="viewSellerProducts('${seller.uid}', '${bName}')" class="btn-outline py-1.5 px-3 text-[10px] bg-blue-50 text-blue-600 border-blue-200 font-bold">
+                            Lihat Produk
+                        </button>
+                    `;
+                    list.appendChild(div);
+                });
+            } catch (error) {
+                list.innerHTML = `<div class="text-center py-8 text-red-500 text-xs">Gagal memuat data: ${error.message}</div>`;
+            }
+        }
+
+        async function loadSellerRevenue() {
+            if (!currentUid) return;
+            try {
+                const rs = await turso.execute({
+                    sql: "SELECT total_price, payment_method, shipping_method FROM riwayat_pemesanan WHERE seller_uid = ?",
+                    args: [currentUid]
+                });
+                
+                let grandTotal = 0;
+                let qrisTotal = 0;
+                let paypalTotal = 0;
+                let waTotal = 0;
+
+                let jneTotal = 0;
+                let jntTotal = 0;
+                let sicepatTotal = 0;
+                let posTotal = 0;
+                let instantTotal = 0;
+                let pickupTotal = 0;
+                
+                const formatRupiah = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+
+                rs.rows.forEach(row => {
+                    const price = parseFloat(row.total_price) || 0;
+                    grandTotal += price;
+                    
+                    // Pembayaran
+                    if (row.payment_method === 'QRIS') {
+                        qrisTotal += price;
+                    } else if (row.payment_method === 'PayPal') {
+                        paypalTotal += price;
+                    } else if (row.payment_method === 'WhatsApp') {
+                        waTotal += price;
+                    }
+
+                    // Pengiriman
+                    const ship = row.shipping_method || 'JNE';
+                    if (ship === 'JNE') jneTotal += price;
+                    else if (ship === 'J&T') jntTotal += price;
+                    else if (ship === 'SiCepat') sicepatTotal += price;
+                    else if (ship === 'POS Indonesia') posTotal += price;
+                    else if (ship === 'Layanan Instan') instantTotal += price;
+                    else if (ship === 'Ambil Sendiri') pickupTotal += price;
+                });
+                
+                document.getElementById('seller-revenue-total').textContent = formatRupiah(grandTotal);
+                document.getElementById('seller-revenue-qris').textContent = formatRupiah(qrisTotal);
+                document.getElementById('seller-revenue-paypal').textContent = formatRupiah(paypalTotal);
+                document.getElementById('seller-revenue-wa').textContent = formatRupiah(waTotal);
+
+                document.getElementById('seller-revenue-jne').textContent = formatRupiah(jneTotal);
+                document.getElementById('seller-revenue-jnt').textContent = formatRupiah(jntTotal);
+                document.getElementById('seller-revenue-sicepat').textContent = formatRupiah(sicepatTotal);
+                document.getElementById('seller-revenue-pos').textContent = formatRupiah(posTotal);
+                document.getElementById('seller-revenue-instant').textContent = formatRupiah(instantTotal);
+                document.getElementById('seller-revenue-pickup').textContent = formatRupiah(pickupTotal);
+            } catch (err) {
+                console.error("Gagal memuat pendapatan seller:", err);
+            }
+        }
+        window.loadSellerRevenue = loadSellerRevenue;
+
+        window.viewSellerProducts = async function (sellerId, businessName) {
+            // UI Update loading
+            const grid = document.getElementById('product-grid');
+            let skeletonHtml = '';
+            for (let i = 0; i < 6; i++) {
+                skeletonHtml += `
+                    <div class="glass-card flex flex-col p-3 animate-pulse border border-slate-100 bg-white">
+                        <div class="w-full h-44 bg-slate-200 rounded-xl mb-3"></div>
+                        <div class="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
+                        <div class="h-3 bg-slate-200 rounded w-1/2 mb-4"></div>
+                        <div class="mt-auto h-8 bg-slate-200 rounded-xl w-full"></div>
+                    </div>
+                `;
+            }
+            grid.innerHTML = skeletonHtml;
+
+            try {
+                const rs = await turso.execute({
+                    sql: "SELECT p.*, u.photoURL as sellerPhoto, u.isSubscribed as sellerIsSubscribed, u.aiStoreRating as sellerAiRating FROM products p LEFT JOIN users u ON p.sellerId = u.uid WHERE p.sellerId = ? ORDER BY p.createdAt DESC",
+                    args: [sellerId]
+                });
+
+                grid.innerHTML = '';
+                document.getElementById('refresh-btn-text').innerHTML = `<i class="fa-solid fa-xmark text-red-500"></i> Filter: ${businessName}`;
+
+                if (rs.rows.length > 0) {
+                    document.getElementById('empty-state').classList.add('hidden');
+                    rs.rows.forEach(row => {
+                        grid.appendChild(createProductCard(row, false));
+                    });
+                } else {
+                    document.getElementById('empty-state').classList.remove('hidden');
+                    document.getElementById('empty-state').querySelector('p').textContent = `UMKM ${businessName} belum memiliki produk.`;
+                }
+                changePage(2); // Go to Beranda
+            } catch (error) {
+                showToast("Gagal memuat produk UMKM: " + error.message, "error");
+            }
+        };
+
+        window.viewSellerProducts = viewSellerProducts;
+        window.loadOtherSellers = loadOtherSellers;
+        window.openSubscriptionModal = function () {
+            document.getElementById('subscription-modal').classList.add('visible');
+
+            // Cek apakah user sudah pernah trial
+            const trialBtn = document.getElementById('modal-activate-trial-btn');
+            if (trialBtn) {
+                if (currentUserData.trialStartedAt || currentUserData.isSubscribed === 1) {
+                    trialBtn.classList.add('hidden');
+                } else {
+                    trialBtn.classList.remove('hidden');
+                }
+            }
+        };
+
+        const LOUVIN_API_KEY = "lv_e837b09fd975494bb25ab6eaeffef179";
+        const SLOT_PLAN_ID = "fcb9f01d-f01b-45b1-85ca-811e2e4ec90a";
+        let subPollingInterval = null;
+
+        window.handleBuySlot = async function () {
+            const btn = document.getElementById('buy-slot-btn');
+            const qrisContainer = document.getElementById('sub-qris-container');
+            const qrisImage = document.getElementById('sub-qris-image');
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghubungkan...';
+
+            try {
+                const response = await fetch("https://api.louvin.dev/create-subscription", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "x-api-key": LOUVIN_API_KEY
+                    },
+                    body: JSON.stringify({
+                        plan_id: SLOT_PLAN_ID,
+                        customer_email: currentUserData.email,
+                        customer_name: currentUserData.username || currentUserData.businessName
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    const qrString = data.payment.qr_string;
+                    const subId = data.subscription.id;
+                    const txnId = data.transaction.id;
+
+                    const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrString)}`;
+                    qrisImage.innerHTML = `<img src="${qrImageUrl}" class="w-40 h-40 mx-auto" />`;
+                    qrisContainer.classList.remove('hidden');
+                    btn.classList.add('hidden');
+
+                    startPollingSubscription(subId, txnId);
+                } else {
+                    throw new Error(data.error || "Gagal membuat langganan");
+                }
+            } catch (error) {
+                console.error(error);
+                showToast("Error: " + error.message, "error");
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-credit-card"></i> Aktifkan Sekarang';
+            }
+        };
+
+        function startPollingSubscription(subId, txnId) {
+            if (subPollingInterval) clearInterval(subPollingInterval);
+
+            subPollingInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`https://api.louvin.dev/check-status?id=${txnId}`, {
+                        method: "GET",
+                        headers: { "x-api-key": LOUVIN_API_KEY }
+                    });
+                    const data = await response.json();
+
+                    if (data.success && data.transaction && data.transaction.status === 'settled') {
+                        clearInterval(subPollingInterval);
+
+                        await turso.execute({
+                            sql: "UPDATE users SET isSubscribed = 1, subscriptionExpiry = ? WHERE uid = ?",
+                            args: [new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), currentUid]
+                        });
+
+                        currentUserData.isSubscribed = 1;
+                        renderProfileUI();
+
+                        showToast("Upgrade Berhasil! Sekarang Anda memiliki slot tak terbatas.", "success");
+                        setTimeout(() => closeModal('subscription-modal'), 2000);
+
+                        setTimeout(() => {
+                            document.getElementById('sub-qris-container').classList.add('hidden');
+                            const btn = document.getElementById('buy-slot-btn');
+                            btn.classList.remove('hidden');
+                            btn.disabled = false;
+                            btn.innerHTML = '<i class="fa-solid fa-credit-card"></i> Aktifkan Sekarang';
+                        }, 3000);
+                    }
+                } catch (e) {
+                    console.error("Polling error:", e);
+                }
+            }, 3000);
+        }
+
+        const originalCloseModal = window.closeModal;
+        window.closeModal = function (id) {
+            if (id === 'subscription-modal' && subPollingInterval) {
+                clearInterval(subPollingInterval);
+            }
+            if (typeof originalCloseModal === 'function') {
+                originalCloseModal(id);
+            } else {
+                const el = document.getElementById(id);
+                if (el) el.classList.remove('visible');
+            }
+        };
+
+        window.showHelp = function () {
+            window.open("https://wa.me/6283802453336?text=Halo,%20saya%20butuh%20bantuan%20di%20PasarUMKM", "_blank");
+        };
+
+        window.handleActivateTrial = async function () {
+            if (currentUserData.trialStartedAt) {
+                showToast("Anda sudah menggunakan jatah uji coba gratis.", "error");
+                return;
+            }
+
+            const confirmed = await showConfirm({
+                title: 'Aktifkan Uji Coba Gratis?',
+                message: 'Anda akan mendapatkan +5 Slot Produk dan Tampilan Gold Premium selama 7 hari!',
+                okText: 'Aktifkan Sekarang',
+                cancelText: 'Nanti Saja',
+                type: 'info',
+                icon: 'fa-star'
+            });
+            if (!confirmed) return;
+
+            try {
+                const now = new Date().toISOString();
+                await turso.execute({
+                    sql: "UPDATE users SET trialStartedAt = ? WHERE uid = ?",
+                    args: [now, currentUid]
+                });
+
+                currentUserData.trialStartedAt = now;
+                renderProfileUI();
+                showToast("Uji Coba Gratis Berhasil Diaktifkan! Nikmati fitur Premium selama 7 hari.", "success");
+            } catch (error) {
+                showToast("Gagal mengaktifkan uji coba: " + error.message, "error");
+            }
+        };
+
+        window.toggleAddProductForm = function () {
+            const container = document.getElementById('add-product-form-container');
+            if (container) {
+                container.classList.toggle('hidden');
+                if (!container.classList.contains('hidden')) {
+                    container.scrollIntoView({ behavior: 'smooth' });
+                }
+            }
+        };
+
+        // Drag to scroll helper for horizontal elements
+        document.querySelectorAll('.top-carousel, #my-shop-products-laci').forEach(slider => {
+            let isDown = false;
+            let startX;
+            let scrollLeft;
+
+            slider.addEventListener('mousedown', (e) => {
+                isDown = true;
+                slider.style.cursor = 'grabbing';
+                startX = e.pageX - slider.offsetLeft;
+                scrollLeft = slider.scrollLeft;
+            });
+            slider.addEventListener('mouseleave', () => {
+                isDown = false;
+                slider.style.cursor = 'default';
+            });
+            slider.addEventListener('mouseup', () => {
+                isDown = false;
+                slider.style.cursor = 'default';
+            });
+            slider.addEventListener('mousemove', (e) => {
+                if(!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - slider.offsetLeft;
+                const walk = (x - startX) * 1.5; // scroll speed
+                slider.scrollLeft = scrollLeft - walk;
+            });
+        });
+    </script>
+    <!-- Subscription Modal -->
+    <div id="subscription-modal" class="modal-overlay">
+        <div class="modal-content max-w-sm">
+            <div class="text-center mb-6">
+                <div
+                    class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fa-solid fa-gem text-3xl"></i>
+                </div>
+                <h3 class="font-display font-bold text-xl text-slate-800">Upgrade Akun Pro</h3>
+                <p class="text-sm text-slate-500 mt-2">Dapatkan slot lebih banyak & tampilan toko yang lebih stylist dan
+                    elegan!</p>
+            </div>
+
+            <div class="bg-amber-50 rounded-2xl p-5 border border-amber-200 mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-xs font-bold text-amber-600 uppercase tracking-wider">Paket Pro (Gold)</span>
+                    <span class="text-xs font-bold bg-white text-amber-600 px-2 py-0.5 rounded-full shadow-sm">1
+                        Bulan</span>
+                </div>
+                <div class="flex items-baseline gap-1 mb-4">
+                    <span class="text-2xl font-black text-amber-800">Rp 50.000</span>
+                    <span class="text-xs text-slate-500 font-medium">/ bulan</span>
+                </div>
+                <ul class="space-y-2.5">
+                    <li class="flex items-center gap-2 text-xs text-amber-800 font-medium">
+                        <i class="fa-solid fa-circle-check text-amber-500"></i> Total 50 Slot Produk (+40 Slot)
+                    </li>
+                    <li class="flex items-center gap-2 text-xs text-amber-800 font-medium">
+                        <i class="fa-solid fa-circle-check text-amber-500"></i> Bingkai Gold (Mewah & Stylist)
+                    </li>
+                    <li class="flex items-center gap-2 text-xs text-amber-800 font-medium">
+                        <i class="fa-solid fa-crown text-amber-500"></i> Lencana Mahkota Premium
+                    </li>
+                    <li class="flex items-center gap-2 text-xs text-amber-800 font-medium">
+                        <i class="fa-solid fa-circle-check text-amber-500"></i> Prioritas Rekomendasi AI
+                    </li>
+                </ul>
+            </div>
+
+            <div id="sub-qris-container" class="hidden mb-6 text-center">
+                <p class="text-[10px] font-bold text-yellow-600 uppercase mb-3 tracking-widest">Scan QRIS Berikut</p>
+                <div id="sub-qris-image"
+                    class="bg-white p-3 rounded-xl border-2 border-dashed border-blue-200 inline-block mb-3">
+                    <!-- QRIS Image will be here -->
+                </div>
+                <p class="text-[11px] font-bold text-slate-700">Menunggu Pembayaran...</p>
+                <p class="text-[9px] text-slate-400 mt-1">Pembayaran otomatis diverifikasi sistem</p>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <div class="flex gap-3">
+                    <button id="modal-activate-trial-btn"
+                        onclick="handleActivateTrial(); closeModal('subscription-modal');"
+                        class="flex-1 py-3 px-4 bg-orange-100 text-orange-600 rounded-xl text-xs font-bold hover:bg-orange-200 transition-all flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-gift"></i> Uji Coba 7 Hari
+                    </button>
+                    <button id="buy-slot-btn" onclick="handleBuySlot()"
+                        class="flex-[1.5] py-3 px-4 bg-blue-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-credit-card"></i> Aktifkan Sekarang
+                    </button>
+                </div>
+                <button onclick="closeModal('subscription-modal')"
+                    class="w-full py-2 px-4 text-slate-400 text-[11px] font-bold hover:text-slate-600 transition-colors">Nanti
+                    Saja</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Verifikasi UMKM | PASAR UMKM</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        display: ['Outfit', 'sans-serif'],
+                        body: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --bg: #F8FAFC;
+            --accent: #2563EB;
+            --accent-hover: #1D4ED8;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg);
+            color: #1E293B;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 24px;
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 99px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-verified {
+            background: #DCFCE7;
+            color: #166534;
+        }
+
+        .status-pending {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+
+        /* Toast */
+        #toast-container {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 9999;
+        }
+
+        .toast {
+            padding: 12px 20px;
+            border-radius: 12px;
+            background: white;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .loader {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #E2E8F0;
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+<style> *:not(.fa-spin):not(.loader):not(.btn-spinner) { animation: none !important; transition: none !important; } </style>
+
+</head>
+
+<body class="min-h-screen">
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center gap-4">
+        <div class="loader"></div>
+        <p class="text-slate-500 font-medium">Memverifikasi Admin...</p>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <nav class="bg-white border-b border-slate-200 py-4 px-6 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div
+                    class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div>
+                    <h1 class="font-display font-bold text-lg text-slate-800">Admin Control</h1>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Verifikasi UMKM</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="window.location.href='dashboard.html'"
+                    class="text-xs font-bold text-slate-600 hover:text-blue-600 transition-colors">
+                    <i class="fa-solid fa-arrow-left mr-1"></i> Dashboard User
+                </button>
+                <div id="admin-info"
+                    class="text-xs font-bold bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg border border-blue-100 hidden">
+                    Admin: <span id="admin-email"></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto p-6 md:p-8">
+        <header class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h2 class="font-display text-3xl font-black text-slate-900 mb-2">Daftar Pendaftar UMKM</h2>
+                <p class="text-slate-500">Kelola izin berjualan untuk seluruh UMKM di platform Anda.</p>
+            </div>
+            <div class="flex gap-3">
+                <div class="bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
+                    <span class="text-xs font-bold text-slate-700">Platform Online</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Section -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="glass-card p-6 border-l-4 border-blue-500 shadow-sm hover:shadow-md transition-all">
+                <div class="text-slate-400 text-xs font-bold uppercase mb-1">Total UMKM</div>
+                <div id="stat-total" class="text-3xl font-black text-slate-950">0</div>
+            </div>
+            <div class="glass-card p-6 border-l-4 border-emerald-500 shadow-sm hover:shadow-md transition-all">
+                <div class="text-slate-400 text-xs font-bold uppercase mb-1">Total Platform Sales</div>
+                <div id="stat-revenue" class="text-3xl font-black text-emerald-600">Rp 0</div>
+            </div>
+            <div class="glass-card p-6 border-l-4 border-indigo-500 shadow-sm hover:shadow-md transition-all">
+                <div class="text-slate-400 text-xs font-bold uppercase mb-1">Terverifikasi</div>
+                <div id="stat-verified" class="text-3xl font-black text-indigo-600">0</div>
+            </div>
+            <div class="glass-card p-6 border-l-4 border-amber-500 shadow-sm hover:shadow-md transition-all">
+                <div class="text-slate-400 text-xs font-bold uppercase mb-1">Menunggu Verifikasi</div>
+                <div id="stat-pending" class="text-3xl font-black text-amber-600">0</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Left Side: Laporan Pendapatan Metode Pembayaran & Pengiriman -->
+            <div class="lg:col-span-1 flex flex-col gap-6">
+                <!-- Rincian Pembayaran -->
+                <div class="glass-card p-6 border border-slate-100 shadow-sm bg-white">
+                    <h3 class="font-display text-base font-bold text-slate-800 flex items-center gap-2 mb-4">
+                        <i class="fa-solid fa-wallet text-emerald-500"></i> Rincian Pembayaran
+                    </h3>
+                    <div class="space-y-4">
+                        <!-- QRIS -->
+                        <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100/50">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs font-bold text-blue-700 uppercase tracking-wide"><i class="fa-solid fa-qrcode mr-1"></i> QRIS</span>
+                                <span id="admin-rev-qris" class="text-sm font-black text-blue-900">Rp 0</span>
+                            </div>
+                        </div>
+                        <!-- PayPal -->
+                        <div class="bg-sky-50/50 p-4 rounded-xl border border-sky-100/50">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs font-bold text-sky-700 uppercase tracking-wide"><i class="fa-brands fa-paypal mr-1"></i> PayPal</span>
+                                <span id="admin-rev-paypal" class="text-sm font-black text-sky-900">Rp 0</span>
+                            </div>
+                        </div>
+                        <!-- Manual WA -->
+                        <div class="bg-green-50/50 p-4 rounded-xl border border-green-100/50">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs font-bold text-green-700 uppercase tracking-wide"><i class="fa-brands fa-whatsapp mr-1"></i> Manual WA</span>
+                                <span id="admin-rev-wa" class="text-sm font-black text-green-900">Rp 0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rincian Pengiriman -->
+                <div class="glass-card p-6 border border-slate-100 shadow-sm bg-white">
+                    <h3 class="font-display text-base font-bold text-slate-800 flex items-center gap-2 mb-4">
+                        <i class="fa-solid fa-truck text-indigo-500"></i> Rincian Pengiriman
+                    </h3>
+                    <div class="space-y-3">
+                        <!-- JNE -->
+                        <div class="flex justify-between items-center p-2.5 rounded-lg border border-slate-100 bg-slate-50/50 text-xs">
+                            <span class="font-bold text-slate-600">JNE</span>
+                            <span id="admin-rev-jne" class="font-black text-slate-800">Rp 0</span>
+                        </div>
+                        <!-- J&T -->
+                        <div class="flex justify-between items-center p-2.5 rounded-lg border border-slate-100 bg-slate-50/50 text-xs">
+                            <span class="font-bold text-slate-600">J&T</span>
+                            <span id="admin-rev-jnt" class="font-black text-slate-800">Rp 0</span>
+                        </div>
+                        <!-- SiCepat -->
+                        <div class="flex justify-between items-center p-2.5 rounded-lg border border-slate-100 bg-slate-50/50 text-xs">
+                            <span class="font-bold text-slate-600">SiCepat</span>
+                            <span id="admin-rev-sicepat" class="font-black text-slate-800">Rp 0</span>
+                        </div>
+                        <!-- POS -->
+                        <div class="flex justify-between items-center p-2.5 rounded-lg border border-slate-100 bg-slate-50/50 text-xs">
+                            <span class="font-bold text-slate-600">POS Indonesia</span>
+                            <span id="admin-rev-pos" class="font-black text-slate-800">Rp 0</span>
+                        </div>
+                        <!-- Instan -->
+                        <div class="flex justify-between items-center p-2.5 rounded-lg border border-slate-100 bg-slate-50/50 text-xs">
+                            <span class="font-bold text-slate-600">Layanan Instan</span>
+                            <span id="admin-rev-instant" class="font-black text-slate-800">Rp 0</span>
+                        </div>
+                        <!-- Ambil Sendiri -->
+                        <div class="flex justify-between items-center p-2.5 rounded-lg border border-slate-100 bg-slate-50/50 text-xs">
+                            <span class="font-bold text-slate-600">Ambil Sendiri</span>
+                            <span id="admin-rev-pickup" class="font-black text-slate-800">Rp 0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Search & Table -->
+            <div class="lg:col-span-2 flex flex-col gap-6">
+                <!-- Search & Filter -->
+                <div class="glass-card p-4 flex flex-wrap gap-4 items-center justify-between shadow-sm bg-white">
+                    <div class="relative flex-1 min-w-[200px]">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="search-input" oninput="filterUsers()"
+                            placeholder="Cari Nama, Email atau Nama Usaha..."
+                            class="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 transition-all">
+                    </div>
+                    <button onclick="loadUsers()"
+                        class="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition-all shadow-sm">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                    </button>
+                </div>
+
+                <!-- Table Container -->
+                <div class="glass-card overflow-hidden shadow-sm flex-grow bg-white">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-slate-50 border-b border-slate-200">
+                                <tr>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Info User</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Nama Usaha</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Kontak</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Status</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="user-table-body" class="divide-y divide-slate-100">
+                                <!-- Data will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="empty-state" class="hidden py-20 text-center">
+                        <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                            <i class="fa-solid fa-user-slash text-3xl"></i>
+                        </div>
+                        <p class="text-slate-500 font-medium">Tidak ada data UMKM yang ditemukan.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { createClient } from 'https://esm.sh/@libsql/client/web';
+
+        // Firebase Config (Session Terpisah untuk Admin)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDjtYr8Wsb9WAtfxM3UfDMFL_oFaMYM2Yg",
+            authDomain: "umkm-75e22.firebaseapp.com",
+            projectId: "umkm-75e22",
+            storageBucket: "umkm-75e22.firebasestorage.app",
+            messagingSenderId: "1042010063344",
+            appId: "1:1042010063344:web:c7be3bbedcd8f79c2c5d35"
+        };
+
+        // Menggunakan sesi yang sama dengan Admin Login
+        const adminApp = firebase.initializeApp(firebaseConfig, "AdminPortal");
+        const auth = adminApp.auth();
+
+        // Turso Config
+        const turso = createClient({
+            url: 'libsql://umkm-elnathanwebsite.aws-ap-northeast-1.turso.io',
+            authToken: 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzgyOTg4OTgsImlkIjoiMDE5ZTA5MmItNWEwMS03ZDE0LWE2M2EtZTg0YTBhODIzMmVjIiwicmlkIjoiMjUxYTliYzctYjA0NC00YzY3LTlmZWItYzBmNzQwMjczNTQxIn0.K_pVVV7lZDUOuz7s3TljfqC-VPiMtIpW2RoAaYlBFmqu-HTc6ueuw3B6kBbUBx8TTy5-g_E-H7zoqpLHLFLQDQ'
+        });
+
+        const ADMIN_EMAIL = 'admin@pasarumkm.com';
+        let allUsers = [];
+
+        // Auth Check
+        auth.onAuthStateChanged(async (user) => {
+            const overlay = document.getElementById('loading-overlay');
+            if (user) {
+                if (user.email === ADMIN_EMAIL) {
+                    overlay.classList.add('hidden');
+                    document.getElementById('admin-info').classList.remove('hidden');
+                    document.getElementById('admin-email').textContent = user.email;
+                    loadUsers();
+                } else {
+                    showToast("Akses ditolak! Halaman ini hanya untuk Admin.", "error");
+                    setTimeout(() => window.location.href = 'dashboard.html', 2000);
+                }
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+
+        async function loadUsers() {
+            try {
+                const rs = await turso.execute("SELECT * FROM users ORDER BY createdAt DESC");
+                allUsers = rs.rows;
+                renderUsers(allUsers);
+                
+                // Fetch order history for revenue statistics
+                const salesRs = await turso.execute("SELECT total_price, payment_method, shipping_method FROM riwayat_pemesanan");
+                updateStats(allUsers, salesRs.rows);
+            } catch (err) {
+                showToast("Gagal memuat data: " + err.message, "error");
+            }
+        }
+
+        function renderUsers(users) {
+            const tbody = document.getElementById('user-table-body');
+            const emptyState = document.getElementById('empty-state');
+            tbody.innerHTML = '';
+
+            if (users.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+
+            users.forEach(user => {
+                const isVerified = user.isVerified === 1;
+                const row = document.createElement('tr');
+                row.className = "hover:bg-slate-50 transition-colors";
+                row.innerHTML = `
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <img src="${user.photoURL || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.username)}" class="w-10 h-10 rounded-full border border-slate-200">
+                            <div>
+                                <p class="text-sm font-bold text-slate-800">${user.username}</p>
+                                <p class="text-[11px] text-slate-500">${user.email}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-sm font-medium text-slate-600">${user.businessName || '-'}</td>
+                    <td class="px-6 py-4">
+                        <p class="text-xs font-bold text-slate-700"><i class="fa-brands fa-whatsapp text-green-500 mr-1"></i> ${user.phone || '-'}</p>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <span class="status-badge ${isVerified ? 'status-verified' : 'status-pending'}">
+                            ${isVerified ? 'Terverifikasi' : 'Pending'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex justify-end gap-2">
+                            ${isVerified ?
+                        `<button onclick="updateStatus('${user.uid}', 0)" class="px-3 py-1.5 bg-red-50 text-red-600 text-[11px] font-bold rounded-lg border border-red-100 hover:bg-red-100 transition-all">Cabut Izin</button>` :
+                        `<button onclick="updateStatus('${user.uid}', 1)" class="px-3 py-1.5 bg-emerald-50 text-emerald-600 text-[11px] font-bold rounded-lg border border-emerald-100 hover:bg-emerald-100 transition-all">Verifikasi</button>`
+                    }
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        window.updateStatus = async function (uid, status) {
+            const actionText = status === 1 ? 'Memverifikasi...' : 'Mencabut izin...';
+            showToast(actionText, 'info');
+
+            try {
+                await turso.execute({
+                    sql: "UPDATE users SET isVerified = ? WHERE uid = ?",
+                    args: [status, uid]
+                });
+                showToast(status === 1 ? 'UMKM berhasil diverifikasi!' : 'Izin UMKM telah dicabut.', 'success');
+                loadUsers();
+            } catch (err) {
+                showToast("Gagal memperbarui status: " + err.message, "error");
+            }
+        };
+
+        window.filterUsers = function () {
+            const query = document.getElementById('search-input').value.toLowerCase().trim();
+            const filtered = allUsers.filter(u =>
+                u.username.toLowerCase().includes(query) ||
+                u.email.toLowerCase().includes(query) ||
+                (u.businessName && u.businessName.toLowerCase().includes(query))
+            );
+            renderUsers(filtered);
+        };
+
+        function updateStats(users, sales = []) {
+            document.getElementById('stat-total').textContent = users.length;
+            document.getElementById('stat-verified').textContent = users.filter(u => u.isVerified === 1).length;
+            document.getElementById('stat-pending').textContent = users.filter(u => u.isVerified !== 1).length;
+
+            let grandTotal = 0;
+            let qrisTotal = 0;
+            let paypalTotal = 0;
+            let waTotal = 0;
+
+            let jneTotal = 0;
+            let jntTotal = 0;
+            let sicepatTotal = 0;
+            let posTotal = 0;
+            let instantTotal = 0;
+            let pickupTotal = 0;
+
+            const formatRupiah = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+
+            sales.forEach(row => {
+                const price = parseFloat(row.total_price) || 0;
+                grandTotal += price;
+                
+                // Pembayaran
+                if (row.payment_method === 'QRIS') {
+                    qrisTotal += price;
+                } else if (row.payment_method === 'PayPal') {
+                    paypalTotal += price;
+                } else if (row.payment_method === 'WhatsApp') {
+                    waTotal += price;
+                }
+
+                // Pengiriman
+                const ship = row.shipping_method || 'JNE';
+                if (ship === 'JNE') jneTotal += price;
+                else if (ship === 'J&T') jntTotal += price;
+                else if (ship === 'SiCepat') sicepatTotal += price;
+                else if (ship === 'POS Indonesia') posTotal += price;
+                else if (ship === 'Layanan Instan') instantTotal += price;
+                else if (ship === 'Ambil Sendiri') pickupTotal += price;
+            });
+
+            document.getElementById('stat-revenue').textContent = formatRupiah(grandTotal);
+            document.getElementById('admin-rev-qris').textContent = formatRupiah(qrisTotal);
+            document.getElementById('admin-rev-paypal').textContent = formatRupiah(paypalTotal);
+            document.getElementById('admin-rev-wa').textContent = formatRupiah(waTotal);
+
+            document.getElementById('admin-rev-jne').textContent = formatRupiah(jneTotal);
+            document.getElementById('admin-rev-jnt').textContent = formatRupiah(jntTotal);
+            document.getElementById('admin-rev-sicepat').textContent = formatRupiah(sicepatTotal);
+            document.getElementById('admin-rev-pos').textContent = formatRupiah(posTotal);
+            document.getElementById('admin-rev-instant').textContent = formatRupiah(instantTotal);
+            document.getElementById('admin-rev-pickup').textContent = formatRupiah(pickupTotal);
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast shadow-lg';
+
+            let icon = 'fa-circle-info text-blue-500';
+            if (type === 'success') icon = 'fa-circle-check text-emerald-500';
+            if (type === 'error') icon = 'fa-circle-xmark text-red-500';
+
+            toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span class="font-bold text-slate-700">${message}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        window.loadUsers = loadUsers;
+    </script>
+</body>
+
+</html>
