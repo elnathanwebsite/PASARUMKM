@@ -1497,6 +1497,17 @@
                         </div>
                         <i class="fa-solid fa-wallet text-xl text-white/30"></i>
                     </div>
+
+                    <!-- Peringatan Pembayaran Non-Tunai Platform -->
+                    <div class="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-3.5 text-xs mb-4 flex items-start gap-2.5 shadow-sm">
+                        <i class="fa-solid fa-circle-exclamation text-amber-500 text-sm mt-0.5 shrink-0"></i>
+                        <div>
+                            <p class="font-bold text-amber-900 mb-0.5">PERINGATAN PENTING!</p>
+                            <p class="text-[11px] leading-relaxed text-amber-800 opacity-90">
+                                Hanya transaksi menggunakan **QRIS** dan **PayPal** yang masuk ke saldo pencairan platform. Pembayaran via **WhatsApp (Manual WA)** atau **COD / Ambil Sendiri** tidak masuk ke saldo pencairan karena diselesaikan secara langsung di luar platform.
+                            </p>
+                        </div>
+                    </div>
                     
                     <!-- Bank Account Info Form -->
                     <div class="space-y-4">
@@ -3595,7 +3606,7 @@
                 } catch(e) {
                     console.error("Gagal memuat total penarikan:", e);
                 }
-                const activeBalance = grandTotal - wdTotal;
+                const activeBalance = (qrisTotal + paypalTotal) - wdTotal;
                 document.getElementById('wd-active-balance').textContent = formatRupiah(activeBalance);
 
                 // Load withdrawal history logs
@@ -3654,9 +3665,9 @@
             }
 
             try {
-                // 3. Cek Saldo Aktif Penjual
+                // 3. Cek Saldo Aktif Penjual (Hanya QRIS & PayPal)
                 const salesRs = await turso.execute({
-                    sql: "SELECT SUM(total_price) as total FROM riwayat_pemesanan WHERE seller_uid = ?",
+                    sql: "SELECT SUM(total_price) as total FROM riwayat_pemesanan WHERE seller_uid = ? AND payment_method IN ('QRIS', 'PayPal')",
                     args: [currentUid]
                 });
                 const revenueSum = parseFloat(salesRs.rows[0].total) || 0;

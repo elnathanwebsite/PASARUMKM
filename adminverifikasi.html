@@ -535,7 +535,11 @@
                     const price = parseFloat(row.total_price) || 0;
                     if (!uid) return;
                     if (!sellerSales[uid]) sellerSales[uid] = 0;
-                    sellerSales[uid] += price;
+                    
+                    // Hanya QRIS & PayPal yang masuk ke Saldo Aktif
+                    if (row.payment_method === 'QRIS' || row.payment_method === 'PayPal') {
+                        sellerSales[uid] += price;
+                    }
                     
                     if (!sellerPaymentSales[uid]) {
                         sellerPaymentSales[uid] = { QRIS: 0, PayPal: 0, WhatsApp: 0 };
