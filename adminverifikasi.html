@@ -293,6 +293,7 @@
                                 <tr>
                                     <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Info User</th>
                                     <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Nama Usaha</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Saldo Toko</th>
                                     <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Kontak</th>
                                     <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Status</th>
                                     <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
@@ -358,14 +359,27 @@
             }
         });
 
+        let sellerRevenues = {};
+
         async function loadUsers() {
             try {
                 const rs = await turso.execute("SELECT * FROM users ORDER BY createdAt DESC");
                 allUsers = rs.rows;
-                renderUsers(allUsers);
                 
                 // Fetch order history for revenue statistics
-                const salesRs = await turso.execute("SELECT total_price, payment_method, shipping_method FROM riwayat_pemesanan");
+                const salesRs = await turso.execute("SELECT total_price, payment_method, shipping_method, seller_uid FROM riwayat_pemesanan");
+                
+                // Calculate seller revenues map
+                sellerRevenues = {};
+                salesRs.rows.forEach(row => {
+                    const sellerUid = row.seller_uid;
+                    const price = parseFloat(row.total_price) || 0;
+                    if (sellerUid) {
+                        sellerRevenues[sellerUid] = (sellerRevenues[sellerUid] || 0) + price;
+                    }
+                });
+
+                renderUsers(allUsers);
                 updateStats(allUsers, salesRs.rows);
             } catch (err) {
                 showToast("Gagal memuat data: " + err.message, "error");
@@ -384,8 +398,12 @@
 
             emptyState.classList.add('hidden');
 
+            const formatRupiah = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+
             users.forEach(user => {
                 const isVerified = user.isVerified === 1;
+                const saldo = sellerRevenues[user.uid] || 0;
+
                 const row = document.createElement('tr');
                 row.className = "hover:bg-slate-50 transition-colors";
                 row.innerHTML = `
@@ -399,6 +417,7 @@
                         </div>
                     </td>
                     <td class="px-6 py-4 text-sm font-medium text-slate-600">${user.businessName || '-'}</td>
+                    <td class="px-6 py-4 text-sm font-black text-emerald-600">${formatRupiah(saldo)}</td>
                     <td class="px-6 py-4">
                         <p class="text-xs font-bold text-slate-700"><i class="fa-brands fa-whatsapp text-green-500 mr-1"></i> ${user.phone || '-'}</p>
                     </td>
