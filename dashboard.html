@@ -2080,6 +2080,12 @@
                 await turso.execute("ALTER TABLE users ADD COLUMN lastAnalysisMonth TEXT");
             } catch (e) { }
             try {
+                await turso.execute("ALTER TABLE users ADD COLUMN aiCompetitorScanCount INTEGER DEFAULT 0");
+            } catch (e) { }
+            try {
+                await turso.execute("ALTER TABLE users ADD COLUMN aiCompetitorScanResetDate TEXT");
+            } catch (e) { }
+            try {
                 await turso.execute("ALTER TABLE users ADD COLUMN isVerified INTEGER DEFAULT 0");
             } catch (e) { }
             try {
@@ -3758,6 +3764,34 @@
             btnElement.disabled = true;
 
             try {
+                // Quota limit check
+                let scanCount = currentUserData.aiCompetitorScanCount || 0;
+                let resetDateStr = currentUserData.aiCompetitorScanResetDate;
+                
+                // If resetDate is older than 7 days, reset scanCount
+                if (resetDateStr) {
+                    const resetDate = new Date(resetDateStr);
+                    const now = new Date();
+                    const diffDays = (now - resetDate) / (1000 * 60 * 60 * 24);
+                    if (diffDays >= 7) {
+                        scanCount = 0;
+                        resetDateStr = now.toISOString();
+                        currentUserData.aiCompetitorScanResetDate = resetDateStr;
+                    }
+                } else {
+                    resetDateStr = new Date().toISOString();
+                    currentUserData.aiCompetitorScanResetDate = resetDateStr;
+                }
+
+                if (!currentUserData.isSubscribed && scanCount >= 10) {
+                    // Try to trigger subscription modal if available, otherwise just throw error
+                    if (typeof document.getElementById('subscription-modal') !== 'undefined') {
+                        document.getElementById('subscription-modal').classList.remove('hidden');
+                        throw new Error("Limit Analisis Pesaing Anda habis (10/10). Silakan berlangganan Premium!");
+                    }
+                    throw new Error("Limit Analisis Pesaing Anda habis (10/10). Silakan berlangganan Premium untuk riset tanpa batas!");
+                }
+
                 // Fetch seller products
                 const rs = await turso.execute({
                     sql: "SELECT name, category, price, description FROM products WHERE sellerId = ?",
@@ -3770,14 +3804,29 @@
 
                 const productListStr = rs.rows.map(p => `- ${p.name} (${p.category}) Rp${p.price}`).join('\n');
                 
-                const prompt = `Anda adalah seorang Analis Bisnis UMKM profesional yang ramah. Saya memiliki data sebuah toko bernama "${sellerName}".
-Toko ini menjual produk-produk berikut:
+                // Fetch MY products for comparison
+                const myProductsList = productsCache.filter(p => p.sellerId === currentUid);
+                const myProductListStr = myProductsList.length > 0 
+                    ? myProductsList.map(p => `- ${p.name} (${p.category}) Rp${p.price}`).join('\n')
+                    : "(Saya belum mengupload produk apapun)";
+
+                const myStoreName = currentUserData.businessName || currentUserData.username || "Toko Saya";
+
+                const prompt = `Anda adalah seorang Analis Bisnis UMKM yang jujur, blak-blakan, tajam, dan sangat menohok. Saya memiliki toko bernama "${myStoreName}" dan ingin Anda membandingkan toko saya dengan toko pesaing bernama "${sellerName}".
+
+Produk Toko Saya ("${myStoreName}"):
+${myProductListStr}
+
+Produk Toko Pesaing ("${sellerName}"):
 ${productListStr}
 
-Tolong buatkan 2 paragraf singkat (maksimal 100 kata) yang menganalisis:
-1. Potensi dan jenis bisnis toko ini secara umum.
-2. Target pasar yang cocok dan 1 saran singkat untuk meningkatkan penjualan.
-Gunakan bahasa Indonesia yang profesional, positif, elegan dan tidak kaku. Jangan pakai format markdown berlebihan, gunakan teks biasa.`;
+Buatlah analisis panjang (sekitar 3-4 paragraf) yang membedah dan membandingkan kedua toko ini secara langsung:
+1. Bedah keunggulan dan kelemahan produk pesaing secara tajam.
+2. Bandingkan secara *head-to-head* dengan toko saya (dari segi harga, variasi, dll). Siapa yang lebih unggul dan kenapa?
+3. Berikan kritik tajam atau "tamparan keras" ("menohok") mengenai kelemahan toko saya dibandingkan mereka.
+4. Berikan taktik brutal tapi aplikatif agar saya bisa memenangkan persaingan melawan mereka.
+
+Gunakan bahasa Indonesia yang profesional namun sedikit sinis/menohok demi membangkitkan semangat. Jangan pakai format markdown berlebihan, cukup paragraf teks biasa.`;
 
                 // Call OpenRouter AI
                 const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -3807,8 +3856,17 @@ Gunakan bahasa Indonesia yang profesional, positif, elegan dan tidak kaku. Janga
                         sql: "UPDATE users SET aiStoreAnalysis = ? WHERE uid = ?",
                         args: [aiResult, sellerUid]
                     });
+                    
+                    // Update Quota for Current User
+                    scanCount++;
+                    currentUserData.aiCompetitorScanCount = scanCount;
+                    await turso.execute({
+                        sql: "UPDATE users SET aiCompetitorScanCount = ?, aiCompetitorScanResetDate = ? WHERE uid = ?",
+                        args: [scanCount, resetDateStr, currentUid]
+                    });
+
                 } catch(e) {
-                    console.log("Failed to save analysis to DB:", e);
+                    console.log("Failed to save analysis or quota to DB:", e);
                 }
 
                 // Show result
