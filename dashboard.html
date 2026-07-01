@@ -3699,6 +3699,7 @@
                     const sRating = seller.aiStoreRating !== null && seller.aiStoreRating !== undefined 
                         ? parseFloat(seller.aiStoreRating).toFixed(1) 
                         : "0.0";
+                    const aiAnalysis = seller.aiStoreAnalysis || '';
 
                     const div = document.createElement('div');
                     div.className = 'seller-card flex-col items-stretch gap-0';
@@ -3722,11 +3723,12 @@
                                     Lihat Produk
                                 </button>
                                 <button onclick="analyzeStoreWithAI('${seller.uid}', '${bName}', this)" class="btn-outline py-1 px-3 text-[10px] bg-purple-50 text-purple-600 border-purple-200 font-bold flex items-center justify-center gap-1">
-                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Analisis
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> ${aiAnalysis ? 'Buka Analisis' : 'Analisis'}
                                 </button>
                             </div>
                         </div>
-                        <div id="ai-drawer-${seller.uid}" class="hidden w-full mt-3 p-3 bg-purple-50/50 rounded-xl border border-purple-100 text-[11px] text-slate-700 leading-relaxed">
+                        <div id="ai-drawer-${seller.uid}" class="hidden w-full mt-3 p-3 bg-purple-50/50 rounded-xl border border-purple-100 text-[11px] text-slate-700 leading-relaxed" data-analyzed="${aiAnalysis ? 'true' : 'false'}">
+                            ${aiAnalysis ? `<strong><i class="fa-solid fa-robot text-purple-600 mr-1"></i> Analisis AI:</strong><br><br>${aiAnalysis.replace(/\n/g, '<br>')}` : ''}
                         </div>
                     `;
                     list.appendChild(div);
@@ -3736,12 +3738,17 @@
             }
         }
 
-        async function analyzeStoreWithAI(sellerUid, sellerName, btnElement) {
+        window.analyzeStoreWithAI = async function(sellerUid, sellerName, btnElement) {
             const drawer = document.getElementById(`ai-drawer-${sellerUid}`);
             
             // Toggle drawer if already analyzed
             if (drawer.dataset.analyzed === "true") {
                 drawer.classList.toggle('hidden');
+                if (drawer.classList.contains('hidden')) {
+                    btnElement.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Buka Analisis';
+                } else {
+                    btnElement.innerHTML = '<i class="fa-solid fa-chevron-up"></i> Tutup Analisis';
+                }
                 return;
             }
 
@@ -3794,18 +3801,29 @@ Gunakan bahasa Indonesia yang profesional, positif, elegan dan tidak kaku. Janga
                 const data = await response.json();
                 const aiResult = data.choices[0].message.content.trim();
 
+                // Save to database
+                try {
+                    await turso.execute({
+                        sql: "UPDATE users SET aiStoreAnalysis = ? WHERE uid = ?",
+                        args: [aiResult, sellerUid]
+                    });
+                } catch(e) {
+                    console.log("Failed to save analysis to DB:", e);
+                }
+
                 // Show result
                 drawer.innerHTML = `<strong><i class="fa-solid fa-robot text-purple-600 mr-1"></i> Analisis AI:</strong><br><br>${aiResult.replace(/\n/g, '<br>')}`;
                 drawer.dataset.analyzed = "true";
                 drawer.classList.remove('hidden');
+                btnElement.innerHTML = '<i class="fa-solid fa-chevron-up"></i> Tutup Analisis';
 
             } catch (error) {
                 showToast(error.message, "error");
-            } finally {
                 btnElement.innerHTML = originalBtnHTML;
+            } finally {
                 btnElement.disabled = false;
             }
-        }
+        };
 
         async function loadSellerRevenue() {
             if (!currentUid) return;
