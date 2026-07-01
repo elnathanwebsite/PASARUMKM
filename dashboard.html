@@ -3860,6 +3860,8 @@ Gunakan bahasa Indonesia yang profesional namun sedikit sinis/menohok demi memba
                     method: "POST",
                     headers: {
                         "Authorization": "Bearer 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",
+                        "HTTP-Referer": window.location.href,
+                        "X-Title": "Pasar UMKM",
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
@@ -3871,7 +3873,14 @@ Gunakan bahasa Indonesia yang profesional namun sedikit sinis/menohok demi memba
                 });
 
                 if (!response.ok) {
-                    throw new Error("Gagal terhubung ke AI server.");
+                    let errMsg = "Gagal terhubung ke AI server.";
+                    try {
+                        const errData = await response.json();
+                        if (errData.error && errData.error.message) {
+                            errMsg += " Detail: " + errData.error.message;
+                        }
+                    } catch (e) {}
+                    throw new Error(errMsg);
                 }
 
                 const data = await response.json();
