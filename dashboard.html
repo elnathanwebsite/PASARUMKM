@@ -3442,13 +3442,14 @@
 
                 rs.rows.forEach(row => {
                     const price = parseFloat(row.total_price) || 0;
-                    grandTotal += price;
                     
                     // Pembayaran
                     if (row.payment_method === 'QRIS') {
                         qrisTotal += price;
+                        grandTotal += price;
                     } else if (row.payment_method === 'PayPal') {
                         paypalTotal += price;
+                        grandTotal += price;
                     } else if (row.payment_method === 'WhatsApp') {
                         waTotal += price;
                     }

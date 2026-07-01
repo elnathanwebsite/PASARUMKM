@@ -369,12 +369,13 @@
                 // Fetch order history for revenue statistics
                 const salesRs = await turso.execute("SELECT total_price, payment_method, shipping_method, seller_uid FROM riwayat_pemesanan");
                 
-                // Calculate seller revenues map
+                // Calculate seller revenues map (only QRIS & PayPal)
                 sellerRevenues = {};
                 salesRs.rows.forEach(row => {
                     const sellerUid = row.seller_uid;
                     const price = parseFloat(row.total_price) || 0;
-                    if (sellerUid) {
+                    const method = row.payment_method;
+                    if (sellerUid && (method === 'QRIS' || method === 'PayPal')) {
                         sellerRevenues[sellerUid] = (sellerRevenues[sellerUid] || 0) + price;
                     }
                 });
