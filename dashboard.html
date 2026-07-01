@@ -2564,8 +2564,6 @@
                     },
                     body: JSON.stringify({
                         model: "nvidia/nemotron-nano-12b-v2-vl:free",
-                        max_tokens: 300,
-                        temperature: 0.6,
                         messages: [
                             {
                                 role: "system",
@@ -2719,8 +2717,6 @@
                     },
                     body: JSON.stringify({
                         model: "nvidia/nemotron-nano-12b-v2-vl:free",
-                        max_tokens: 300,
-                        temperature: 0.6,
                         messages: [
                             {
                                 role: "system",
@@ -3442,8 +3438,6 @@
                     },
                     body: JSON.stringify({
                         model: "nvidia/nemotron-nano-12b-v2-vl:free",
-                        max_tokens: 250,
-                        temperature: 0.6,
                         messages: [
                             {
                                 role: "system",
@@ -3551,8 +3545,6 @@
                     },
                     body: JSON.stringify({
                         model: "nvidia/nemotron-nano-12b-v2-vl:free",
-                        max_tokens: 250,
-                        temperature: 0.5,
                         messages: [
                             {
                                 role: "system",
@@ -3681,7 +3673,9 @@
             try {
                 let sql = `
                     SELECT u.*, 
-                    (SELECT category FROM products WHERE sellerId = u.uid GROUP BY category ORDER BY COUNT(*) DESC LIMIT 1) as dominantCategory 
+                    (SELECT category FROM products WHERE sellerId = u.uid GROUP BY category ORDER BY COUNT(*) DESC LIMIT 1) as dominantCategory,
+                    (SELECT COUNT(*) FROM products WHERE sellerId = u.uid) as productCount,
+                    (SELECT AVG(price) FROM products WHERE sellerId = u.uid) as avgPrice
                     FROM users u 
                     WHERE u.uid != ?
                 `;
@@ -3690,7 +3684,9 @@
                 if (categoryFilter !== 'Semua') {
                     sql = `
                         SELECT u.*, 
-                        (SELECT category FROM products WHERE sellerId = u.uid GROUP BY category ORDER BY COUNT(*) DESC LIMIT 1) as dominantCategory 
+                        (SELECT category FROM products WHERE sellerId = u.uid GROUP BY category ORDER BY COUNT(*) DESC LIMIT 1) as dominantCategory,
+                        (SELECT COUNT(*) FROM products WHERE sellerId = u.uid) as productCount,
+                        (SELECT AVG(price) FROM products WHERE sellerId = u.uid) as avgPrice
                         FROM users u 
                         WHERE u.uid != ? 
                         AND EXISTS (SELECT 1 FROM products WHERE sellerId = u.uid AND category = ?)
@@ -3714,6 +3710,9 @@
                         ? parseFloat(seller.aiStoreRating).toFixed(1) 
                         : "0.0";
                     const aiAnalysis = seller.aiStoreAnalysis || '';
+                    
+                    const pCount = seller.productCount || 0;
+                    const pAvgPriceFormatted = seller.avgPrice ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(seller.avgPrice) : "Rp0";
 
                     const div = document.createElement('div');
                     div.className = 'seller-card flex-col items-stretch gap-0';
@@ -3736,22 +3735,22 @@
                                 <button onclick="viewSellerProducts('${seller.uid}', '${bName}')" class="btn-outline py-1 px-3 text-[10px] bg-blue-50 text-blue-600 border-blue-200 font-bold">
                                     Lihat Produk
                                 </button>
-                                <button onclick="analyzeStoreWithAI('${seller.uid}', '${bName}', this)" class="btn-outline py-1 px-3 text-[10px] bg-purple-50 text-purple-600 border-purple-200 font-bold flex items-center justify-center gap-1">
+                                <button id="btn-analisis-${seller.uid}" onclick="analyzeStoreWithAI('${seller.uid}', '${bName}', this, false)" class="btn-outline py-1 px-3 text-[10px] bg-purple-50 text-purple-600 border-purple-200 font-bold flex items-center justify-center gap-1">
                                     <i class="fa-solid fa-wand-magic-sparkles"></i> ${aiAnalysis ? 'Buka Analisis' : 'Analisis'}
                                 </button>
                             </div>
                         </div>
                         <div id="ai-drawer-${seller.uid}" class="hidden w-full mt-3 p-3 bg-purple-50/50 rounded-xl border border-purple-100 text-[11px] text-slate-700 leading-relaxed" data-analyzed="${aiAnalysis ? 'true' : 'false'}">
-                            <div id="ai-drawer-content-${seller.uid}">
+                            <div class="mb-2 flex justify-between items-center border-b border-purple-100 pb-2">
+                                <div class="text-[10px]">
+                                    <span class="font-bold text-slate-800">Total Produk:</span> <span class="text-purple-700">${pCount}</span> &bull; 
+                                    <span class="font-bold text-slate-800">Rata-rata Harga:</span> <span class="text-purple-700">${pAvgPriceFormatted}</span>
+                                </div>
+                                <button onclick="analyzeStoreWithAI('${seller.uid}', '${bName}', document.getElementById('btn-analisis-${seller.uid}'), true)" class="text-purple-600 hover:text-purple-800 font-bold underline"><i class="fa-solid fa-rotate-right"></i> Ulang</button>
+                            </div>
+                            <div id="ai-result-${seller.uid}">
                                 ${aiAnalysis ? `<strong><i class="fa-solid fa-robot text-purple-600 mr-1"></i> Analisis AI:</strong><br><br>${aiAnalysis.replace(/\n/g, '<br>')}` : ''}
                             </div>
-                            ${aiAnalysis ? `
-                            <div class="mt-3 text-right">
-                                <button onclick="analyzeStoreWithAI('${seller.uid}', '${bName}', this, true)" class="btn-outline py-1 px-3 text-[9px] bg-white text-purple-600 border-purple-200 font-bold inline-flex items-center justify-center gap-1">
-                                    <i class="fa-solid fa-rotate-right"></i> Analisis Ulang
-                                </button>
-                            </div>
-                            ` : ''}
                         </div>
                     `;
                     list.appendChild(div);
@@ -3761,12 +3760,12 @@
             }
         }
 
-        window.analyzeStoreWithAI = async function(sellerUid, sellerName, btnElement, isReanalyze = false) {
+        window.analyzeStoreWithAI = async function(sellerUid, sellerName, btnElement, forceReanalyze = false) {
             const drawer = document.getElementById(`ai-drawer-${sellerUid}`);
-            const contentDiv = document.getElementById(`ai-drawer-content-${sellerUid}`) || drawer;
+            const resultContainer = document.getElementById(`ai-result-${sellerUid}`);
             
-            // Toggle drawer if already analyzed and not forcing a re-analysis
-            if (!isReanalyze && drawer.dataset.analyzed === "true") {
+            // Toggle drawer if already analyzed and NOT forcing re-analyze
+            if (!forceReanalyze && drawer.dataset.analyzed === "true") {
                 drawer.classList.toggle('hidden');
                 if (drawer.classList.contains('hidden')) {
                     btnElement.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Buka Analisis';
@@ -3776,10 +3775,20 @@
                 return;
             }
 
+            // If forcing re-analyze, ensure drawer is open
+            if (forceReanalyze) {
+                drawer.classList.remove('hidden');
+                btnElement.innerHTML = '<i class="fa-solid fa-chevron-up"></i> Tutup Analisis';
+            }
+
             // UI Loading state
             const originalBtnHTML = btnElement.innerHTML;
             btnElement.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
             btnElement.disabled = true;
+            
+            if (forceReanalyze && resultContainer) {
+                resultContainer.innerHTML = '<div class="text-center py-4"><i class="fa-solid fa-circle-notch fa-spin text-purple-500 text-lg mb-2"></i><p>Menyusun ulang analisis...</p></div>';
+            }
 
             try {
                 // Quota limit check
@@ -3820,18 +3829,11 @@
                     throw new Error("Toko ini belum memiliki produk.");
                 }
 
-                const productCount = rs.rows.length;
-                const avgPrice = rs.rows.reduce((sum, p) => sum + parseFloat(p.price), 0) / productCount;
-                const formattedAvgPrice = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(avgPrice);
-
                 const productListStr = rs.rows.map(p => `- ${p.name} (${p.category}) Rp${p.price}`).join('\n');
                 
                 // Fetch MY products for comparison
                 const myProductsList = productsCache.filter(p => p.sellerId === currentUid);
-                const myProductCount = myProductsList.length;
-                const myAvgPrice = myProductCount > 0 ? myProductsList.reduce((sum, p) => sum + parseFloat(p.price), 0) / myProductCount : 0;
-                
-                const myProductListStr = myProductCount > 0 
+                const myProductListStr = myProductsList.length > 0 
                     ? myProductsList.map(p => `- ${p.name} (${p.category}) Rp${p.price}`).join('\n')
                     : "(Saya belum mengupload produk apapun)";
 
@@ -3839,21 +3841,15 @@
 
                 const prompt = `Anda adalah seorang Analis Bisnis UMKM yang jujur, blak-blakan, tajam, dan sangat menohok. Saya memiliki toko bernama "${myStoreName}" dan ingin Anda membandingkan toko saya dengan toko pesaing bernama "${sellerName}".
 
-Statistik Toko Saya ("${myStoreName}"):
-- Total Produk: ${myProductCount}
-- Rata-rata Harga: Rp${Math.round(myAvgPrice)}
-Daftar Produk:
+Produk Toko Saya ("${myStoreName}"):
 ${myProductListStr}
 
-Statistik Toko Pesaing ("${sellerName}"):
-- Total Produk: ${productCount}
-- Rata-rata Harga: Rp${Math.round(avgPrice)}
-Daftar Produk:
+Produk Toko Pesaing ("${sellerName}"):
 ${productListStr}
 
 Buatlah analisis panjang (sekitar 3-4 paragraf) yang membedah dan membandingkan kedua toko ini secara langsung:
-1. Bedah keunggulan dan kelemahan produk pesaing secara tajam (termasuk menyorot harga rata-rata mereka).
-2. Bandingkan secara *head-to-head* dengan toko saya (dari segi jumlah produk, harga, variasi). Siapa yang lebih unggul dan kenapa?
+1. Bedah keunggulan dan kelemahan produk pesaing secara tajam.
+2. Bandingkan secara *head-to-head* dengan toko saya (dari segi harga, variasi, dll). Siapa yang lebih unggul dan kenapa?
 3. Berikan kritik tajam atau "tamparan keras" ("menohok") mengenai kelemahan toko saya dibandingkan mereka.
 4. Berikan taktik brutal tapi aplikatif agar saya bisa memenangkan persaingan melawan mereka.
 
@@ -3868,8 +3864,6 @@ Gunakan bahasa Indonesia yang profesional namun sedikit sinis/menohok demi memba
                     },
                     body: JSON.stringify({
                         model: "nvidia/nemotron-nano-12b-v2-vl:free",
-                        max_tokens: 450,
-                        temperature: 0.6,
                         messages: [
                             { role: "user", content: prompt }
                         ]
@@ -3902,44 +3896,23 @@ Gunakan bahasa Indonesia yang profesional namun sedikit sinis/menohok demi memba
                     console.log("Failed to save analysis or quota to DB:", e);
                 }
 
-                const analysisHTML = `
-                <div class="mb-3 flex flex-wrap gap-2 items-center text-[10px] text-purple-800 bg-purple-100/50 p-2 rounded-lg border border-purple-200/50">
-                    <span class="font-bold"><i class="fa-solid fa-box mr-1"></i> ${productCount} Produk</span>
-                    <span>|</span>
-                    <span class="font-bold"><i class="fa-solid fa-tag mr-1"></i> Rata-rata: ${formattedAvgPrice}</span>
-                </div>
-                <strong><i class="fa-solid fa-robot text-purple-600 mr-1"></i> Analisis AI:</strong><br><br>${aiResult.replace(/\n/g, '<br>')}
-                `;
-
-                // Update UI structure
-                drawer.innerHTML = `
-                    <div id="ai-drawer-content-${sellerUid}">
-                        ${analysisHTML}
-                    </div>
-                    <div class="mt-3 text-right">
-                        <button onclick="analyzeStoreWithAI('${sellerUid}', '${sellerName}', this, true)" class="btn-outline py-1 px-3 text-[9px] bg-white text-purple-600 border-purple-200 font-bold inline-flex items-center justify-center gap-1">
-                            <i class="fa-solid fa-rotate-right"></i> Analisis Ulang
-                        </button>
-                    </div>
-                `;
-                
+                // Show result
+                const finalHTML = `<strong><i class="fa-solid fa-robot text-purple-600 mr-1"></i> Analisis AI:</strong><br><br>${aiResult.replace(/\n/g, '<br>')}`;
+                if (resultContainer) {
+                    resultContainer.innerHTML = finalHTML;
+                } else {
+                    drawer.innerHTML = finalHTML; // Fallback
+                }
                 drawer.dataset.analyzed = "true";
                 drawer.classList.remove('hidden');
-
-                // If this wasn't a re-analysis from inside the drawer, change the main button
-                if (!isReanalyze) {
-                    btnElement.innerHTML = '<i class="fa-solid fa-chevron-up"></i> Tutup Analisis';
-                } else {
-                    btnElement.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Analisis Ulang';
-                    const mainCardBtn = drawer.parentElement.querySelector('button[onclick^="analyzeStoreWithAI"]');
-                    if (mainCardBtn && mainCardBtn !== btnElement) {
-                        mainCardBtn.innerHTML = '<i class="fa-solid fa-chevron-up"></i> Tutup Analisis';
-                    }
-                }
+                btnElement.innerHTML = '<i class="fa-solid fa-chevron-up"></i> Tutup Analisis';
 
             } catch (error) {
                 showToast(error.message, "error");
                 btnElement.innerHTML = originalBtnHTML;
+                if (forceReanalyze && resultContainer) {
+                    resultContainer.innerHTML = '<p class="text-red-500">Gagal mengulang analisis.</p>';
+                }
             } finally {
                 btnElement.disabled = false;
             }
