@@ -141,8 +141,7 @@
 
         .glass-input {
             width: 100%;
-            background: rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(8px);
+            background: #FFFFFF;
             border: 1px solid var(--border);
             border-radius: 12px;
             padding: 12px 16px;
@@ -172,9 +171,7 @@
             left: 0;
             right: 0;
             height: 60px;
-            background: rgba(248, 250, 252, 0.85);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background: #F8FAFC;
             border-bottom: 1px solid var(--border);
             z-index: 100;
             display: flex;
@@ -204,8 +201,7 @@
         }
 
         .seller-card {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(10px);
+            background: #FFFFFF;
             border: 1px solid var(--border);
             border-radius: 20px;
             padding: 16px;
@@ -246,9 +242,7 @@
             left: 0;
             right: 0;
             height: 60px;
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
+            background: #FFFFFF;
             border-top: 1px solid var(--border);
             z-index: 100;
             display: flex;
@@ -356,8 +350,7 @@
         .modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(255, 255, 255, 0.4);
-            backdrop-filter: blur(12px);
+            background: rgba(0, 0, 0, 0.6);
             z-index: 1000;
             display: flex;
             align-items: center;
@@ -373,8 +366,7 @@
         }
 
         .modal-content {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(40px);
+            background: #FFFFFF;
             border: 1px solid var(--border);
             border-radius: 24px;
             padding: 2rem;
@@ -455,9 +447,7 @@
             position: sticky;
             top: 0;
             z-index: 10;
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background: #F8FAFC;
             padding: 16px 20px;
             display: flex;
             align-items: center;
@@ -516,10 +506,9 @@
             align-items: center;
             gap: 12px;
             animation: toastIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            background: rgba(255, 255, 255, 0.97);
+            background: rgba(255, 255, 255, 0.98);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 0, 0, 0.05);
             pointer-events: all;
             max-width: 420px;
             margin-left: auto;
@@ -599,9 +588,7 @@
             position: fixed;
             inset: 0;
             z-index: 99999;
-            background: rgba(15, 23, 42, 0.4);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            background: rgba(15, 23, 42, 0.7);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1089,7 +1076,7 @@
                         style="background: linear-gradient(135deg, #1E3A8A, #7C3AED, #DB2777); min-width: 85%;">
                         <div class="flex justify-between items-start mb-2">
                             <span
-                                class="text-[10px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-full backdrop-blur-md border border-white/30">Next-Gen
+                                class="text-[10px] font-bold bg-white text-blue-800 px-2 py-0.5 rounded-full border border-blue-100 shadow-sm">Next-Gen
                                 UMKM</span>
                             <i class="fa-solid fa-wand-magic-sparkles text-white/50 text-xl"></i>
                         </div>
@@ -1210,7 +1197,11 @@
                 </div>
 
                 <!-- Grid Produk 2 Kolom -->
-                <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 pb-8"></div>
+                <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 pb-4"></div>
+
+                <div id="load-more-container" class="hidden justify-center pb-8">
+                    <button onclick="loadMoreMarketProducts()" class="btn-outline text-xs rounded-full py-2 px-6 font-bold shadow-sm bg-white">Muat Lebih Banyak <i class="fa-solid fa-chevron-down ml-1"></i></button>
+                </div>
 
                 <div id="empty-state" class="text-center py-12 hidden">
                     <i class="fa-solid fa-shop text-4xl mb-3" style="color: var(--muted); opacity: 0.3;"></i>
@@ -1825,13 +1816,13 @@
             <!-- Product Image -->
             <div class="w-full h-72 md:h-96 bg-slate-100 relative md:rounded-3xl md:overflow-hidden md:shadow-md">
                 <img id="detail-img" src="" class="w-full h-full object-cover md:object-contain bg-slate-900/5">
-                <div class="absolute top-4 right-4 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-full text-xs font-bold text-blue-800 shadow-sm"
+                <div class="absolute top-4 right-4 bg-white px-3 py-1.5 rounded-full text-xs font-bold text-blue-800 shadow-sm"
                     id="detail-category">Kategori</div>
             </div>
 
             <!-- Info Section -->
             <div
-                class="p-6 -mt-6 md:mt-6 relative bg-white/90 md:bg-white backdrop-blur-xl rounded-t-3xl md:rounded-3xl shadow-[0_-8px_30px_rgba(0,0,0,0.05)] md:shadow-xl border-t md:border border-slate-100">
+                class="p-6 -mt-6 md:mt-6 relative bg-white md:bg-white rounded-t-3xl md:rounded-3xl shadow-[0_-8px_30px_rgba(0,0,0,0.05)] md:shadow-xl border-t md:border border-slate-100">
                 <div class="flex justify-between items-start gap-4 mb-2">
                     <h1 id="detail-name" class="font-display text-2xl font-bold leading-tight text-slate-800">Nama
                         Produk</h1>
@@ -2112,6 +2103,8 @@
         let currentUserData = null;
         let currentUid = null;
         let productsCache = [];
+        let currentMarketPage = 1;
+        const MARKET_LIMIT = 20;
 
         // ================================================================
         // AUTENTIKASI
@@ -2782,6 +2775,7 @@
 
             try {
                 if (!filteredIds) {
+                    currentMarketPage = 1; // Reset pagination on full load
                     const rs = await turso.execute({
                         sql: "SELECT p.*, u.photoURL as sellerPhoto, u.isSubscribed as sellerIsSubscribed, u.aiStoreRating as sellerAiRating FROM products p LEFT JOIN users u ON p.sellerId = u.uid ORDER BY p.createdAt DESC",
                         args: []
@@ -2829,12 +2823,26 @@
                 }
 
                 // Render Produk Lain
+                const loadMoreContainer = document.getElementById('load-more-container');
                 if (otherProducts.length > 0) {
                     emptyState.classList.add('hidden');
-                    otherProducts.forEach(row => {
+                    
+                    const paginatedProducts = filteredIds ? otherProducts : otherProducts.slice(0, MARKET_LIMIT);
+                    
+                    paginatedProducts.forEach(row => {
                         grid.appendChild(createProductCard(row, filteredIds !== null));
                     });
+
+                    if (!filteredIds && otherProducts.length > MARKET_LIMIT) {
+                        loadMoreContainer.classList.remove('hidden');
+                        loadMoreContainer.classList.add('flex');
+                    } else {
+                        loadMoreContainer.classList.add('hidden');
+                        loadMoreContainer.classList.remove('flex');
+                    }
                 } else {
+                    loadMoreContainer.classList.add('hidden');
+                    loadMoreContainer.classList.remove('flex');
                     if (myProducts.length === 0) {
                         emptyState.classList.remove('hidden');
                         emptyStateText.textContent = filteredIds ? "Maaf, AI tidak menemukan produk yang sesuai." : "Belum ada produk di pasar";
@@ -2847,6 +2855,26 @@
                 showToast("Gagal memuat produk: " + error.message, "error");
             }
         }
+
+        window.loadMoreMarketProducts = function() {
+            const grid = document.getElementById('product-grid');
+            const loadMoreContainer = document.getElementById('load-more-container');
+            
+            const otherProducts = productsCache.filter(p => p.sellerId !== currentUid);
+            const startIndex = currentMarketPage * MARKET_LIMIT;
+            currentMarketPage++;
+            const endIndex = currentMarketPage * MARKET_LIMIT;
+            
+            const nextBatch = otherProducts.slice(startIndex, endIndex);
+            nextBatch.forEach(row => {
+                grid.appendChild(createProductCard(row, false));
+            });
+            
+            if (otherProducts.length <= endIndex) {
+                loadMoreContainer.classList.add('hidden');
+                loadMoreContainer.classList.remove('flex');
+            }
+        };
 
         function createCompactProductCard(product) {
             const div = document.createElement('div');
@@ -2938,7 +2966,7 @@
                     <img src="${product.imageData || 'https://placehold.co/400x300/F8FAFC/94A3B8?text=Produk'}" alt="${product.name}" class="product-img" loading="lazy" style="width:100%; height:180px; object-cover: cover; border-radius: 12px 12px 0 0;">
                     
                     <!-- Seller Overlay Top-Left -->
-                    <div class="absolute top-2 left-2 flex items-center gap-1.5 bg-white/80 backdrop-blur-md py-1 px-1.5 rounded-full border border-white/50 shadow-sm max-w-[85%] overflow-hidden ${isPro ? 'border-amber-400/50' : ''}">
+                    <div class="absolute top-2 left-2 flex items-center gap-1.5 bg-white py-1 px-1.5 rounded-full border border-slate-100 shadow-sm max-w-[85%] overflow-hidden ${isPro ? 'border-amber-400' : ''}">
                         <img src="${sellerPhoto}" class="w-4 h-4 rounded-full object-cover" loading="lazy">
                         <span class="text-[8px] font-bold text-slate-800 truncate pr-1 flex items-center gap-1">
                             ${product.sellerBusiness || 'Penjual'}
@@ -2949,7 +2977,7 @@
                         </span>
                     </div>
 
-                    <button onclick="event.stopPropagation(); handleShareProduct('${encodeURIComponent(product.name)}', ${product.price}, '${encodeURIComponent(product.sellerBusiness || product.sellerName || 'Penjual')}')" class="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-slate-700 shadow-sm hover:bg-white transition-colors">
+                    <button onclick="event.stopPropagation(); handleShareProduct('${encodeURIComponent(product.name)}', ${product.price}, '${encodeURIComponent(product.sellerBusiness || product.sellerName || 'Penjual')}')" class="absolute top-2 right-2 w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-700 shadow-sm hover:bg-slate-50 transition-colors">
                         <i class="fa-solid fa-share-nodes text-[10px]"></i>
                     </button>
                 </div>

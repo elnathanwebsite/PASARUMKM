@@ -80,8 +80,7 @@
 
         .glass-input {
             width: 100%;
-            background: rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(8px);
+            background: #FFFFFF;
             border: 1px solid var(--border);
             border-radius: 12px;
             padding: 12px 16px;
@@ -176,8 +175,7 @@
             position: sticky;
             top: 0;
             z-index: 100;
-            background: rgba(248, 250, 252, 0.8);
-            backdrop-filter: blur(20px);
+            background: #F8FAFC;
             border-bottom: 1px solid var(--border);
         }
 
@@ -212,7 +210,7 @@
     </nav>
 
     <!-- Header -->
-    <header class="fixed top-0 inset-x-0 h-16 bg-white/90 backdrop-blur-md z-50 border-b border-slate-100 flex items-center px-4">
+    <header class="fixed top-0 inset-x-0 h-16 bg-white z-50 border-b border-slate-100 flex items-center px-4">
         <button onclick="history.back()" class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-100 transition-colors">
             <i class="fa-solid fa-arrow-left"></i>
         </button>
@@ -409,7 +407,7 @@
         </div>
 
         <!-- QRIS Modal -->
-        <div id="qris-modal" class="fixed inset-0 z-[200] hidden items-center justify-center bg-gray-900/50 backdrop-blur-sm">
+        <div id="qris-modal" class="fixed inset-0 z-[200] hidden items-center justify-center bg-gray-900/70">
             <div class="glass-card p-6 max-w-sm w-full mx-4 text-center bg-white" style="background: rgba(255,255,255,0.9);">
                 <h3 class="font-display font-bold text-xl mb-2 text-slate-800">Scan QRIS</h3>
                 <p class="text-sm text-gray-500 mb-4">Total: <span id="qris-total-price" class="font-bold text-blue-600"></span></p>
@@ -422,7 +420,7 @@
         </div>
 
         <!-- PayPal Modal -->
-        <div id="paypal-modal" class="fixed inset-0 z-[200] hidden items-center justify-center bg-gray-900/50 backdrop-blur-sm">
+        <div id="paypal-modal" class="fixed inset-0 z-[200] hidden items-center justify-center bg-gray-900/70">
             <div class="glass-card p-6 max-w-sm w-full mx-4 text-center bg-white" style="background: rgba(255,255,255,0.9);">
                 <h3 class="font-display font-bold text-xl mb-2 text-slate-800">Bayar dengan PayPal</h3>
                 <p class="text-sm text-gray-500 mb-4">Total: <span id="paypal-total-price" class="font-bold text-blue-600"></span></p>
