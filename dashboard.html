@@ -1482,6 +1482,75 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Tarik Dana / Payout Section -->
+                <div class="glass-card p-5 border border-blue-100 bg-blue-50/10 rounded-2xl mb-6">
+                    <h2 class="font-display text-base font-bold text-slate-800 flex items-center gap-2 mb-4">
+                        <i class="fa-solid fa-money-bill-transfer text-blue-500"></i> Penarikan Saldo Toko
+                    </h2>
+                    
+                    <!-- Bank Account Info Form -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5 block">Pilih Rekening / E-Wallet Tujuan</label>
+                            <select id="wd-bank-name" onchange="saveBankProfile()" class="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-blue-500 transition-all font-bold text-slate-700">
+                                <option value="" disabled selected>Pilih Bank atau E-Wallet</option>
+                                <option value="BCA">BCA (Bank Central Asia)</option>
+                                <option value="Mandiri">Mandiri</option>
+                                <option value="BNI">BNI</option>
+                                <option value="BRI">BRI</option>
+                                <option value="GoPay">GoPay</option>
+                                <option value="OVO">OVO</option>
+                                <option value="DANA">DANA</option>
+                                <option value="LinkAja">LinkAja</option>
+                                <option value="ShopeePay">ShopeePay</option>
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5 block">Nomor Rekening / No. HP E-Wallet</label>
+                                <input type="text" id="wd-bank-account" oninput="saveBankProfile()" placeholder="Masukkan nomor rekening/HP..." class="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-blue-500 transition-all font-bold text-slate-700">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5 block">Nama Pemilik Rekening</label>
+                                <input type="text" id="wd-bank-account-name" oninput="saveBankProfile()" placeholder="Masukkan nama pemilik..." class="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-blue-500 transition-all font-bold text-slate-700">
+                            </div>
+                        </div>
+
+                        <div class="border-t border-slate-100 pt-3">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5 block">Jumlah Penarikan (IDR)</label>
+                            <div class="flex gap-2">
+                                <input type="number" id="wd-amount" placeholder="Contoh: 50000" class="flex-grow p-3 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-blue-500 transition-all font-bold text-slate-700">
+                                <button onclick="requestWithdrawal()" class="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-100 transition-all flex items-center gap-1 active:scale-95">
+                                    <i class="fa-solid fa-paper-plane"></i> Tarik Dana
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Withdrawal History Table -->
+                    <div class="border-t border-slate-100 mt-5 pt-4">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2 block">Riwayat Penarikan Anda</label>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead>
+                                    <tr class="text-slate-400 font-bold border-b border-slate-100">
+                                        <th class="pb-2">Tujuan</th>
+                                        <th class="pb-2 text-right">Jumlah</th>
+                                        <th class="pb-2 text-center">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="wd-history-list" class="divide-y divide-slate-50 text-slate-700 font-medium">
+                                    <!-- Loaded dynamically -->
+                                    <tr>
+                                        <td colspan="3" class="py-4 text-center text-slate-400 text-[10px]">Belum ada pengajuan penarikan dana.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </section>
         </div>
     </main>
@@ -1944,6 +2013,30 @@
             try {
                 await turso.execute("ALTER TABLE users ADD COLUMN aiStoreAnalysis TEXT DEFAULT ''");
             } catch (e) { }
+            try {
+                await turso.execute("ALTER TABLE users ADD COLUMN bankName TEXT");
+            } catch (e) { }
+            try {
+                await turso.execute("ALTER TABLE users ADD COLUMN bankAccount TEXT");
+            } catch (e) { }
+            try {
+                await turso.execute("ALTER TABLE users ADD COLUMN bankAccountName TEXT");
+            } catch (e) { }
+            try {
+                await turso.execute(`
+                    CREATE TABLE IF NOT EXISTS tarik_dana (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        seller_uid TEXT NOT NULL,
+                        business_name TEXT,
+                        bank_name TEXT NOT NULL,
+                        account_number TEXT NOT NULL,
+                        account_name TEXT NOT NULL,
+                        amount REAL NOT NULL,
+                        status TEXT DEFAULT 'Pending',
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    )
+                `);
+            } catch(e) { }
         })();
 
         let currentUserData = null;
@@ -3442,14 +3535,13 @@
 
                 rs.rows.forEach(row => {
                     const price = parseFloat(row.total_price) || 0;
+                    grandTotal += price;
                     
                     // Pembayaran
                     if (row.payment_method === 'QRIS') {
                         qrisTotal += price;
-                        grandTotal += price;
                     } else if (row.payment_method === 'PayPal') {
                         paypalTotal += price;
-                        grandTotal += price;
                     } else if (row.payment_method === 'WhatsApp') {
                         waTotal += price;
                     }
@@ -3475,11 +3567,120 @@
                 document.getElementById('seller-revenue-pos').textContent = formatRupiah(posTotal);
                 document.getElementById('seller-revenue-instant').textContent = formatRupiah(instantTotal);
                 document.getElementById('seller-revenue-pickup').textContent = formatRupiah(pickupTotal);
+
+                // Populate bank inputs from cache
+                if (currentUserData) {
+                    if (currentUserData.bankName) document.getElementById('wd-bank-name').value = currentUserData.bankName;
+                    if (currentUserData.bankAccount) document.getElementById('wd-bank-account').value = currentUserData.bankAccount;
+                    if (currentUserData.bankAccountName) document.getElementById('wd-bank-account-name').value = currentUserData.bankAccountName;
+                }
+
+                // Load withdrawal history logs
+                loadWithdrawalHistory();
             } catch (err) {
                 console.error("Gagal memuat pendapatan seller:", err);
             }
         }
         window.loadSellerRevenue = loadSellerRevenue;
+
+        async function saveBankProfile() {
+            if (!currentUid) return;
+            const bankName = document.getElementById('wd-bank-name').value;
+            const bankAccount = document.getElementById('wd-bank-account').value.trim();
+            const bankAccountName = document.getElementById('wd-bank-account-name').value.trim();
+            
+            try {
+                await turso.execute({
+                    sql: "UPDATE users SET bankName = ?, bankAccount = ?, bankAccountName = ? WHERE uid = ?",
+                    args: [bankName, bankAccount, bankAccountName, currentUid]
+                });
+                // Update local cache
+                if (currentUserData) {
+                    currentUserData.bankName = bankName;
+                    currentUserData.bankAccount = bankAccount;
+                    currentUserData.bankAccountName = bankAccountName;
+                }
+            } catch(e) {
+                console.error("Gagal menyimpan profil rekening:", e);
+            }
+        }
+        window.saveBankProfile = saveBankProfile;
+
+        async function requestWithdrawal() {
+            if (!currentUid) return;
+            const bankName = document.getElementById('wd-bank-name').value;
+            const bankAccount = document.getElementById('wd-bank-account').value.trim();
+            const bankAccountName = document.getElementById('wd-bank-account-name').value.trim();
+            const amountVal = parseFloat(document.getElementById('wd-amount').value) || 0;
+
+            if (!bankName || !bankAccount || !bankAccountName) {
+                showToast("Lengkapi nomor rekening dan nama pemilik tujuan penarikan.", "error");
+                return;
+            }
+
+            if (amountVal <= 0) {
+                showToast("Masukkan jumlah penarikan yang valid (di atas Rp 0).", "error");
+                return;
+            }
+
+            try {
+                // Insert request
+                const bName = currentUserData.businessName || currentUserData.username || 'UMKM';
+                await turso.execute({
+                    sql: "INSERT INTO tarik_dana (seller_uid, business_name, bank_name, account_number, account_name, amount) VALUES (?, ?, ?, ?, ?, ?)",
+                    args: [currentUid, bName, bankName, bankAccount, bankAccountName, amountVal]
+                });
+                
+                showToast("Pengajuan penarikan dana berhasil dikirim!", "success");
+                document.getElementById('wd-amount').value = '';
+                loadWithdrawalHistory();
+            } catch (err) {
+                showToast("Gagal mengirim pengajuan: " + err.message, "error");
+            }
+        }
+        window.requestWithdrawal = requestWithdrawal;
+
+        async function loadWithdrawalHistory() {
+            if (!currentUid) return;
+            const list = document.getElementById('wd-history-list');
+            try {
+                const rs = await turso.execute({
+                    sql: "SELECT * FROM tarik_dana WHERE seller_uid = ? ORDER BY created_at DESC",
+                    args: [currentUid]
+                });
+
+                if (rs.rows.length === 0) {
+                    list.innerHTML = `<tr><td colspan="3" class="py-4 text-center text-slate-400 text-[10px]">Belum ada pengajuan penarikan dana.</td></tr>`;
+                    return;
+                }
+
+                const formatRupiah = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+                
+                let html = '';
+                rs.rows.forEach(row => {
+                    let statusClass = 'text-amber-500 bg-amber-50 border border-amber-100';
+                    if (row.status === 'Disetujui') statusClass = 'text-emerald-600 bg-emerald-50 border border-emerald-100';
+                    if (row.status === 'Ditolak') statusClass = 'text-red-500 bg-red-50 border border-red-100';
+
+                    html += `
+                        <tr class="border-b border-slate-50 last:border-0">
+                            <td class="py-2.5">
+                                <p class="font-bold text-slate-800 text-[11px]">${row.bank_name}</p>
+                                <p class="text-[9px] text-slate-400 font-mono">${row.account_number}</p>
+                            </td>
+                            <td class="py-2.5 text-right font-black text-slate-800 text-[11px]">${formatRupiah(row.amount)}</td>
+                            <td class="py-2.5 text-center">
+                                <span class="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold ${statusClass}">${row.status}</span>
+                            </td>
+                        </tr>
+                    `;
+                });
+                list.innerHTML = html;
+            } catch (err) {
+                console.error("Gagal memuat riwayat penarikan:", err);
+            }
+        }
+        window.loadWithdrawalHistory = loadWithdrawalHistory;
 
         window.viewSellerProducts = async function (sellerId, businessName) {
             // UI Update loading

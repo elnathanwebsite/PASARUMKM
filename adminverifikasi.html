@@ -176,144 +176,254 @@
             </div>
         </header>
 
-        <!-- Stats Section -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div class="glass-card p-6 border-l-4 border-blue-500 shadow-sm hover:shadow-md transition-all">
-                <div class="text-slate-400 text-xs font-bold uppercase mb-1">Total UMKM</div>
-                <div id="stat-total" class="text-3xl font-black text-slate-950">0</div>
+        <!-- Admin Navigation Tabs -->
+        <div class="flex bg-slate-100 rounded-xl p-1 mb-8 max-w-md shadow-sm border border-slate-200/30">
+            <button onclick="switchAdminTab('umkm')" id="tab-adm-umkm" class="flex-1 text-center py-2 rounded-lg text-xs font-bold text-slate-700 bg-white shadow-sm transition-all active:scale-[0.98]">
+                Pendaftar UMKM & Saldo
+            </button>
+            <button onclick="switchAdminTab('wd')" id="tab-adm-wd" class="flex-1 text-center py-2 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-700 transition-all active:scale-[0.98]">
+                Pengajuan Tarik Dana
+            </button>
+        </div>
+
+        <!-- Section: UMKM List & Revenue -->
+        <div id="section-adm-umkm">
+            <!-- Stats Section -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="glass-card p-6 border-l-4 border-blue-500 shadow-sm hover:shadow-md transition-all">
+                    <div class="text-slate-400 text-xs font-bold uppercase mb-1">Total UMKM</div>
+                    <div id="stat-total" class="text-3xl font-black text-slate-950">0</div>
+                </div>
+                <div class="glass-card p-6 border-l-4 border-emerald-500 shadow-sm hover:shadow-md transition-all">
+                    <div class="text-slate-400 text-xs font-bold uppercase mb-1">Total Platform Sales</div>
+                    <div id="stat-revenue" class="text-3xl font-black text-emerald-600">Rp 0</div>
+                </div>
+                <div class="glass-card p-6 border-l-4 border-indigo-500 shadow-sm hover:shadow-md transition-all">
+                    <div class="text-slate-400 text-xs font-bold uppercase mb-1">Terverifikasi</div>
+                    <div id="stat-verified" class="text-3xl font-black text-indigo-600">0</div>
+                </div>
+                <div class="glass-card p-6 border-l-4 border-amber-500 shadow-sm hover:shadow-md transition-all">
+                    <div class="text-slate-400 text-xs font-bold uppercase mb-1">Menunggu Verifikasi</div>
+                    <div id="stat-pending" class="text-3xl font-black text-amber-600">0</div>
+                </div>
             </div>
-            <div class="glass-card p-6 border-l-4 border-emerald-500 shadow-sm hover:shadow-md transition-all">
-                <div class="text-slate-400 text-xs font-bold uppercase mb-1">Total Platform Sales</div>
-                <div id="stat-revenue" class="text-3xl font-black text-emerald-600">Rp 0</div>
-            </div>
-            <div class="glass-card p-6 border-l-4 border-indigo-500 shadow-sm hover:shadow-md transition-all">
-                <div class="text-slate-400 text-xs font-bold uppercase mb-1">Terverifikasi</div>
-                <div id="stat-verified" class="text-3xl font-black text-indigo-600">0</div>
-            </div>
-            <div class="glass-card p-6 border-l-4 border-amber-500 shadow-sm hover:shadow-md transition-all">
-                <div class="text-slate-400 text-xs font-bold uppercase mb-1">Menunggu Verifikasi</div>
-                <div id="stat-pending" class="text-3xl font-black text-amber-600">0</div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <!-- Left Side: Laporan Pendapatan Metode Pembayaran & Pengiriman -->
+                <div class="lg:col-span-1 flex flex-col gap-6">
+                    <!-- Rincian Pembayaran -->
+                    <div class="glass-card p-6 border border-slate-100 shadow-sm bg-white">
+                        <h3 class="font-display text-base font-bold text-slate-800 flex items-center gap-2 mb-4">
+                            <i class="fa-solid fa-wallet text-emerald-500"></i> Rincian Pembayaran
+                        </h3>
+                        <div class="space-y-4">
+                            <!-- QRIS -->
+                            <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100/50">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs font-bold text-blue-700 uppercase tracking-wide"><i class="fa-solid fa-qrcode mr-1"></i> QRIS</span>
+                                    <span id="admin-rev-qris" class="text-sm font-black text-blue-900">Rp 0</span>
+                                </div>
+                            </div>
+                            <!-- PayPal -->
+                            <div class="bg-sky-50/50 p-4 rounded-xl border border-sky-100/50">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs font-bold text-sky-700 uppercase tracking-wide"><i class="fa-brands fa-paypal mr-1"></i> PayPal</span>
+                                    <span id="admin-rev-paypal" class="text-sm font-black text-sky-900">Rp 0</span>
+                                </div>
+                            </div>
+                            <!-- Manual WA -->
+                            <div class="bg-green-50/50 p-4 rounded-xl border border-green-100/50">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs font-bold text-green-700 uppercase tracking-wide"><i class="fa-brands fa-whatsapp mr-1"></i> Manual WA</span>
+                                    <span id="admin-rev-wa" class="text-sm font-black text-green-900">Rp 0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rincian Pengiriman -->
+                    <div class="glass-card p-6 border border-slate-100 shadow-sm bg-white">
+                        <h3 class="font-display text-base font-bold text-slate-800 flex items-center gap-2 mb-4">
+                            <i class="fa-solid fa-truck text-indigo-500"></i> Rincian Pengiriman
+                        </h3>
+                        <div class="space-y-3">
+                            <!-- JNE -->
+                            <div class="flex justify-between items-center p-2.5 rounded-lg border border-slate-100 bg-slate-50/50 text-xs">
+                                <span class="font-bold text-slate-600">JNE</span>
+                                <span id="admin-rev-jne" class="font-black text-slate-800">Rp 0</span>
+                            </div>
+                            <!-- J&T -->
+                            <div class="flex justify-between items-center p-2.5 rounded-lg border border-slate-100 bg-slate-50/50 text-xs">
+                                <span class="font-bold text-slate-600">J&T</span>
+                                <span id="admin-rev-jnt" class="font-black text-slate-800">Rp 0</span>
+                            </div>
+                            <!-- SiCepat -->
+                            <div class="flex justify-between items-center p-2.5 rounded-lg border border-slate-100 bg-slate-50/50 text-xs">
+                                <span class="font-bold text-slate-600">SiCepat</span>
+                                <span id="admin-rev-sicepat" class="font-black text-slate-800">Rp 0</span>
+                            </div>
+                            <!-- POS -->
+                            <div class="flex justify-between items-center p-2.5 rounded-lg border border-slate-100 bg-slate-50/50 text-xs">
+                                <span class="font-bold text-slate-600">POS Indonesia</span>
+                                <span id="admin-rev-pos" class="font-black text-slate-800">Rp 0</span>
+                            </div>
+                            <!-- Instan -->
+                            <div class="flex justify-between items-center p-2.5 rounded-lg border border-slate-100 bg-slate-50/50 text-xs">
+                                <span class="font-bold text-slate-600">Layanan Instan</span>
+                                <span id="admin-rev-instant" class="font-black text-slate-800">Rp 0</span>
+                            </div>
+                            <!-- Ambil Sendiri -->
+                            <div class="flex justify-between items-center p-2.5 rounded-lg border border-slate-100 bg-slate-50/50 text-xs">
+                                <span class="font-bold text-slate-600">Ambil Sendiri</span>
+                                <span id="admin-rev-pickup" class="font-black text-slate-800">Rp 0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Side: Search & Table -->
+                <div class="lg:col-span-2 flex flex-col gap-6">
+                    <!-- Search & Filter -->
+                    <div class="glass-card p-4 flex flex-wrap gap-4 items-center justify-between shadow-sm bg-white">
+                        <div class="relative flex-1 min-w-[200px]">
+                            <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            <input type="text" id="search-input" oninput="filterUsers()"
+                                placeholder="Cari Nama, Email atau Nama Usaha..."
+                                class="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 transition-all">
+                        </div>
+                        <button onclick="loadUsers()"
+                            class="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition-all shadow-sm">
+                            <i class="fa-solid fa-arrows-rotate"></i>
+                        </button>
+                    </div>
+
+                    <!-- Table Container -->
+                    <div class="glass-card overflow-hidden shadow-sm flex-grow bg-white">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-slate-50 border-b border-slate-200">
+                                    <tr>
+                                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Info User</th>
+                                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Nama Usaha</th>
+                                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Kontak</th>
+                                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Saldo Terkumpul</th>
+                                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Status</th>
+                                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="user-table-body" class="divide-y divide-slate-100">
+                                    <!-- Data will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="empty-state" class="hidden py-20 text-center">
+                            <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                                <i class="fa-solid fa-user-slash text-3xl"></i>
+                            </div>
+                            <p class="text-slate-500 font-medium">Tidak ada data UMKM yang ditemukan.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <!-- Left Side: Laporan Pendapatan Metode Pembayaran & Pengiriman -->
-            <div class="lg:col-span-1 flex flex-col gap-6">
-                <!-- Rincian Pembayaran -->
-                <div class="glass-card p-6 border border-slate-100 shadow-sm bg-white">
-                    <h3 class="font-display text-base font-bold text-slate-800 flex items-center gap-2 mb-4">
-                        <i class="fa-solid fa-wallet text-emerald-500"></i> Rincian Pembayaran
-                    </h3>
-                    <div class="space-y-4">
-                        <!-- QRIS -->
-                        <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100/50">
-                            <div class="flex justify-between items-center">
-                                <span class="text-xs font-bold text-blue-700 uppercase tracking-wide"><i class="fa-solid fa-qrcode mr-1"></i> QRIS</span>
-                                <span id="admin-rev-qris" class="text-sm font-black text-blue-900">Rp 0</span>
-                            </div>
-                        </div>
-                        <!-- PayPal -->
-                        <div class="bg-sky-50/50 p-4 rounded-xl border border-sky-100/50">
-                            <div class="flex justify-between items-center">
-                                <span class="text-xs font-bold text-sky-700 uppercase tracking-wide"><i class="fa-brands fa-paypal mr-1"></i> PayPal</span>
-                                <span id="admin-rev-paypal" class="text-sm font-black text-sky-900">Rp 0</span>
-                            </div>
-                        </div>
-                        <!-- Manual WA -->
-                        <div class="bg-green-50/50 p-4 rounded-xl border border-green-100/50">
-                            <div class="flex justify-between items-center">
-                                <span class="text-xs font-bold text-green-700 uppercase tracking-wide"><i class="fa-brands fa-whatsapp mr-1"></i> Manual WA</span>
-                                <span id="admin-rev-wa" class="text-sm font-black text-green-900">Rp 0</span>
-                            </div>
-                        </div>
-                    </div>
+        <!-- Section: Pengajuan Tarik Dana -->
+        <div id="section-adm-wd" class="hidden">
+            <div class="glass-card overflow-hidden shadow-sm bg-white p-6">
+                <h3 class="font-display text-base font-bold text-slate-800 flex items-center gap-2 mb-4">
+                    <i class="fa-solid fa-money-bill-transfer text-blue-500"></i> Pengajuan Penarikan Dana UMKM
+                </h3>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Info Usaha / Kontak</th>
+                                <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Rekening Penerima</th>
+                                <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Jumlah Tarik</th>
+                                <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Status</th>
+                                <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-wd-table-body" class="divide-y divide-slate-100">
+                            <!-- Loaded dynamically -->
+                        </tbody>
+                    </table>
                 </div>
 
-                <!-- Rincian Pengiriman -->
-                <div class="glass-card p-6 border border-slate-100 shadow-sm bg-white">
-                    <h3 class="font-display text-base font-bold text-slate-800 flex items-center gap-2 mb-4">
-                        <i class="fa-solid fa-truck text-indigo-500"></i> Rincian Pengiriman
-                    </h3>
-                    <div class="space-y-3">
-                        <!-- JNE -->
-                        <div class="flex justify-between items-center p-2.5 rounded-lg border border-slate-100 bg-slate-50/50 text-xs">
-                            <span class="font-bold text-slate-600">JNE</span>
-                            <span id="admin-rev-jne" class="font-black text-slate-800">Rp 0</span>
-                        </div>
-                        <!-- J&T -->
-                        <div class="flex justify-between items-center p-2.5 rounded-lg border border-slate-100 bg-slate-50/50 text-xs">
-                            <span class="font-bold text-slate-600">J&T</span>
-                            <span id="admin-rev-jnt" class="font-black text-slate-800">Rp 0</span>
-                        </div>
-                        <!-- SiCepat -->
-                        <div class="flex justify-between items-center p-2.5 rounded-lg border border-slate-100 bg-slate-50/50 text-xs">
-                            <span class="font-bold text-slate-600">SiCepat</span>
-                            <span id="admin-rev-sicepat" class="font-black text-slate-800">Rp 0</span>
-                        </div>
-                        <!-- POS -->
-                        <div class="flex justify-between items-center p-2.5 rounded-lg border border-slate-100 bg-slate-50/50 text-xs">
-                            <span class="font-bold text-slate-600">POS Indonesia</span>
-                            <span id="admin-rev-pos" class="font-black text-slate-800">Rp 0</span>
-                        </div>
-                        <!-- Instan -->
-                        <div class="flex justify-between items-center p-2.5 rounded-lg border border-slate-100 bg-slate-50/50 text-xs">
-                            <span class="font-bold text-slate-600">Layanan Instan</span>
-                            <span id="admin-rev-instant" class="font-black text-slate-800">Rp 0</span>
-                        </div>
-                        <!-- Ambil Sendiri -->
-                        <div class="flex justify-between items-center p-2.5 rounded-lg border border-slate-100 bg-slate-50/50 text-xs">
-                            <span class="font-bold text-slate-600">Ambil Sendiri</span>
-                            <span id="admin-rev-pickup" class="font-black text-slate-800">Rp 0</span>
-                        </div>
+                <div id="admin-wd-empty" class="hidden py-20 text-center bg-white">
+                    <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                        <i class="fa-solid fa-money-bill-transfer text-3xl"></i>
                     </div>
-                </div>
-            </div>
-
-            <!-- Right Side: Search & Table -->
-            <div class="lg:col-span-2 flex flex-col gap-6">
-                <!-- Search & Filter -->
-                <div class="glass-card p-4 flex flex-wrap gap-4 items-center justify-between shadow-sm bg-white">
-                    <div class="relative flex-1 min-w-[200px]">
-                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                        <input type="text" id="search-input" oninput="filterUsers()"
-                            placeholder="Cari Nama, Email atau Nama Usaha..."
-                            class="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 transition-all">
-                    </div>
-                    <button onclick="loadUsers()"
-                        class="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition-all shadow-sm">
-                        <i class="fa-solid fa-arrows-rotate"></i>
-                    </button>
-                </div>
-
-                <!-- Table Container -->
-                <div class="glass-card overflow-hidden shadow-sm flex-grow bg-white">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead class="bg-slate-50 border-b border-slate-200">
-                                <tr>
-                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Info User</th>
-                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Nama Usaha</th>
-                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Saldo Toko</th>
-                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Kontak</th>
-                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Status</th>
-                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="user-table-body" class="divide-y divide-slate-100">
-                                <!-- Data will be loaded here -->
-                            </tbody>
-                        </table>
-                    </div>
-                    <div id="empty-state" class="hidden py-20 text-center">
-                        <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
-                            <i class="fa-solid fa-user-slash text-3xl"></i>
-                        </div>
-                        <p class="text-slate-500 font-medium">Tidak ada data UMKM yang ditemukan.</p>
-                    </div>
+                    <p class="text-slate-500 font-medium">Tidak ada pengajuan penarikan dana.</p>
                 </div>
             </div>
         </div>
     </main>
+
+    <!-- Modal Detail Penjual & Pendapatan -->
+    <div id="seller-detail-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden border border-slate-100 animate-[fadeIn_0.2s_ease-out]">
+            <!-- Header -->
+            <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+                <div>
+                    <h3 id="det-business-name" class="font-display font-bold text-base text-slate-800">Nama Toko</h3>
+                    <p id="det-owner-name" class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Pemilik: XXXXX</p>
+                </div>
+                <button onclick="closeModal('seller-detail-modal')" class="w-8 h-8 rounded-full bg-slate-200/50 flex items-center justify-center hover:bg-slate-200 transition-colors">
+                    <i class="fa-solid fa-xmark text-slate-600"></i>
+                </button>
+            </div>
+            <!-- Body -->
+            <div class="p-6 space-y-6 max-h-[450px] overflow-y-auto">
+                <!-- Kontak -->
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide block mb-1">Kontak Usaha</label>
+                    <p id="det-email" class="text-xs text-slate-600 font-medium">Email: -</p>
+                    <p id="det-phone" class="text-xs text-slate-600 font-medium">No. HP: -</p>
+                </div>
+
+                <!-- Info Rekening -->
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide block mb-2">Rekening / E-Wallet Terdaftar</label>
+                    <p id="det-bank-destination" class="text-sm font-black text-slate-800">BCA - 12345678</p>
+                    <p id="det-bank-recipient" class="text-[11px] text-slate-500 font-bold mt-0.5">a.n. Nama Penerima</p>
+                </div>
+
+                <!-- Saldo Penjualan Berdasarkan Metode Pembayaran -->
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide block mb-3">Klasifikasi Pendapatan Penjual</label>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="bg-blue-50/50 p-3 rounded-xl border border-blue-100/50">
+                            <span class="text-[9px] font-bold text-blue-700 uppercase block">QRIS</span>
+                            <span id="det-rev-qris" class="text-xs font-black text-blue-900 mt-1 block">Rp 0</span>
+                        </div>
+                        <div class="bg-sky-50/50 p-3 rounded-xl border border-sky-100/50">
+                            <span class="text-[9px] font-bold text-sky-700 uppercase block">PayPal</span>
+                            <span id="det-rev-paypal" class="text-xs font-black text-sky-900 mt-1 block">Rp 0</span>
+                        </div>
+                        <div class="bg-green-50/50 p-3 rounded-xl border border-green-100/50">
+                            <span class="text-[9px] font-bold text-green-700 uppercase block">Manual WA</span>
+                            <span id="det-rev-wa" class="text-xs font-black text-green-900 mt-1 block">Rp 0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Pendapatan Bersih -->
+                <div class="bg-emerald-500 text-white p-4 rounded-xl shadow-md flex justify-between items-center">
+                    <div>
+                        <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-100">Total Saldo Penjualan</span>
+                        <h4 id="det-rev-total" class="font-display font-black text-xl mt-0.5">Rp 0</h4>
+                    </div>
+                    <i class="fa-solid fa-wallet text-2xl text-white/30"></i>
+                </div>
+            </div>
+            <!-- Footer -->
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 text-right">
+                <button onclick="closeModal('seller-detail-modal')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition-all">Tutup</button>
+            </div>
+        </div>
+    </div>
 
     <script type="module">
         import { createClient } from 'https://esm.sh/@libsql/client/web';
@@ -338,6 +448,34 @@
             authToken: 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzgyOTg4OTgsImlkIjoiMDE5ZTA5MmItNWEwMS03ZDE0LWE2M2EtZTg0YTBhODIzMmVjIiwicmlkIjoiMjUxYTliYzctYjA0NC00YzY3LTlmZWItYzBmNzQwMjczNTQxIn0.K_pVVV7lZDUOuz7s3TljfqC-VPiMtIpW2RoAaYlBFmqu-HTc6ueuw3B6kBbUBx8TTy5-g_E-H7zoqpLHLFLQDQ'
         });
 
+        // Database Healing: Ensure tarik_dana table and bank columns exist
+        (async () => {
+            try {
+                await turso.execute("ALTER TABLE users ADD COLUMN bankName TEXT");
+            } catch(e){}
+            try {
+                await turso.execute("ALTER TABLE users ADD COLUMN bankAccount TEXT");
+            } catch(e){}
+            try {
+                await turso.execute("ALTER TABLE users ADD COLUMN bankAccountName TEXT");
+            } catch(e){}
+            try {
+                await turso.execute(`
+                    CREATE TABLE IF NOT EXISTS tarik_dana (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        seller_uid TEXT NOT NULL,
+                        business_name TEXT,
+                        bank_name TEXT NOT NULL,
+                        account_number TEXT NOT NULL,
+                        account_name TEXT NOT NULL,
+                        amount REAL NOT NULL,
+                        status TEXT DEFAULT 'Pending',
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    )
+                `);
+            } catch(e){}
+        })();
+
         const ADMIN_EMAIL = 'admin@pasarumkm.com';
         let allUsers = [];
 
@@ -359,7 +497,8 @@
             }
         });
 
-        let sellerRevenues = {};
+        let sellerSales = {};
+        let sellerPaymentSales = {};
 
         async function loadUsers() {
             try {
@@ -369,19 +508,29 @@
                 // Fetch order history for revenue statistics
                 const salesRs = await turso.execute("SELECT total_price, payment_method, shipping_method, seller_uid FROM riwayat_pemesanan");
                 
-                // Calculate seller revenues map (only QRIS & PayPal)
-                sellerRevenues = {};
+                // Process seller caches
+                sellerSales = {};
+                sellerPaymentSales = {};
                 salesRs.rows.forEach(row => {
-                    const sellerUid = row.seller_uid;
+                    const uid = row.seller_uid;
                     const price = parseFloat(row.total_price) || 0;
-                    const method = row.payment_method;
-                    if (sellerUid && (method === 'QRIS' || method === 'PayPal')) {
-                        sellerRevenues[sellerUid] = (sellerRevenues[sellerUid] || 0) + price;
+                    if (!uid) return;
+                    if (!sellerSales[uid]) sellerSales[uid] = 0;
+                    sellerSales[uid] += price;
+                    
+                    if (!sellerPaymentSales[uid]) {
+                        sellerPaymentSales[uid] = { QRIS: 0, PayPal: 0, WhatsApp: 0 };
                     }
+                    if (row.payment_method === 'QRIS') sellerPaymentSales[uid].QRIS += price;
+                    else if (row.payment_method === 'PayPal') sellerPaymentSales[uid].PayPal += price;
+                    else if (row.payment_method === 'WhatsApp') sellerPaymentSales[uid].WhatsApp += price;
                 });
 
                 renderUsers(allUsers);
                 updateStats(allUsers, salesRs.rows);
+                
+                // Also load withdrawal requests
+                loadWithdrawalRequests();
             } catch (err) {
                 showToast("Gagal memuat data: " + err.message, "error");
             }
@@ -403,8 +552,7 @@
 
             users.forEach(user => {
                 const isVerified = user.isVerified === 1;
-                const saldo = sellerRevenues[user.uid] || 0;
-
+                const totalSales = sellerSales[user.uid] || 0;
                 const row = document.createElement('tr');
                 row.className = "hover:bg-slate-50 transition-colors";
                 row.innerHTML = `
@@ -418,10 +566,10 @@
                         </div>
                     </td>
                     <td class="px-6 py-4 text-sm font-medium text-slate-600">${user.businessName || '-'}</td>
-                    <td class="px-6 py-4 text-sm font-black text-emerald-600">${formatRupiah(saldo)}</td>
                     <td class="px-6 py-4">
                         <p class="text-xs font-bold text-slate-700"><i class="fa-brands fa-whatsapp text-green-500 mr-1"></i> ${user.phone || '-'}</p>
                     </td>
+                    <td class="px-6 py-4 text-right text-xs font-bold text-emerald-600 font-mono">${formatRupiah(totalSales)}</td>
                     <td class="px-6 py-4 text-center">
                         <span class="status-badge ${isVerified ? 'status-verified' : 'status-pending'}">
                             ${isVerified ? 'Terverifikasi' : 'Pending'}
@@ -429,6 +577,7 @@
                     </td>
                     <td class="px-6 py-4 text-right">
                         <div class="flex justify-end gap-2">
+                            <button onclick="viewSellerDetails('${user.uid}')" class="px-3 py-1.5 bg-indigo-50 text-indigo-600 text-[11px] font-bold rounded-lg border border-indigo-100 hover:bg-indigo-100 transition-all">Detail</button>
                             ${isVerified ?
                         `<button onclick="updateStatus('${user.uid}', 0)" class="px-3 py-1.5 bg-red-50 text-red-600 text-[11px] font-bold rounded-lg border border-red-100 hover:bg-red-100 transition-all">Cabut Izin</button>` :
                         `<button onclick="updateStatus('${user.uid}', 1)" class="px-3 py-1.5 bg-emerald-50 text-emerald-600 text-[11px] font-bold rounded-lg border border-emerald-100 hover:bg-emerald-100 transition-all">Verifikasi</button>`
@@ -540,6 +689,143 @@
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
         }
+
+        window.switchAdminTab = function(tab) {
+            const btnUmkm = document.getElementById('tab-adm-umkm');
+            const btnWd = document.getElementById('tab-adm-wd');
+            const secUmkm = document.getElementById('section-adm-umkm');
+            const secWd = document.getElementById('section-adm-wd');
+
+            btnUmkm.classList.remove('bg-white', 'shadow-sm', 'text-slate-700');
+            btnUmkm.classList.add('text-slate-500', 'hover:text-slate-700');
+            btnWd.classList.remove('bg-white', 'shadow-sm', 'text-slate-700');
+            btnWd.classList.add('text-slate-500', 'hover:text-slate-700');
+
+            secUmkm.classList.add('hidden');
+            secWd.classList.add('hidden');
+
+            if (tab === 'umkm') {
+                btnUmkm.classList.add('bg-white', 'shadow-sm', 'text-slate-700');
+                btnUmkm.classList.remove('text-slate-500', 'hover:text-slate-700');
+                secUmkm.classList.remove('hidden');
+                loadUsers();
+            } else if (tab === 'wd') {
+                btnWd.classList.add('bg-white', 'shadow-sm', 'text-slate-700');
+                btnWd.classList.remove('text-slate-500', 'hover:text-slate-700');
+                secWd.classList.remove('hidden');
+                loadWithdrawalRequests();
+            }
+        };
+
+        window.viewSellerDetails = function(uid) {
+            const user = allUsers.find(u => u.uid === uid);
+            if (!user) return;
+
+            const formatRupiah = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+            
+            document.getElementById('det-business-name').textContent = user.businessName || user.username || 'UMKM';
+            document.getElementById('det-owner-name').textContent = 'Pemilik: ' + user.username;
+            document.getElementById('det-email').textContent = 'Email: ' + (user.email || '-');
+            document.getElementById('det-phone').textContent = 'No. HP: ' + (user.phone || '-');
+
+            if (user.bankName && user.bankAccount) {
+                document.getElementById('det-bank-destination').textContent = `${user.bankName} - ${user.bankAccount}`;
+                document.getElementById('det-bank-recipient').textContent = `a.n. ${user.bankAccountName || user.username}`;
+            } else {
+                document.getElementById('det-bank-destination').textContent = 'Belum Mengatur Rekening';
+                document.getElementById('det-bank-recipient').textContent = '';
+            }
+
+            const pSales = sellerPaymentSales[uid] || { QRIS: 0, PayPal: 0, WhatsApp: 0 };
+            const total = sellerSales[uid] || 0;
+
+            document.getElementById('det-rev-qris').textContent = formatRupiah(pSales.QRIS);
+            document.getElementById('det-rev-paypal').textContent = formatRupiah(pSales.PayPal);
+            document.getElementById('det-rev-wa').textContent = formatRupiah(pSales.WhatsApp);
+            document.getElementById('det-rev-total').textContent = formatRupiah(total);
+
+            document.getElementById('seller-detail-modal').classList.remove('hidden');
+        };
+
+        window.closeModal = function(id) {
+            document.getElementById(id).classList.add('hidden');
+        };
+
+        window.loadWithdrawalRequests = async function() {
+            const tbody = document.getElementById('admin-wd-table-body');
+            const emptyDiv = document.getElementById('admin-wd-empty');
+            tbody.innerHTML = '';
+
+            try {
+                const rs = await turso.execute("SELECT * FROM tarik_dana ORDER BY created_at DESC");
+                if (rs.rows.length === 0) {
+                    emptyDiv.classList.remove('hidden');
+                    return;
+                }
+                emptyDiv.classList.add('hidden');
+
+                const formatRupiah = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+
+                rs.rows.forEach(row => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50 transition-colors";
+
+                    let statusClass = 'text-amber-500 bg-amber-50 border border-amber-100';
+                    if (row.status === 'Disetujui') statusClass = 'text-emerald-600 bg-emerald-50 border border-emerald-100';
+                    if (row.status === 'Ditolak') statusClass = 'text-red-500 bg-red-50 border border-red-100';
+
+                    let actionsHtml = '';
+                    if (row.status === 'Pending') {
+                        actionsHtml = `
+                            <button onclick="updateWdStatus(${row.id}, 'Disetujui')" class="px-2.5 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-lg font-bold text-[11px] hover:bg-emerald-100 transition-all mr-1.5"><i class="fa-solid fa-check"></i> Setujui (Transfer)</button>
+                            <button onclick="updateWdStatus(${row.id}, 'Ditolak')" class="px-2.5 py-1 bg-red-50 text-red-600 border border-red-100 rounded-lg font-bold text-[11px] hover:bg-red-100 transition-all"><i class="fa-solid fa-xmark"></i> Tolak</button>
+                        `;
+                    } else {
+                        actionsHtml = `<span class="text-xs text-slate-400 font-medium">Selesai dievaluasi</span>`;
+                    }
+
+                    tr.innerHTML = `
+                        <td class="px-6 py-4">
+                            <p class="text-sm font-bold text-slate-800">${row.business_name || 'UMKM'}</p>
+                            <p class="text-[10px] text-indigo-600 font-bold uppercase tracking-wider font-mono">${row.seller_uid.substring(0,8)}...</p>
+                        </td>
+                        <td class="px-6 py-4">
+                            <p class="text-xs font-bold text-slate-800">${row.bank_name}</p>
+                            <p class="text-xs text-slate-600 font-mono font-bold">${row.account_number}</p>
+                            <p class="text-[10px] text-slate-400 font-bold">a.n. ${row.account_name}</p>
+                        </td>
+                        <td class="px-6 py-4 text-right text-sm font-black text-emerald-600 font-mono">${formatRupiah(row.amount)}</td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold ${statusClass}">${row.status}</span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex justify-end gap-1">
+                                ${actionsHtml}
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch(e) {
+                showToast("Gagal memuat pengajuan: " + e.message, "error");
+            }
+        };
+
+        window.updateWdStatus = async function(id, newStatus) {
+            const confirmMsg = `Apakah Anda yakin ingin menetapkan status pengajuan penarikan dana ini menjadi "${newStatus}"?`;
+            if (!confirm(confirmMsg)) return;
+
+            try {
+                await turso.execute({
+                    sql: "UPDATE tarik_dana SET status = ? WHERE id = ?",
+                    args: [newStatus, id]
+                });
+                showToast("Status pengajuan penarikan dana berhasil diperbarui ke: " + newStatus, "success");
+                loadWithdrawalRequests();
+            } catch(e) {
+                showToast("Gagal memperbarui status: " + e.message, "error");
+            }
+        };
 
         window.loadUsers = loadUsers;
     </script>
