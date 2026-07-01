@@ -3734,7 +3734,16 @@
                             </div>
                         </div>
                         <div id="ai-drawer-${seller.uid}" class="hidden w-full mt-3 p-3 bg-purple-50/50 rounded-xl border border-purple-100 text-[11px] text-slate-700 leading-relaxed" data-analyzed="${aiAnalysis ? 'true' : 'false'}">
-                            ${aiAnalysis ? `<strong><i class="fa-solid fa-robot text-purple-600 mr-1"></i> Analisis AI:</strong><br><br>${aiAnalysis.replace(/\n/g, '<br>')}` : ''}
+                            <div id="ai-drawer-content-${seller.uid}">
+                                ${aiAnalysis ? `<strong><i class="fa-solid fa-robot text-purple-600 mr-1"></i> Analisis AI:</strong><br><br>${aiAnalysis.replace(/\n/g, '<br>')}` : ''}
+                            </div>
+                            ${aiAnalysis ? `
+                            <div class="mt-3 text-right">
+                                <button onclick="analyzeStoreWithAI('${seller.uid}', '${bName}', this, true)" class="btn-outline py-1 px-3 text-[9px] bg-white text-purple-600 border-purple-200 font-bold inline-flex items-center justify-center gap-1">
+                                    <i class="fa-solid fa-rotate-right"></i> Analisis Ulang
+                                </button>
+                            </div>
+                            ` : ''}
                         </div>
                     `;
                     list.appendChild(div);
@@ -3744,11 +3753,12 @@
             }
         }
 
-        window.analyzeStoreWithAI = async function(sellerUid, sellerName, btnElement) {
+        window.analyzeStoreWithAI = async function(sellerUid, sellerName, btnElement, isReanalyze = false) {
             const drawer = document.getElementById(`ai-drawer-${sellerUid}`);
+            const contentDiv = document.getElementById(`ai-drawer-content-${sellerUid}`) || drawer;
             
-            // Toggle drawer if already analyzed
-            if (drawer.dataset.analyzed === "true") {
+            // Toggle drawer if already analyzed and not forcing a re-analysis
+            if (!isReanalyze && drawer.dataset.analyzed === "true") {
                 drawer.classList.toggle('hidden');
                 if (drawer.classList.contains('hidden')) {
                     btnElement.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Buka Analisis';
@@ -3783,13 +3793,13 @@
                     currentUserData.aiCompetitorScanResetDate = resetDateStr;
                 }
 
-                if (!currentUserData.isSubscribed && scanCount >= 10) {
+                if (!currentUserData.isSubscribed && scanCount >= 7) {
                     // Try to trigger subscription modal if available, otherwise just throw error
-                    if (typeof document.getElementById('subscription-modal') !== 'undefined') {
+                    if (typeof document.getElementById('subscription-modal') !== 'undefined' && document.getElementById('subscription-modal')) {
                         document.getElementById('subscription-modal').classList.remove('hidden');
-                        throw new Error("Limit Analisis Pesaing Anda habis (10/10). Silakan berlangganan Premium!");
+                        throw new Error("Limit Analisis Pesaing Anda habis (7/7). Silakan berlangganan Premium!");
                     }
-                    throw new Error("Limit Analisis Pesaing Anda habis (10/10). Silakan berlangganan Premium untuk riset tanpa batas!");
+                    throw new Error("Limit Analisis Pesaing Anda habis (7/7). Silakan berlangganan Premium untuk riset tanpa batas!");
                 }
 
                 // Fetch seller products
@@ -3802,11 +3812,18 @@
                     throw new Error("Toko ini belum memiliki produk.");
                 }
 
+                const productCount = rs.rows.length;
+                const avgPrice = rs.rows.reduce((sum, p) => sum + parseFloat(p.price), 0) / productCount;
+                const formattedAvgPrice = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(avgPrice);
+
                 const productListStr = rs.rows.map(p => `- ${p.name} (${p.category}) Rp${p.price}`).join('\n');
                 
                 // Fetch MY products for comparison
                 const myProductsList = productsCache.filter(p => p.sellerId === currentUid);
-                const myProductListStr = myProductsList.length > 0 
+                const myProductCount = myProductsList.length;
+                const myAvgPrice = myProductCount > 0 ? myProductsList.reduce((sum, p) => sum + parseFloat(p.price), 0) / myProductCount : 0;
+                
+                const myProductListStr = myProductCount > 0 
                     ? myProductsList.map(p => `- ${p.name} (${p.category}) Rp${p.price}`).join('\n')
                     : "(Saya belum mengupload produk apapun)";
 
@@ -3814,15 +3831,21 @@
 
                 const prompt = `Anda adalah seorang Analis Bisnis UMKM yang jujur, blak-blakan, tajam, dan sangat menohok. Saya memiliki toko bernama "${myStoreName}" dan ingin Anda membandingkan toko saya dengan toko pesaing bernama "${sellerName}".
 
-Produk Toko Saya ("${myStoreName}"):
+Statistik Toko Saya ("${myStoreName}"):
+- Total Produk: ${myProductCount}
+- Rata-rata Harga: Rp${Math.round(myAvgPrice)}
+Daftar Produk:
 ${myProductListStr}
 
-Produk Toko Pesaing ("${sellerName}"):
+Statistik Toko Pesaing ("${sellerName}"):
+- Total Produk: ${productCount}
+- Rata-rata Harga: Rp${Math.round(avgPrice)}
+Daftar Produk:
 ${productListStr}
 
 Buatlah analisis panjang (sekitar 3-4 paragraf) yang membedah dan membandingkan kedua toko ini secara langsung:
-1. Bedah keunggulan dan kelemahan produk pesaing secara tajam.
-2. Bandingkan secara *head-to-head* dengan toko saya (dari segi harga, variasi, dll). Siapa yang lebih unggul dan kenapa?
+1. Bedah keunggulan dan kelemahan produk pesaing secara tajam (termasuk menyorot harga rata-rata mereka).
+2. Bandingkan secara *head-to-head* dengan toko saya (dari segi jumlah produk, harga, variasi). Siapa yang lebih unggul dan kenapa?
 3. Berikan kritik tajam atau "tamparan keras" ("menohok") mengenai kelemahan toko saya dibandingkan mereka.
 4. Berikan taktik brutal tapi aplikatif agar saya bisa memenangkan persaingan melawan mereka.
 
@@ -3869,11 +3892,40 @@ Gunakan bahasa Indonesia yang profesional namun sedikit sinis/menohok demi memba
                     console.log("Failed to save analysis or quota to DB:", e);
                 }
 
-                // Show result
-                drawer.innerHTML = `<strong><i class="fa-solid fa-robot text-purple-600 mr-1"></i> Analisis AI:</strong><br><br>${aiResult.replace(/\n/g, '<br>')}`;
+                const analysisHTML = `
+                <div class="mb-3 flex flex-wrap gap-2 items-center text-[10px] text-purple-800 bg-purple-100/50 p-2 rounded-lg border border-purple-200/50">
+                    <span class="font-bold"><i class="fa-solid fa-box mr-1"></i> ${productCount} Produk</span>
+                    <span>|</span>
+                    <span class="font-bold"><i class="fa-solid fa-tag mr-1"></i> Rata-rata: ${formattedAvgPrice}</span>
+                </div>
+                <strong><i class="fa-solid fa-robot text-purple-600 mr-1"></i> Analisis AI:</strong><br><br>${aiResult.replace(/\n/g, '<br>')}
+                `;
+
+                // Update UI structure
+                drawer.innerHTML = `
+                    <div id="ai-drawer-content-${sellerUid}">
+                        ${analysisHTML}
+                    </div>
+                    <div class="mt-3 text-right">
+                        <button onclick="analyzeStoreWithAI('${sellerUid}', '${sellerName}', this, true)" class="btn-outline py-1 px-3 text-[9px] bg-white text-purple-600 border-purple-200 font-bold inline-flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-rotate-right"></i> Analisis Ulang
+                        </button>
+                    </div>
+                `;
+                
                 drawer.dataset.analyzed = "true";
                 drawer.classList.remove('hidden');
-                btnElement.innerHTML = '<i class="fa-solid fa-chevron-up"></i> Tutup Analisis';
+
+                // If this wasn't a re-analysis from inside the drawer, change the main button
+                if (!isReanalyze) {
+                    btnElement.innerHTML = '<i class="fa-solid fa-chevron-up"></i> Tutup Analisis';
+                } else {
+                    btnElement.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Analisis Ulang';
+                    const mainCardBtn = drawer.parentElement.querySelector('button[onclick^="analyzeStoreWithAI"]');
+                    if (mainCardBtn && mainCardBtn !== btnElement) {
+                        mainCardBtn.innerHTML = '<i class="fa-solid fa-chevron-up"></i> Tutup Analisis';
+                    }
+                }
 
             } catch (error) {
                 showToast(error.message, "error");
