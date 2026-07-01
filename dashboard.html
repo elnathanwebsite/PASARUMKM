@@ -3701,29 +3701,109 @@
                         : "0.0";
 
                     const div = document.createElement('div');
-                    div.className = 'seller-card';
+                    div.className = 'seller-card flex-col items-stretch gap-0';
                     div.innerHTML = `
-                        <img src="${photo}" class="seller-avatar" alt="${bName}">
-                        <div class="flex-grow">
-                            <h4 class="font-bold text-sm text-slate-800 leading-tight">${bName}</h4>
-                            <div class="flex flex-col gap-0.5 mt-1">
-                                ${julukan ? `<p class="text-[9px] font-bold text-indigo-600 uppercase tracking-tighter"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> ${julukan}</p>` : ''}
-                                <div class="flex items-center gap-1.5 mt-0.5">
-                                    <span class="inline-flex items-center gap-0.5 text-amber-600 font-bold bg-amber-50 px-1 rounded border border-amber-200/30 text-[9px]">
-                                        <i class="fa-solid fa-star text-[8px]"></i> ${sRating}
-                                    </span>
-                                    <p class="text-[9px] text-slate-500 font-medium"><i class="fa-solid fa-circle-check text-blue-500 mr-1"></i> UMKM Terverifikasi</p>
+                        <div class="flex items-center gap-3 w-full">
+                            <img src="${photo}" class="seller-avatar" alt="${bName}">
+                            <div class="flex-grow">
+                                <h4 class="font-bold text-sm text-slate-800 leading-tight">${bName}</h4>
+                                <div class="flex flex-col gap-0.5 mt-1">
+                                    ${julukan ? `<p class="text-[9px] font-bold text-indigo-600 uppercase tracking-tighter"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> ${julukan}</p>` : ''}
+                                    <div class="flex items-center gap-1.5 mt-0.5">
+                                        <span class="inline-flex items-center gap-0.5 text-amber-600 font-bold bg-amber-50 px-1 rounded border border-amber-200/30 text-[9px]">
+                                            <i class="fa-solid fa-star text-[8px]"></i> ${sRating}
+                                        </span>
+                                        <p class="text-[9px] text-slate-500 font-medium"><i class="fa-solid fa-circle-check text-blue-500 mr-1"></i> Terverifikasi</p>
+                                    </div>
                                 </div>
                             </div>
+                            <div class="flex flex-col gap-1">
+                                <button onclick="viewSellerProducts('${seller.uid}', '${bName}')" class="btn-outline py-1 px-3 text-[10px] bg-blue-50 text-blue-600 border-blue-200 font-bold">
+                                    Lihat Produk
+                                </button>
+                                <button onclick="analyzeStoreWithAI('${seller.uid}', '${bName}', this)" class="btn-outline py-1 px-3 text-[10px] bg-purple-50 text-purple-600 border-purple-200 font-bold flex items-center justify-center gap-1">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Analisis
+                                </button>
+                            </div>
                         </div>
-                        <button onclick="viewSellerProducts('${seller.uid}', '${bName}')" class="btn-outline py-1.5 px-3 text-[10px] bg-blue-50 text-blue-600 border-blue-200 font-bold">
-                            Lihat Produk
-                        </button>
+                        <div id="ai-drawer-${seller.uid}" class="hidden w-full mt-3 p-3 bg-purple-50/50 rounded-xl border border-purple-100 text-[11px] text-slate-700 leading-relaxed">
+                        </div>
                     `;
                     list.appendChild(div);
                 });
             } catch (error) {
                 list.innerHTML = `<div class="text-center py-8 text-red-500 text-xs">Gagal memuat data: ${error.message}</div>`;
+            }
+        }
+
+        async function analyzeStoreWithAI(sellerUid, sellerName, btnElement) {
+            const drawer = document.getElementById(`ai-drawer-${sellerUid}`);
+            
+            // Toggle drawer if already analyzed
+            if (drawer.dataset.analyzed === "true") {
+                drawer.classList.toggle('hidden');
+                return;
+            }
+
+            // UI Loading state
+            const originalBtnHTML = btnElement.innerHTML;
+            btnElement.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+            btnElement.disabled = true;
+
+            try {
+                // Fetch seller products
+                const rs = await turso.execute({
+                    sql: "SELECT name, category, price, description FROM products WHERE sellerId = ?",
+                    args: [sellerUid]
+                });
+
+                if (rs.rows.length === 0) {
+                    throw new Error("Toko ini belum memiliki produk.");
+                }
+
+                const productListStr = rs.rows.map(p => `- ${p.name} (${p.category}) Rp${p.price}`).join('\n');
+                
+                const prompt = `Anda adalah seorang Analis Bisnis UMKM profesional yang ramah. Saya memiliki data sebuah toko bernama "${sellerName}".
+Toko ini menjual produk-produk berikut:
+${productListStr}
+
+Tolong buatkan 2 paragraf singkat (maksimal 100 kata) yang menganalisis:
+1. Potensi dan jenis bisnis toko ini secara umum.
+2. Target pasar yang cocok dan 1 saran singkat untuk meningkatkan penjualan.
+Gunakan bahasa Indonesia yang profesional, positif, elegan dan tidak kaku. Jangan pakai format markdown berlebihan, gunakan teks biasa.`;
+
+                // Call OpenRouter AI
+                const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": "Bearer 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",
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        model: "nvidia/nemotron-nano-12b-v2-vl:free",
+                        messages: [
+                            { role: "user", content: prompt }
+                        ]
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error("Gagal terhubung ke AI server.");
+                }
+
+                const data = await response.json();
+                const aiResult = data.choices[0].message.content.trim();
+
+                // Show result
+                drawer.innerHTML = `<strong><i class="fa-solid fa-robot text-purple-600 mr-1"></i> Analisis AI:</strong><br><br>${aiResult.replace(/\n/g, '<br>')}`;
+                drawer.dataset.analyzed = "true";
+                drawer.classList.remove('hidden');
+
+            } catch (error) {
+                showToast(error.message, "error");
+            } finally {
+                btnElement.innerHTML = originalBtnHTML;
+                btnElement.disabled = false;
             }
         }
 
