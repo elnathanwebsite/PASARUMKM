@@ -985,29 +985,44 @@
                         style="border-color: var(--accent); background: rgba(255,255,255,0.8);"><img id="profile-photo"
                             src="https://ui-avatars.com/api/?background=1E3A8A&color=fff&name=U" alt="Avatar"
                             class="w-full h-full object-cover"></div>
-                    <h2 id="profile-name" class="font-display text-xl font-bold mb-1">Memuat...</h2>
-                    <p id="profile-business" class="text-sm mb-2 font-medium" style="color: var(--accent);">UMKM</p>
                     <div id="profile-julukan-badge"
                         class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-bold mb-2 border border-indigo-100 hidden">
                         <i class="fa-solid fa-wand-magic-sparkles text-[9px]"></i> <span
                             id="profile-julukan"></span>
                     </div>
                     <div id="profile-ai-rating-container" class="hidden mb-2"></div>
-                    <!-- Subscription Badge -->
-                    <div class="flex justify-center mb-4">
-                        <div id="subscription-badge"
-                            class="text-[10px] font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-200 flex items-center gap-1.5 cursor-pointer hover:bg-blue-100 transition-colors"
-                            onclick="openSubscriptionModal()">
-                            <i class="fa-solid fa-store text-blue-500"></i> Gratis (Maks 7 Produk)
-                        </div>
-                    </div>
-                    <div class="text-left space-y-3 mb-6 text-sm">
-                        <div class="flex items-center gap-3 p-3 rounded-xl" style="background: rgba(0,0,0,0.02);"><i
-                                class="fa-regular fa-envelope w-5 text-center" style="color: var(--accent);"></i><span
-                                id="profile-email" style="color: var(--muted); word-break: break-all;">-</span></div>
-                        <div class="flex items-center gap-3 p-3 rounded-xl" style="background: rgba(0,0,0,0.02);"><i
-                                class="fa-brands fa-whatsapp w-5 text-center" style="color: var(--accent);"></i><span
-                                id="profile-phone" style="color: var(--muted);">-</span></div>
+
+                    <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm mb-6 mt-2">
+                        <table class="w-full text-left text-xs sm:text-sm text-slate-600">
+                            <tbody class="divide-y divide-slate-100">
+                                <tr>
+                                    <th class="px-4 py-3 bg-slate-50 font-semibold text-slate-700 w-1/3 border-r border-slate-100">Nama Lengkap</th>
+                                    <td class="px-4 py-3 font-bold text-slate-800" id="profile-name">Memuat...</td>
+                                </tr>
+                                <tr>
+                                    <th class="px-4 py-3 bg-slate-50 font-semibold text-slate-700 border-r border-slate-100">Nama Usaha</th>
+                                    <td class="px-4 py-3" id="profile-business">UMKM</td>
+                                </tr>
+                                <tr>
+                                    <th class="px-4 py-3 bg-slate-50 font-semibold text-slate-700 border-r border-slate-100">Paket Akun</th>
+                                    <td class="px-4 py-3">
+                                        <div id="subscription-badge"
+                                            class="inline-flex text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-full border border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors"
+                                            onclick="openSubscriptionModal()">
+                                            <i class="fa-solid fa-store text-blue-500 mr-1"></i> Gratis (Maks 7 Produk)
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th class="px-4 py-3 bg-slate-50 font-semibold text-slate-700 border-r border-slate-100">Email</th>
+                                    <td class="px-4 py-3" id="profile-email" style="word-break: break-all;">-</td>
+                                </tr>
+                                <tr>
+                                    <th class="px-4 py-3 bg-slate-50 font-semibold text-slate-700 border-r border-slate-100">WhatsApp</th>
+                                    <td class="px-4 py-3" id="profile-phone">-</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                     <button onclick="openEditProfileModal()"
                         class="btn-outline w-full text-sm flex items-center justify-center gap-2 mb-3"><i
@@ -1250,14 +1265,31 @@
                             <div class="mb-3">
                                 <div class="flex justify-between items-center mb-1">
                                     <label class="text-xs font-semibold" style="color: var(--muted);">Deskripsi</label>
-                                    <button type="button" id="ai-gen-desc-add"
-                                        onclick="handleGenerateAIDescription('add')"
-                                        class="text-[9px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors">
-                                        <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Gunakan AI
-                                    </button>
+                                    <div class="flex items-center gap-2">
+                                        <select id="ai-lang-add" class="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-blue-500 font-medium text-slate-600">
+                                            <option value="Indonesia">Indonesia</option>
+                                            <option value="Inggris">Inggris</option>
+                                            <option value="Jawa">Jawa</option>
+                                            <option value="Sunda">Sunda</option>
+                                        </select>
+                                        <button type="button" id="ai-gen-desc-add"
+                                            onclick="handleGenerateAIDescription('add')"
+                                            class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors shadow-sm flex items-center gap-1">
+                                            <i class="fa-solid fa-wand-magic-sparkles"></i> Analisis AI
+                                        </button>
+                                    </div>
                                 </div>
                                 <textarea id="prod-desc" class="glass-input" rows="3" required
                                     style="resize: none;"></textarea>
+                                <div id="ai-progress-container-add" class="hidden mt-2">
+                                    <div class="flex justify-between text-[10px] text-blue-600 font-semibold mb-1">
+                                        <span>AI sedang menganalisis gambar dan membuat deskripsi...</span>
+                                        <span id="ai-progress-text-add">0%</span>
+                                    </div>
+                                    <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                        <div id="ai-progress-bar-add" class="bg-blue-500 h-1.5 rounded-full" style="width: 0%; transition: width 0.3s ease;"></div>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Metode Pembayaran -->
@@ -1659,13 +1691,30 @@
                 <div class="mb-3">
                     <div class="flex justify-between items-center mb-1">
                         <label class="text-xs font-semibold" style="color: var(--muted);">Deskripsi</label>
-                        <button type="button" id="ai-gen-desc-edit" onclick="handleGenerateAIDescription('edit')"
-                            class="text-[9px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors">
-                            <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Gunakan AI
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <select id="ai-lang-edit" class="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-blue-500 font-medium text-slate-600">
+                                <option value="Indonesia">Indonesia</option>
+                                <option value="Inggris">Inggris</option>
+                                <option value="Jawa">Jawa</option>
+                                <option value="Sunda">Sunda</option>
+                            </select>
+                            <button type="button" id="ai-gen-desc-edit" onclick="handleGenerateAIDescription('edit')"
+                                class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors shadow-sm flex items-center gap-1">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> Analisis AI
+                            </button>
+                        </div>
                     </div>
                     <textarea id="edit-prod-desc" class="glass-input" rows="3" required
                         style="resize: none;"></textarea>
+                    <div id="ai-progress-container-edit" class="hidden mt-2">
+                        <div class="flex justify-between text-[10px] text-blue-600 font-semibold mb-1">
+                            <span>AI sedang menganalisis gambar dan membuat deskripsi...</span>
+                            <span id="ai-progress-text-edit">0%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                            <div id="ai-progress-bar-edit" class="bg-blue-500 h-1.5 rounded-full" style="width: 0%; transition: width 0.3s ease;"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Metode Pembayaran Edit -->
@@ -1772,17 +1821,17 @@
             <button onclick="closeProductDetail()" class="fpm-back-btn"><i class="fa-solid fa-arrow-left"></i></button>
             <h2 class="fpm-title">Detail Produk</h2>
         </div>
-        <div class="p-0 pb-24">
+        <div class="p-0 pb-24 md:max-w-2xl md:mx-auto md:pt-6">
             <!-- Product Image -->
-            <div class="w-full h-72 bg-slate-100 relative">
-                <img id="detail-img" src="" class="w-full h-full object-cover">
+            <div class="w-full h-72 md:h-96 bg-slate-100 relative md:rounded-3xl md:overflow-hidden md:shadow-md">
+                <img id="detail-img" src="" class="w-full h-full object-cover md:object-contain bg-slate-900/5">
                 <div class="absolute top-4 right-4 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-full text-xs font-bold text-blue-800 shadow-sm"
                     id="detail-category">Kategori</div>
             </div>
 
             <!-- Info Section -->
             <div
-                class="p-6 -mt-6 relative bg-white/90 backdrop-blur-xl rounded-t-3xl shadow-[0_-8px_30px_rgba(0,0,0,0.05)] border-t border-white">
+                class="p-6 -mt-6 md:mt-6 relative bg-white/90 md:bg-white backdrop-blur-xl rounded-t-3xl md:rounded-3xl shadow-[0_-8px_30px_rgba(0,0,0,0.05)] md:shadow-xl border-t md:border border-slate-100">
                 <div class="flex justify-between items-start gap-4 mb-2">
                     <h1 id="detail-name" class="font-display text-2xl font-bold leading-tight text-slate-800">Nama
                         Produk</h1>
@@ -2571,21 +2620,79 @@
             const nameId = type === 'add' ? 'prod-name' : 'edit-prod-name';
             const descId = type === 'add' ? 'prod-desc' : 'edit-prod-desc';
             const btnId = type === 'add' ? 'ai-gen-desc-add' : 'ai-gen-desc-edit';
+            const fileInputId = type === 'add' ? 'prod-image' : 'edit-prod-image';
+            const urlInputId = type === 'add' ? 'prod-image-url' : 'edit-prod-image-url';
+            const langId = type === 'add' ? 'ai-lang-add' : 'ai-lang-edit';
+            const progressContainerId = type === 'add' ? 'ai-progress-container-add' : 'ai-progress-container-edit';
+            const progressBarId = type === 'add' ? 'ai-progress-bar-add' : 'ai-progress-bar-edit';
+            const progressTextId = type === 'add' ? 'ai-progress-text-add' : 'ai-progress-text-edit';
 
             const name = document.getElementById(nameId).value.trim();
             const descArea = document.getElementById(descId);
             const btn = document.getElementById(btnId);
+            const fileInput = document.getElementById(fileInputId);
+            const urlInput = document.getElementById(urlInputId);
+            const langSelect = document.getElementById(langId);
+            const progressContainer = document.getElementById(progressContainerId);
+            const progressBar = document.getElementById(progressBarId);
+            const progressText = document.getElementById(progressTextId);
+            const selectedLang = langSelect ? langSelect.value : "Indonesia";
 
             if (!name) {
                 showToast("Silakan isi Nama Produk terlebih dahulu!", "error");
                 return;
             }
 
+            if (descArea) {
+                descArea.value = '';
+            }
+
             btn.disabled = true;
             const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Sedang Membuat...';
+            
+            if (progressContainer) {
+                progressContainer.classList.remove('hidden');
+                progressBar.style.width = '0%';
+                progressText.innerText = '0%';
+            }
+
+            let progressValue = 0;
+            const progressInterval = setInterval(() => {
+                if (progressValue < 90) {
+                    progressValue += (90 - progressValue) * 0.1 + 1;
+                    if (progressValue > 90) progressValue = 90;
+                    if (progressBar) progressBar.style.width = `${progressValue}%`;
+                    if (progressText) progressText.innerText = `${Math.floor(progressValue)}%`;
+                }
+            }, 300);
 
             try {
+                let imageData = '';
+                if (fileInput.files.length > 0) {
+                    imageData = await processImage(fileInput.files[0]);
+                } else if (urlInput.value.trim()) {
+                    imageData = urlInput.value.trim();
+                }
+
+                let userContent;
+                if (imageData) {
+                    userContent = [
+                        {
+                            type: "text",
+                            text: `Buatkan deskripsi untuk produk bernama: "${name}"`
+                        },
+                        {
+                            type: "image_url",
+                            image_url: {
+                                url: imageData
+                            }
+                        }
+                    ];
+                } else {
+                    userContent = `Buatkan deskripsi untuk produk bernama: "${name}"`;
+                }
+
                 const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                     method: 'POST',
                     headers: {
@@ -2599,11 +2706,11 @@
                         messages: [
                             {
                                 role: "system",
-                                content: "Anda adalah asisten pembuat deskripsi produk UMKM yang kreatif dan persuasif. Tugas Anda adalah membuat deskripsi singkat (maksimal 150 kata) berdasarkan nama produk yang diberikan. Gunakan gaya bahasa yang menarik bagi pembeli, sebutkan keunggulan produk secara umum, dan berikan kesan ramah. HANYA kembalikan teks deskripsinya saja tanpa embel-embel seperti 'Berikut adalah deskripsinya:'."
+                                content: `Anda adalah asisten AI ahli pembuat deskripsi produk UMKM. Tugas utama Anda: 1. Analisis gambar produk yang diunggah secara mendalam (jika ada). 2. Sesuaikan deskripsi dengan judul produk. 3. Gabungkan detail visual dari gambar (warna, bentuk, tekstur, atau konteks penggunaan) dengan judul untuk membuat deskripsi singkat (maksimal 150 kata) yang sangat menarik, kreatif, dan persuasif. Jika gambar tidak ada, fokus buatkan dari judul secara kreatif. HANYA kembalikan teks deskripsi tanpa kalimat pengantar/penutup. WAJIB GUNAKAN BAHASA: ${selectedLang}.`
                             },
                             {
                                 role: "user",
-                                content: `Buatkan deskripsi untuk produk bernama: "${name}"`
+                                content: userContent
                             }
                         ]
                     })
@@ -2613,9 +2720,19 @@
                 const data = await response.json();
                 const aiDesc = data.choices[0].message.content.trim();
 
+                clearInterval(progressInterval);
+                if (progressBar) progressBar.style.width = '100%';
+                if (progressText) progressText.innerText = '100%';
+
+                setTimeout(() => {
+                    if (progressContainer) progressContainer.classList.add('hidden');
+                }, 1500);
+
                 descArea.value = aiDesc;
                 showToast("Deskripsi berhasil dibuat oleh AI!", "success");
             } catch (error) {
+                clearInterval(progressInterval);
+                if (progressContainer) progressContainer.classList.add('hidden');
                 console.error(error);
                 showToast("Gagal membuat deskripsi: " + error.message, "error");
             } finally {
