@@ -5,6 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Verifikasi UMKM | PASAR UMKM</title>
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" href="favicon/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="favicon/favicon.svg" />
+    <link rel="shortcut icon" href="favicon/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="PASAR UMKM AI" />
+    <link rel="manifest" href="favicon/site.webmanifest" />
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -183,6 +190,9 @@
             <button onclick="switchAdminTab('wd')" id="tab-adm-wd" class="flex-1 text-center py-2 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-700 transition-all active:scale-[0.98]">
                 Pengajuan Tarik Dana
             </button>
+            <button onclick="switchAdminTab('retur')" id="tab-adm-retur" class="flex-1 text-center py-2 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-700 transition-all active:scale-[0.98]">
+                Laporan Retur
+            </button>
         </div>
 
         <!-- Section: UMKM List & Revenue -->
@@ -355,6 +365,39 @@
                         <i class="fa-solid fa-money-bill-transfer text-3xl"></i>
                     </div>
                     <p class="text-slate-500 font-medium">Tidak ada pengajuan penarikan dana.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: Laporan Retur & Masalah -->
+        <div id="section-adm-retur" class="hidden">
+            <div class="glass-card overflow-hidden shadow-sm bg-white p-6 border-red-100">
+                <h3 class="font-display text-base font-bold text-red-700 flex items-center gap-2 mb-4">
+                    <i class="fa-solid fa-triangle-exclamation text-red-500"></i> Laporan Retur & Masalah Pesanan
+                </h3>
+                <p class="text-xs text-slate-500 mb-6">Daftar pesanan dengan status Pengajuan Retur atau Retur Disetujui dari semua platform pembayaran.</p>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-red-50 border-b border-red-100">
+                            <tr>
+                                <th class="px-6 py-4 text-xs font-bold text-red-700 uppercase tracking-wider">Detail Pesanan</th>
+                                <th class="px-6 py-4 text-xs font-bold text-red-700 uppercase tracking-wider">Pembeli & Penjual</th>
+                                <th class="px-6 py-4 text-xs font-bold text-red-700 uppercase tracking-wider text-right">Nominal & Pembayaran</th>
+                                <th class="px-6 py-4 text-xs font-bold text-red-700 uppercase tracking-wider text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-retur-table-body" class="divide-y divide-slate-100">
+                            <!-- Loaded dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="admin-retur-empty" class="hidden py-20 text-center bg-white">
+                    <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                        <i class="fa-solid fa-box-open text-3xl"></i>
+                    </div>
+                    <p class="text-slate-500 font-medium">Tidak ada data retur atau masalah pesanan.</p>
                 </div>
             </div>
         </div>
@@ -716,16 +759,21 @@
         window.switchAdminTab = function(tab) {
             const btnUmkm = document.getElementById('tab-adm-umkm');
             const btnWd = document.getElementById('tab-adm-wd');
+            const btnRetur = document.getElementById('tab-adm-retur');
             const secUmkm = document.getElementById('section-adm-umkm');
             const secWd = document.getElementById('section-adm-wd');
+            const secRetur = document.getElementById('section-adm-retur');
 
-            btnUmkm.classList.remove('bg-white', 'shadow-sm', 'text-slate-700');
-            btnUmkm.classList.add('text-slate-500', 'hover:text-slate-700');
-            btnWd.classList.remove('bg-white', 'shadow-sm', 'text-slate-700');
-            btnWd.classList.add('text-slate-500', 'hover:text-slate-700');
+            [btnUmkm, btnWd, btnRetur].forEach(btn => {
+                if(btn) {
+                    btn.classList.remove('bg-white', 'shadow-sm', 'text-slate-700');
+                    btn.classList.add('text-slate-500', 'hover:text-slate-700');
+                }
+            });
 
-            secUmkm.classList.add('hidden');
-            secWd.classList.add('hidden');
+            [secUmkm, secWd, secRetur].forEach(sec => {
+                if(sec) sec.classList.add('hidden');
+            });
 
             if (tab === 'umkm') {
                 btnUmkm.classList.add('bg-white', 'shadow-sm', 'text-slate-700');
@@ -737,6 +785,64 @@
                 btnWd.classList.remove('text-slate-500', 'hover:text-slate-700');
                 secWd.classList.remove('hidden');
                 loadWithdrawalRequests();
+            } else if (tab === 'retur') {
+                btnRetur.classList.add('bg-white', 'shadow-sm', 'text-slate-700');
+                btnRetur.classList.remove('text-slate-500', 'hover:text-slate-700');
+                secRetur.classList.remove('hidden');
+                loadAdminRetur();
+            }
+        };
+
+        window.loadAdminRetur = async function() {
+            try {
+                const rs = await turso.execute("SELECT * FROM riwayat_pemesanan WHERE status IN ('Pengajuan Retur', 'Retur Disetujui') ORDER BY created_at DESC");
+                const tbody = document.getElementById('admin-retur-table-body');
+                const emptyState = document.getElementById('admin-retur-empty');
+                
+                if (rs.rows.length === 0) {
+                    tbody.innerHTML = '';
+                    emptyState.classList.remove('hidden');
+                    return;
+                }
+                
+                emptyState.classList.add('hidden');
+                
+                const formatRupiah = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+                
+                let html = '';
+                rs.rows.forEach(row => {
+                    let statusClass = 'text-amber-600 bg-amber-50 border-amber-200';
+                    if (row.status === 'Retur Disetujui') statusClass = 'text-green-700 bg-green-50 border-green-200';
+                    
+                    const dateObj = new Date(row.created_at + " UTC");
+                    const dateStr = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+                    
+                    html += `
+                        <tr class="hover:bg-red-50/20 transition-colors">
+                            <td class="px-6 py-4">
+                                <p class="font-bold text-slate-800 text-xs mb-0.5">${row.product_name}</p>
+                                <p class="text-[10px] text-slate-500 font-mono">ID: ${row.id}</p>
+                                <p class="text-[10px] text-slate-400 mt-1">${dateStr}</p>
+                            </td>
+                            <td class="px-6 py-4">
+                                <p class="text-[11px] font-bold text-slate-700"><span class="text-slate-400 font-normal">B:</span> ${row.buyer_name}</p>
+                                <p class="text-[11px] font-bold text-slate-700 mt-1"><span class="text-slate-400 font-normal">P:</span> ${row.seller_name || 'Penjual'}</p>
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <p class="font-black text-red-600 text-[13px]">-${formatRupiah(row.total_price)}</p>
+                                <p class="text-[9px] font-bold text-slate-500 uppercase mt-0.5">${row.payment_method}</p>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="inline-block px-2.5 py-1 rounded-lg text-[10px] font-bold border ${statusClass}">${row.status}</span>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                tbody.innerHTML = html;
+            } catch(e) {
+                console.error("Gagal memuat laporan retur:", e);
+                showToast("Gagal memuat laporan retur.", "error");
             }
         };
 

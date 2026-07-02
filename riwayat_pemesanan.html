@@ -5,6 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Riwayat Pemesanan - Pasar UMKM</title>
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" href="favicon/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="favicon/favicon.svg" />
+    <link rel="shortcut icon" href="favicon/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="PASAR UMKM AI" />
+    <link rel="manifest" href="favicon/site.webmanifest" />
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -119,15 +126,21 @@
         <!-- Control Bar: Tabs & Actions -->
         <div class="mt-6 mb-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
             <!-- Tabs -->
-            <div class="flex w-full sm:w-auto bg-slate-50 rounded-xl p-1">
-                <button onclick="switchTab('beli')" id="tab-beli" class="tab-btn active rounded-lg w-full sm:w-32 text-xs font-bold">
+            <div class="flex flex-wrap w-full sm:w-auto bg-slate-50 rounded-xl p-1 gap-1">
+                <button onclick="switchTab('beli')" id="tab-beli" class="tab-btn active rounded-lg w-full sm:flex-1 min-w-[100px] text-xs font-bold">
                     Pembelian
                 </button>
-                <button onclick="switchTab('jual')" id="tab-jual" class="tab-btn rounded-lg w-full sm:w-32 text-xs font-bold">
+                <button onclick="switchTab('jual')" id="tab-jual" class="tab-btn rounded-lg w-full sm:flex-1 min-w-[100px] text-xs font-bold">
                     Pesanan Masuk
                 </button>
-                <button onclick="switchTab('resi')" id="tab-resi" class="tab-btn rounded-lg w-full sm:w-32 text-xs font-bold">
+                <button onclick="switchTab('resi')" id="tab-resi" class="tab-btn rounded-lg w-full sm:flex-1 min-w-[100px] text-xs font-bold">
                     Cek Resi
+                </button>
+                <button onclick="switchTab('retur')" id="tab-retur" class="tab-btn rounded-lg w-full sm:flex-1 min-w-[100px] text-xs font-bold">
+                    Retur Barang
+                </button>
+                <button onclick="switchTab('tuntas')" id="tab-tuntas" class="tab-btn rounded-lg w-full sm:flex-1 min-w-[100px] text-xs font-bold text-emerald-700 bg-emerald-50">
+                    <i class="fa-solid fa-check-double"></i> Tuntas
                 </button>
             </div>
 
@@ -137,6 +150,10 @@
                 <span>Hapus Riwayat</span>
             </button>
         </div>
+
+        <!-- Sales Rating & Tuntas Subtabs -->
+        <div id="sales-rating-header"></div>
+        <div id="tuntas-subtab-container" class="hidden mb-4"></div>
 
         <!-- Orders List -->
         <div id="orders-container" class="min-h-[300px]">
@@ -211,6 +228,80 @@
         </div>
     </div>
 
+    <!-- Modal Konfirmasi Pesanan -->
+    <div id="konfirmasi-modal" class="fixed inset-0 bg-slate-900/80 z-[9999] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl relative animate-fadeIn">
+            <!-- Header -->
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-gradient-to-r from-emerald-50 to-teal-50">
+                <h3 class="font-display font-bold text-slate-800 text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-check-to-slot text-emerald-600"></i> Konfirmasi Diterima
+                </h3>
+                <button onclick="closeModal('konfirmasi-modal')" class="w-8 h-8 rounded-full bg-slate-200/50 flex items-center justify-center hover:bg-slate-200 transition-colors">
+                    <i class="fa-solid fa-xmark text-slate-600"></i>
+                </button>
+            </div>
+            <!-- Body -->
+            <div class="p-6 space-y-4">
+                <input type="hidden" id="konfirmasi-order-id">
+                <input type="hidden" id="konfirmasi-wa-link">
+                <input type="hidden" id="konfirmasi-product-name">
+                <input type="hidden" id="konfirmasi-resi-code">
+                
+                <div class="bg-blue-50 text-blue-700 p-3 rounded-xl text-xs flex gap-2">
+                    <i class="fa-solid fa-circle-info mt-0.5"></i>
+                    <p>Setelah menekan Kirim, Anda akan diarahkan ke WhatsApp. <b>Harap lampirkan foto pesanan yang telah Anda terima langsung di jendela chat WhatsApp.</b></p>
+                </div>
+
+                <div>
+                    <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-1.5 block">Catatan Tambahan (Opsional)</label>
+                    <textarea id="konfirmasi-notes" rows="2" placeholder="Barang sampai dengan aman..." class="w-full p-3 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all text-slate-800"></textarea>
+                </div>
+            </div>
+            <!-- Footer -->
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
+                <button onclick="closeModal('konfirmasi-modal')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition-all">Batal</button>
+                <button onclick="submitKonfirmasi()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-lg shadow-emerald-200 transition-all">Kirim via WA</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Retur Pesanan -->
+    <div id="retur-modal" class="fixed inset-0 bg-slate-900/80 z-[9999] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl relative animate-fadeIn">
+            <!-- Header -->
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-gradient-to-r from-red-50 to-rose-50">
+                <h3 class="font-display font-bold text-slate-800 text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-arrow-rotate-left text-red-600"></i> Pengajuan Retur Barang
+                </h3>
+                <button onclick="closeModal('retur-modal')" class="w-8 h-8 rounded-full bg-slate-200/50 flex items-center justify-center hover:bg-slate-200 transition-colors">
+                    <i class="fa-solid fa-xmark text-slate-600"></i>
+                </button>
+            </div>
+            <!-- Body -->
+            <div class="p-6 space-y-4">
+                <input type="hidden" id="retur-order-id">
+                <input type="hidden" id="retur-wa-link">
+                <input type="hidden" id="retur-product-name">
+                <input type="hidden" id="retur-resi-code">
+                
+                <div class="bg-blue-50 text-blue-700 p-3 rounded-xl text-xs flex gap-2">
+                    <i class="fa-solid fa-circle-info mt-0.5"></i>
+                    <p>Jelaskan alasan retur di bawah. <b>Pastikan Anda melampirkan foto barang/kerusakan langsung di jendela chat WhatsApp nanti.</b></p>
+                </div>
+
+                <div>
+                    <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-1.5 block">Alasan Retur</label>
+                    <textarea id="retur-notes" rows="3" placeholder="Barang yang dikirim salah warna/ukuran..." class="w-full p-3 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all text-slate-800"></textarea>
+                </div>
+            </div>
+            <!-- Footer -->
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
+                <button onclick="closeModal('retur-modal')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition-all">Batal</button>
+                <button onclick="submitRetur()" class="px-5 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl shadow-lg shadow-red-200 transition-all">Kirim via WA</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { createClient } from 'https://esm.sh/@libsql/client/web';
 
@@ -251,6 +342,12 @@
 
         let currentUid = null;
         let currentTab = 'beli';
+        let tuntasSubTab = 'terjual';
+
+        window.switchTuntasSubTab = function(subtab) {
+            tuntasSubTab = subtab;
+            loadOrders();
+        };
         const formatRupiah = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
 
         auth.onAuthStateChanged((user) => {
@@ -270,10 +367,14 @@
             const btnBeli = document.getElementById('tab-beli');
             const btnJual = document.getElementById('tab-jual');
             const btnResi = document.getElementById('tab-resi');
+            const btnRetur = document.getElementById('tab-retur');
             
             btnBeli.classList.remove('active', 'bg-white', 'shadow-sm');
             btnJual.classList.remove('active', 'bg-white', 'shadow-sm');
             btnResi.classList.remove('active', 'bg-white', 'shadow-sm');
+            if (btnRetur) btnRetur.classList.remove('active', 'bg-white', 'shadow-sm');
+            const btnTuntas = document.getElementById('tab-tuntas');
+            if (btnTuntas) btnTuntas.classList.remove('active', 'bg-white', 'shadow-sm');
 
             if (tab === 'beli') {
                 btnBeli.classList.add('active', 'bg-white', 'shadow-sm');
@@ -281,6 +382,10 @@
                 btnJual.classList.add('active', 'bg-white', 'shadow-sm');
             } else if (tab === 'resi') {
                 btnResi.classList.add('active', 'bg-white', 'shadow-sm');
+            } else if (tab === 'retur' && btnRetur) {
+                btnRetur.classList.add('active', 'bg-white', 'shadow-sm');
+            } else if (tab === 'tuntas' && btnTuntas) {
+                btnTuntas.classList.add('active', 'bg-white', 'shadow-sm');
             }
             
             if (tab === 'resi') {
@@ -293,6 +398,66 @@
         async function loadOrders() {
             if(!currentUid) return;
             const container = document.getElementById('orders-container');
+            
+            const subTabContainer = document.getElementById('tuntas-subtab-container');
+            if (currentTab === 'tuntas') {
+                subTabContainer.classList.remove('hidden');
+                subTabContainer.innerHTML = `
+                    <div class="flex bg-white rounded-xl p-1 shadow-sm border border-slate-100 gap-1 w-full sm:max-w-xs">
+                        <button onclick="switchTuntasSubTab('terjual')" class="flex-1 py-2 text-[10px] font-bold rounded-lg transition-all ${tuntasSubTab === 'terjual' ? 'bg-emerald-50 text-emerald-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50'}">
+                            <i class="fa-solid fa-store mr-1"></i> Tuntas Di Jual
+                        </button>
+                        <button onclick="switchTuntasSubTab('diterima')" class="flex-1 py-2 text-[10px] font-bold rounded-lg transition-all ${tuntasSubTab === 'diterima' ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50'}">
+                            <i class="fa-solid fa-box-open mr-1"></i> Tuntas Di Beli
+                        </button>
+                    </div>
+                `;
+            } else {
+                if (subTabContainer) subTabContainer.classList.add('hidden');
+            }
+            
+            // Calculate Sales Rating for Header
+            try {
+                const srRs = await turso.execute({
+                    sql: "SELECT total_price, payment_method, status FROM riwayat_pemesanan WHERE seller_uid = ?",
+                    args: [currentUid]
+                });
+                let revSum = 0;
+                let succCount = 0;
+                srRs.rows.forEach(r => {
+                    const price = parseFloat(r.total_price) || 0;
+                    if (r.status !== 'Retur Disetujui' && r.status !== 'Dibatalkan') {
+                        succCount++;
+                        if (r.payment_method === 'QRIS' || r.payment_method === 'PayPal') {
+                            revSum += price;
+                        }
+                    }
+                });
+                let minSalesRating = 3.0 + Math.floor(succCount / 5) * 0.1 + Math.floor(revSum / 500000) * 0.1;
+                if (minSalesRating > 5.0) minSalesRating = 5.0;
+                
+                const headerRatingEl = document.getElementById('sales-rating-header');
+                if (headerRatingEl) {
+                    headerRatingEl.innerHTML = `
+                        <div class="bg-gradient-to-r from-amber-500 to-orange-500 p-4 rounded-2xl shadow-md text-white mb-6 flex justify-between items-center relative overflow-hidden">
+                            <div class="absolute -right-4 -top-4 text-white/10 text-8xl">
+                                <i class="fa-solid fa-star"></i>
+                            </div>
+                            <div class="z-10">
+                                <p class="text-[10px] font-bold uppercase tracking-wider opacity-90 mb-0.5"><i class="fa-solid fa-wand-magic-sparkles"></i> Standar Rating Analisis AI</p>
+                                <p class="text-xs opacity-90">Berdasarkan ${succCount} Pesanan Sukses & Rp ${new Intl.NumberFormat('id-ID').format(revSum)} Pendapatan</p>
+                            </div>
+                            <div class="flex flex-col items-center gap-0.5 bg-white/20 px-3 py-1.5 rounded-xl border border-white/30 backdrop-blur-sm z-10">
+                                <div class="flex items-center gap-1.5">
+                                    <i class="fa-solid fa-star text-yellow-300 text-lg"></i>
+                                    <span class="font-display font-black text-2xl">${minSalesRating.toFixed(1)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch(e) { console.error(e); }
+
             // Menampilkan loading state (skeleton loader)
             let skeletonHtml = '';
             for (let i = 0; i < 3; i++) {
@@ -321,12 +486,51 @@
             try {
                 let sqlQuery = "";
                 if(currentTab === 'beli') {
-                    sqlQuery = "SELECT * FROM riwayat_pemesanan WHERE buyer_uid = ? ORDER BY created_at DESC";
+                    sqlQuery = `SELECT r.*, 
+                        s.businessName as other_name, s.email as other_email, s.photoURL as other_photo, s.aiStoreRating as other_rating,
+                        b.businessName as my_name, b.email as my_email, b.photoURL as my_photo, b.aiStoreRating as my_rating 
+                        FROM riwayat_pemesanan r 
+                        LEFT JOIN users s ON r.seller_uid = s.uid 
+                        LEFT JOIN users b ON r.buyer_uid = b.uid 
+                        WHERE r.buyer_uid = ? ORDER BY r.created_at DESC`;
+                } else if (currentTab === 'retur') {
+                    sqlQuery = `SELECT r.*, 
+                        s.businessName as other_name, s.email as other_email, s.photoURL as other_photo, s.aiStoreRating as other_rating,
+                        b.businessName as my_name, b.email as my_email, b.photoURL as my_photo, b.aiStoreRating as my_rating 
+                        FROM riwayat_pemesanan r 
+                        LEFT JOIN users s ON r.seller_uid = s.uid 
+                        LEFT JOIN users b ON r.buyer_uid = b.uid 
+                        WHERE r.buyer_uid = ? AND status IN ('Sampai Tujuan', 'Selesai', 'Pengajuan Retur') ORDER BY r.created_at DESC`;
+                } else if (currentTab === 'tuntas') {
+                    if (tuntasSubTab === 'terjual') {
+                        sqlQuery = `SELECT r.*, 
+                            b.businessName as other_name, b.email as other_email, b.photoURL as other_photo, b.aiStoreRating as other_rating,
+                            s.businessName as my_name, s.email as my_email, s.photoURL as my_photo, s.aiStoreRating as my_rating 
+                            FROM riwayat_pemesanan r 
+                            LEFT JOIN users b ON r.buyer_uid = b.uid 
+                            LEFT JOIN users s ON r.seller_uid = s.uid 
+                            WHERE r.seller_uid = ? AND r.status = 'Selesai' ORDER BY r.created_at DESC`;
+                    } else {
+                        sqlQuery = `SELECT r.*, 
+                            s.businessName as other_name, s.email as other_email, s.photoURL as other_photo, s.aiStoreRating as other_rating,
+                            b.businessName as my_name, b.email as my_email, b.photoURL as my_photo, b.aiStoreRating as my_rating 
+                            FROM riwayat_pemesanan r 
+                            LEFT JOIN users s ON r.seller_uid = s.uid 
+                            LEFT JOIN users b ON r.buyer_uid = b.uid 
+                            WHERE r.buyer_uid = ? AND r.status = 'Selesai' ORDER BY r.created_at DESC`;
+                    }
                 } else {
-                    sqlQuery = "SELECT * FROM riwayat_pemesanan WHERE seller_uid = ? ORDER BY created_at DESC";
+                    sqlQuery = `SELECT r.*, 
+                        b.businessName as other_name, b.email as other_email, b.photoURL as other_photo, b.aiStoreRating as other_rating,
+                        s.businessName as my_name, s.email as my_email, s.photoURL as my_photo, s.aiStoreRating as my_rating 
+                        FROM riwayat_pemesanan r 
+                        LEFT JOIN users b ON r.buyer_uid = b.uid 
+                        LEFT JOIN users s ON r.seller_uid = s.uid 
+                        WHERE r.seller_uid = ? ORDER BY r.created_at DESC`;
                 }
 
-                const rs = await turso.execute({ sql: sqlQuery, args: [currentUid] });
+                const argsArray = [currentUid];
+                const rs = await turso.execute({ sql: sqlQuery, args: argsArray });
                 
                 // Logic batasan 10 riwayat & auto delete
                 let rowsToDisplay = rs.rows;
@@ -345,7 +549,7 @@
                                 <i class="fa-solid fa-box-open text-3xl text-slate-300"></i>
                             </div>
                             <h3 class="text-base font-bold text-slate-700 mb-1">Belum ada pesanan</h3>
-                            <p class="text-sm text-slate-400">Riwayat ${currentTab === 'beli' ? 'pembelian' : 'penjualan'} Anda kosong.</p>
+                            <p class="text-sm text-slate-400">Riwayat ${currentTab === 'beli' ? 'pembelian' : currentTab === 'retur' ? 'retur barang' : currentTab === 'tuntas' ? 'pesanan tuntas' : 'penjualan'} Anda kosong.</p>
                         </div>
                     `;
                     return;
@@ -361,7 +565,7 @@
                     const dateStr = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
                     const timeStr = dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
-                    const isBeli = currentTab === 'beli';
+                    const isBeli = currentTab === 'beli' || currentTab === 'retur' || (currentTab === 'tuntas' && tuntasSubTab === 'diterima');
                     const personName = isBeli ? `Penjual` : `Pembeli: ${row.buyer_name}`;
                     const phoneToShow = isBeli ? row.seller_phone : row.buyer_phone;
                     // Sanitasi nomor HP untuk link WA
@@ -380,6 +584,22 @@
                         paymentBadge = `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wide border border-slate-200">${row.payment_method || 'Lainnya'}</span>`;
                     }
 
+                    // Badge Status Pesanan
+                    let statusBadge = '';
+                    if (row.status === 'Berhasil' || !row.status || row.status === 'Diproses') {
+                        statusBadge = `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-slate-100 text-slate-700 text-[10px] font-bold uppercase tracking-wide border border-slate-200"><i class="fa-solid fa-clock"></i> Diproses</span>`;
+                    } else if (row.status === 'Dikirim') {
+                        statusBadge = `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-blue-50 text-blue-700 text-[10px] font-bold uppercase tracking-wide border border-blue-200"><i class="fa-solid fa-truck-fast"></i> Dikirim</span>`;
+                    } else if (row.status === 'Sampai Tujuan') {
+                        statusBadge = `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-yellow-50 text-yellow-700 text-[10px] font-bold uppercase tracking-wide border border-yellow-200"><i class="fa-solid fa-box"></i> Sampai Tujuan</span>`;
+                    } else if (row.status === 'Selesai') {
+                        statusBadge = `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-green-50 text-green-700 text-[10px] font-bold uppercase tracking-wide border border-green-200"><i class="fa-solid fa-check-double"></i> Selesai</span>`;
+                    } else if (row.status === 'Pengajuan Retur') {
+                        statusBadge = `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-red-50 text-red-700 text-[10px] font-bold uppercase tracking-wide border border-red-200"><i class="fa-solid fa-rotate-left"></i> Retur</span>`;
+                    } else {
+                        statusBadge = `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wide border border-slate-200">${row.status}</span>`;
+                    }
+
 const locationText = row.location ? `<div class="text-xs text-slate-500 mt-2 flex items-start gap-2 bg-slate-50 p-2 rounded-lg"><i class="fa-solid fa-location-dot mt-0.5 text-red-400 shrink-0"></i> <span class="leading-snug break-words">${row.location}</span></div>` : '';
                     const notesText = row.notes ? `<div class="text-xs text-slate-500 mt-2 flex items-start gap-2 bg-blue-50/50 p-2 rounded-lg border border-blue-50"><i class="fa-regular fa-comment-dots mt-0.5 text-blue-400 shrink-0"></i> <span class="leading-snug break-words">"${row.notes}"</span></div>` : '';
 
@@ -388,6 +608,41 @@ const locationText = row.location ? `<div class="text-xs text-slate-500 mt-2 fle
                     const resiCode = `RESI-${String(row.id).padStart(5, '0')}`;
                     
                     // HTML Structure Kartu
+                    
+                    // Flow map logic
+                    const orderStatus = row.status || 'Pending';
+                    const steps = ['Pending', 'Diproses', 'Dikirim', 'Sampai Tujuan', 'Selesai'];
+                    let currentStepIndex = steps.indexOf(orderStatus);
+                    if (currentStepIndex === -1 && orderStatus.includes('Retur')) currentStepIndex = -1; // special case
+                    if (orderStatus === 'Dibatalkan') currentStepIndex = -1;
+                    
+                    const flowHtml = `
+                    <div class="flex items-center justify-between mt-4 mb-5 relative px-2">
+                        <div class="absolute top-1/2 left-2 right-2 h-0.5 bg-slate-200 -z-10 -translate-y-1/2"></div>
+                        ${steps.map((step, idx) => {
+                            const isPast = idx <= currentStepIndex;
+                            const isActive = idx === currentStepIndex;
+                            const color = isPast ? 'bg-blue-500' : 'bg-slate-200';
+                            const textColor = isPast ? 'text-blue-700 font-bold' : 'text-slate-400';
+                            const icon = isActive ? '<i class="fa-solid fa-spinner fa-spin text-white text-[8px]"></i>' : '';
+                            return `
+                                <div class="flex flex-col items-center gap-1 z-10">
+                                    <div class="w-4 h-4 rounded-full ${color} flex items-center justify-center border-2 border-white shadow-sm ring-2 ${isActive ? 'ring-blue-200' : 'ring-transparent'} transition-all">
+                                        ${icon}
+                                    </div>
+                                    <span class="text-[8px] ${textColor} uppercase tracking-tighter w-12 text-center leading-tight bg-white/80 rounded px-0.5">${step}</span>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>`;
+
+                    // Users Profile Logic
+                    const otherName = row.other_name || 'Pengguna';
+                    const otherPhoto = row.other_photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherName)}&background=random`;
+                    const otherEmail = row.other_email || '-';
+                    const otherRating = (row.other_rating !== null && row.other_rating !== undefined) ? parseFloat(row.other_rating).toFixed(1) : '0.0';
+                    const labelOther = currentTab === 'beli' ? 'Penjual' : 'Pembeli';
+
                     card.innerHTML = `
                         <!-- Header Kartu -->
                         <div class="flex flex-wrap justify-between items-center gap-2 mb-4 pb-3 border-b border-slate-100">
@@ -395,15 +650,22 @@ const locationText = row.location ? `<div class="text-xs text-slate-500 mt-2 fle
                                 <i class="fa-regular fa-clock"></i> 
                                 <span>${dateStr} • ${timeStr}</span>
                             </div>
-                             <div class="flex items-center gap-2">
+                             <div class="flex flex-wrap justify-end items-center gap-2 mt-2 sm:mt-0">
                                  ${paymentBadge}
                                  ${row.shipping_method ? `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-purple-50 text-purple-700 text-[10px] font-bold uppercase tracking-wide border border-purple-100"><i class="fa-solid fa-truck"></i> ${row.shipping_method}</span>` : ''}
+                                 ${statusBadge}
                                  <span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wide border border-emerald-100"><i class="fa-solid fa-check-circle"></i> Lunas</span>
                              </div>
                         </div>
                         
                         <div class="text-[11px] font-mono font-black text-indigo-600 bg-indigo-50/70 px-2 py-0.5 rounded border border-indigo-100/50 inline-block mb-3">No. Resi: ${resiCode}</div>
 
+                        
+                        <!-- Process Flow Map -->
+                        ${['Dibatalkan'].includes(orderStatus) || orderStatus.includes('Retur') 
+                          ? `<div class="text-[10px] font-bold text-red-600 bg-red-50 p-2 rounded mb-4 text-center border border-red-100">Status Pesanan: ${orderStatus}</div>`
+                          : flowHtml}
+                          
                         <!-- Detail Produk -->
                         <div class="flex gap-4 mb-4">
                             <div class="w-14 h-14 shrink-0 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center text-blue-600 border border-blue-100 shadow-sm">
@@ -420,6 +682,23 @@ const locationText = row.location ? `<div class="text-xs text-slate-500 mt-2 fle
                             </div>
                         </div>
 
+                        
+                        <!-- Profile Box -->
+                        <div class="flex items-center gap-3 p-3 mb-4 rounded-xl border border-slate-100 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+                            <img src="${otherPhoto}" class="w-10 h-10 rounded-full object-cover border border-slate-200">
+                            <div class="flex-grow min-w-0">
+                                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Info ${labelOther}</p>
+                                <p class="text-sm font-bold text-slate-800 truncate">${otherName}</p>
+                                <p class="text-[10px] text-slate-500 truncate">${otherEmail}</p>
+                            </div>
+                            <div class="flex flex-col items-end justify-center shrink-0">
+                                <span class="bg-amber-50 text-amber-600 border border-amber-200 px-2 py-0.5 rounded text-[10px] font-black flex items-center gap-1 shadow-sm">
+                                    <i class="fa-solid fa-star"></i> ${otherRating}
+                                </span>
+                                <span class="text-[8px] text-slate-400 mt-1">AI Rating</span>
+                            </div>
+                        </div>
+                        
                         <!-- Footer / Total & Kontak -->
                         <div class="bg-slate-50/80 rounded-xl p-4 border border-white/60">
                             <div class="flex justify-between items-center mb-3">
@@ -427,10 +706,7 @@ const locationText = row.location ? `<div class="text-xs text-slate-500 mt-2 fle
                                 <span class="text-lg font-display font-black text-blue-700">${formatRupiah(row.total_price)}</span>
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4 text-xs text-slate-600 pt-2 border-t border-slate-200">
-                                <div class="flex items-center gap-2 overflow-hidden">
-                                    <i class="fa-solid fa-user-tie text-slate-400 w-4 text-center"></i>
-                                    <span class="truncate font-medium">${personName}</span>
-                                </div>
+                                
                                 <div class="flex items-center gap-2 overflow-hidden">
                                     <i class="fa-brands fa-whatsapp text-green-500 w-4 text-center"></i>
                                     <span class="truncate font-mono">${phoneToShow || '-'}</span>
@@ -440,11 +716,21 @@ const locationText = row.location ? `<div class="text-xs text-slate-500 mt-2 fle
 
                         <!-- Tombol Aksi -->
                         ${isBeli ? `
-                            <div class="mt-4 flex gap-2">
-                                <button onclick="lacakKiriman(${row.id}, '${resiCode}')" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all border border-slate-200/50 flex items-center justify-center gap-1.5 active:scale-95">
+                            <div class="mt-4 flex flex-wrap gap-2">
+                                <button onclick="lacakKiriman(${row.id}, '${resiCode}')" class="flex-1 min-w-[120px] py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all border border-slate-200/50 flex items-center justify-center gap-1.5 active:scale-95">
                                     <i class="fa-solid fa-truck-fast"></i> Lacak Kiriman
                                 </button>
-                                <a href="${waLink}" target="_blank" class="flex-1 text-center py-2.5 rounded-xl font-bold text-white text-xs transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.98] shadow-lg shadow-green-900/10 flex items-center justify-center gap-1.5" style="background: linear-gradient(135deg, #10B981, #059669);">
+                                ${row.status === 'Sampai Tujuan' ? `
+                                <button onclick="openKonfirmasiModal(${row.id}, '${resiCode}', \`${row.product_name.replace(/`/g, '')}\`, '${waLink}')" class="flex-1 min-w-[120px] py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs rounded-xl transition-all border border-emerald-200 flex items-center justify-center gap-1.5 active:scale-95">
+                                    <i class="fa-solid fa-check-to-slot"></i> Konfirmasi
+                                </button>
+                                ` : ''}
+                                ${row.status === 'Sampai Tujuan' || row.status === 'Selesai' ? `
+                                <button onclick="openReturModal(${row.id}, '${resiCode}', \`${row.product_name.replace(/`/g, '')}\`, '${waLink}')" class="flex-1 min-w-[120px] py-2.5 bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs rounded-xl transition-all border border-red-200 flex items-center justify-center gap-1.5 active:scale-95">
+                                    <i class="fa-solid fa-arrow-rotate-left"></i> Retur
+                                </button>
+                                ` : ''}
+                                <a href="${waLink}" target="_blank" class="flex-1 min-w-[120px] text-center py-2.5 rounded-xl font-bold text-white text-xs transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.98] shadow-lg shadow-green-900/10 flex items-center justify-center gap-1.5" style="background: linear-gradient(135deg, #10B981, #059669);">
                                     <i class="fa-brands fa-whatsapp text-base"></i> Hubungi Penjual
                                 </a>
                             </div>
@@ -456,11 +742,21 @@ const locationText = row.location ? `<div class="text-xs text-slate-500 mt-2 fle
                                 <button onclick="openUpdateResiModal(${row.id}, '${resiCode}')" class="flex-1 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl transition-all border border-indigo-100/50 flex items-center justify-center gap-1 active:scale-95">
                                     <i class="fa-solid fa-pen-to-square"></i> Update Resi
                                 </button>
+                                ${row.status === 'Pengajuan Retur' ? `
+                                <button onclick="approveReturn(${row.id})" class="flex-1 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl transition-all border border-rose-200 flex items-center justify-center gap-1 active:scale-95">
+                                    <i class="fa-solid fa-check-double"></i> Setujui Retur
+                                </button>
+                                ` : ''}
                                 <a href="${waLink}" target="_blank" class="flex-1 text-center py-2.5 rounded-xl font-bold text-white text-xs transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.98] shadow-lg shadow-green-900/10 flex items-center justify-center gap-1" style="background: linear-gradient(135deg, #10B981, #059669);">
                                     <i class="fa-brands fa-whatsapp text-base"></i> Hubungi Pembeli
                                 </a>
                             </div>
                         `}
+                        ${isBeli && row.status === 'Retur Disetujui' ? `
+                            <div class="mt-3 w-full bg-red-50 text-red-700 p-2.5 rounded-xl text-xs font-bold text-center border border-red-200 shadow-sm animate-fadeIn">
+                                <i class="fa-solid fa-money-bill-transfer"></i> Pengembalian dana disetujui. Dana Anda akan segera dikembalikan.
+                            </div>
+                        ` : ''}
                     `;
                     fragment.appendChild(card);
                 });
@@ -735,7 +1031,7 @@ const locationText = row.location ? `<div class="text-xs text-slate-500 mt-2 fle
             try {
                 let mainStatus = 'Berhasil';
                 if (statusText.includes('sampai') || statusText.includes('diterima')) {
-                    mainStatus = 'Selesai';
+                    mainStatus = 'Sampai Tujuan';
                 }
 
                 await turso.execute({
@@ -743,9 +1039,9 @@ const locationText = row.location ? `<div class="text-xs text-slate-500 mt-2 fle
                     args: [orderId, statusText]
                 });
 
-                if (mainStatus === 'Selesai') {
+                if (mainStatus === 'Sampai Tujuan') {
                     await turso.execute({
-                        sql: "UPDATE riwayat_pemesanan SET status = 'Selesai' WHERE id = ?",
+                        sql: "UPDATE riwayat_pemesanan SET status = 'Sampai Tujuan' WHERE id = ?",
                         args: [orderId]
                     });
                 }
@@ -755,6 +1051,123 @@ const locationText = row.location ? `<div class="text-xs text-slate-500 mt-2 fle
                 loadOrders();
             } catch (err) {
                 alert('Gagal mengirim laporan status: ' + err.message);
+            }
+        };
+
+        window.openKonfirmasiModal = function(orderId, resiCode, productName, waLink) {
+            document.getElementById('konfirmasi-order-id').value = orderId;
+            document.getElementById('konfirmasi-resi-code').value = resiCode;
+            document.getElementById('konfirmasi-product-name').value = productName;
+            document.getElementById('konfirmasi-wa-link').value = waLink;
+            document.getElementById('konfirmasi-notes').value = '';
+            document.getElementById('konfirmasi-modal').classList.remove('hidden');
+        };
+
+        window.submitKonfirmasi = async function() {
+            const orderId = document.getElementById('konfirmasi-order-id').value;
+            const resiCode = document.getElementById('konfirmasi-resi-code').value;
+            const productName = document.getElementById('konfirmasi-product-name').value;
+            const waLink = document.getElementById('konfirmasi-wa-link').value;
+            const notes = document.getElementById('konfirmasi-notes').value.trim();
+
+            try {
+                // Update status di database menjadi Selesai
+                await turso.execute({
+                    sql: "UPDATE riwayat_pemesanan SET status = 'Selesai' WHERE id = ?",
+                    args: [orderId]
+                });
+
+                // Tambahkan log pelacakan
+                await turso.execute({
+                    sql: "INSERT INTO lacak_pesanan (order_id, status_info) VALUES (?, ?)",
+                    args: [orderId, "Pesanan telah diterima dan dikonfirmasi oleh pembeli."]
+                });
+
+                closeModal('konfirmasi-modal');
+                alert('Konfirmasi berhasil! Status pesanan kini Selesai. Mohon kirimkan foto bukti melalui WhatsApp yang akan terbuka setelah ini.');
+                loadOrders();
+
+                // Buka WhatsApp
+                let waMessage = `Halo, saya ingin mengkonfirmasi bahwa pesanan *${productName}* (Resi: ${resiCode}) telah saya terima dengan baik.\n\nBerikut foto buktinya (akan saya lampirkan). Terima kasih!`;
+                if (notes) {
+                    waMessage += `\n\nCatatan: ${notes}`;
+                }
+                const fullWaLink = `${waLink}?text=${encodeURIComponent(waMessage)}`;
+                window.open(fullWaLink, '_blank');
+
+            } catch (err) {
+                alert('Gagal mengkonfirmasi pesanan: ' + err.message);
+            }
+        };
+
+        window.openReturModal = function(orderId, resiCode, productName, waLink) {
+            document.getElementById('retur-order-id').value = orderId;
+            document.getElementById('retur-resi-code').value = resiCode;
+            document.getElementById('retur-product-name').value = productName;
+            document.getElementById('retur-wa-link').value = waLink;
+            document.getElementById('retur-notes').value = '';
+            document.getElementById('retur-modal').classList.remove('hidden');
+        };
+
+        window.submitRetur = async function() {
+            const orderId = document.getElementById('retur-order-id').value;
+            const resiCode = document.getElementById('retur-resi-code').value;
+            const productName = document.getElementById('retur-product-name').value;
+            const waLink = document.getElementById('retur-wa-link').value;
+            const notes = document.getElementById('retur-notes').value.trim();
+
+            if (!notes) {
+                alert('Harap isi alasan retur barang.');
+                return;
+            }
+
+            try {
+                // Update status di database menjadi Pengajuan Retur
+                await turso.execute({
+                    sql: "UPDATE riwayat_pemesanan SET status = 'Pengajuan Retur' WHERE id = ?",
+                    args: [orderId]
+                });
+
+                // Tambahkan log pelacakan
+                await turso.execute({
+                    sql: "INSERT INTO lacak_pesanan (order_id, status_info) VALUES (?, ?)",
+                    args: [orderId, "Pembeli mengajukan retur barang: " + notes]
+                });
+
+                closeModal('retur-modal');
+                alert('Pengajuan retur berhasil! Mohon kirimkan foto bukti barang cacat melalui WhatsApp yang akan terbuka setelah ini.');
+                loadOrders();
+
+                // Buka WhatsApp
+                let waMessage = `Halo, saya ingin mengajukan *RETUR* untuk pesanan *${productName}* (Resi: ${resiCode}).\n\nAlasan Retur: ${notes}\n\nBerikut foto buktinya (akan saya lampirkan). Mohon tindak lanjutnya.`;
+                const fullWaLink = `${waLink}?text=${encodeURIComponent(waMessage)}`;
+                window.open(fullWaLink, '_blank');
+
+            } catch (err) {
+                alert('Gagal mengajukan retur: ' + err.message);
+            }
+        };
+
+        window.approveReturn = async function(orderId) {
+            if (!confirm('Apakah Anda yakin ingin menyetujui retur ini? (Saldo Anda akan dipotong senilai harga pesanan)')) return;
+            
+            try {
+                // Update status di riwayat_pemesanan
+                await turso.execute({
+                    sql: "UPDATE riwayat_pemesanan SET status = 'Retur Disetujui' WHERE id = ?",
+                    args: [orderId]
+                });
+                
+                // Tambahkan log lacak pesanan
+                await turso.execute({
+                    sql: "INSERT INTO lacak_pesanan (order_id, status_info) VALUES (?, ?)",
+                    args: [orderId, "Penjual telah menyetujui pengajuan retur."]
+                });
+                
+                alert('Pengajuan retur berhasil disetujui.');
+                loadOrders(); // Refresh halaman
+            } catch (err) {
+                alert('Gagal menyetujui retur: ' + err.message);
             }
         };
 

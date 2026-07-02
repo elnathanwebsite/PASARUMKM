@@ -6,6 +6,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pasar UMKM - Dashboard</title>
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" href="favicon/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="favicon/favicon.svg" />
+    <link rel="shortcut icon" href="favicon/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="PASAR UMKM AI" />
+    <link rel="manifest" href="favicon/site.webmanifest" />
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,6 +46,7 @@
 
     <style>
         :root {
+            --sidebar-width: 250px;
             --bg: #FFFFFF;
             --fg: #0F172A;
             --muted: #64748B;
@@ -770,7 +778,7 @@
                 top: 0 !important;
                 bottom: auto !important;
                 left: 0 !important;
-                width: 250px !important;
+                width: var(--sidebar-width) !important;
                 height: 100vh !important;
                 flex-direction: column !important;
                 justify-content: flex-start !important;
@@ -778,6 +786,8 @@
                 border-top: none !important;
                 border-right: 1px solid var(--border) !important;
                 align-items: stretch !important;
+                overflow-x: hidden;
+                overflow-y: auto;
             }
             .nav-btn {
                 flex: 0 0 auto !important;
@@ -787,6 +797,7 @@
                 flex-direction: row !important;
                 gap: 15px !important;
                 justify-content: flex-start !important;
+                white-space: nowrap;
             }
             .nav-btn i {
                 font-size: 18px !important;
@@ -796,14 +807,38 @@
                 font-size: 15px !important;
             }
             .app-header {
-                left: 250px !important;
-                width: calc(100% - 250px) !important;
+                left: var(--sidebar-width) !important;
+                width: calc(100% - var(--sidebar-width)) !important;
             }
             .swipe-viewport {
-                left: 250px !important;
-                width: calc(100% - 250px) !important;
+                left: var(--sidebar-width) !important;
+                width: calc(100% - var(--sidebar-width)) !important;
                 bottom: 0 !important; /* no bottom nav on desktop */
             }
+            #sidebar-resizer {
+                display: block;
+                position: fixed;
+                top: 0;
+                bottom: 0;
+                left: calc(var(--sidebar-width) - 2px);
+                width: 5px;
+                cursor: col-resize;
+                z-index: 2000;
+                background: transparent;
+                transition: background 0.2s;
+            }
+            #sidebar-resizer:hover, #sidebar-resizer.is-resizing {
+                background: var(--accent-warm);
+            }
+            .sidebar-collapsed .nav-btn span,
+            .sidebar-collapsed .desktop-ai-chat {
+                display: none !important;
+            }
+            .sidebar-collapsed .nav-btn {
+                justify-content: center !important;
+                padding: 15px !important;
+            }
+
             .desktop-ai-chat {
                 display: flex;
                 flex-direction: column;
@@ -1047,7 +1082,7 @@
                     </div>
                 </div>
 
-                <div class="mb-4">
+                <div class="mb-4 flex gap-2">
                     <select id="public-category-filter" onchange="loadOtherSellers(this.value)"
                         class="glass-input text-xs py-2 px-3 w-full bg-white/50">
                         <option value="Semua">Semua Kategori UMKM</option>
@@ -1059,6 +1094,9 @@
                         <option value="Jasa">Jasa</option>
                         <option value="Lainnya">Lainnya</option>
                     </select>
+                    <button onclick="toggleAllAIDrawers()" class="btn-outline py-2 px-3 text-[10px] bg-indigo-50 text-indigo-600 border-indigo-200 font-bold whitespace-nowrap flex items-center gap-1 shrink-0 rounded-xl shadow-sm hover:bg-indigo-100 transition-all">
+                        <i class="fa-solid fa-layer-group"></i> Semua Analisis
+                    </button>
                 </div>
 
                 <div id="sellers-list" class="space-y-3 pb-8">
@@ -1226,7 +1264,7 @@
             <!-- PAGE 3: TOKO SAYA (MANAJEMEN TOKO) -->
             <section class="swipe-page" id="page-my-shop">
                 <!-- Header Toko -->
-                <div class="flex items-center justify-between mb-6 px-1">
+                <div class="flex items-center justify-between mb-4 px-1">
                     <h2 class="font-display text-xl font-bold text-slate-800">Toko Saya</h2>
                     <div class="flex gap-2">
                         <button onclick="showHelp()"
@@ -1240,6 +1278,44 @@
                     </div>
                 </div>
 
+                <!-- Toko Saya Tabs -->
+                <div class="flex overflow-x-auto gap-2 mb-4 pb-2 border-b border-slate-100 scrollbar-hide" style="scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;">
+                    <button type="button" onclick="switchTokoTab('tab-produk')" id="btn-tab-produk" class="px-4 py-2 text-xs font-bold rounded-full bg-blue-600 text-white shadow-sm whitespace-nowrap transition-colors border-0">Produk</button>
+                    <button type="button" onclick="switchTokoTab('tab-analisis')" id="btn-tab-analisis" class="px-4 py-2 text-xs font-bold rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 whitespace-nowrap transition-colors border-0">Analisis AI</button>
+                    <button type="button" onclick="switchTokoTab('tab-pendapatan')" id="btn-tab-pendapatan" class="px-4 py-2 text-xs font-bold rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 whitespace-nowrap transition-colors border-0">Pendapatan</button>
+                    <button type="button" onclick="switchTokoTab('tab-penarikan')" id="btn-tab-penarikan" class="px-4 py-2 text-xs font-bold rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 whitespace-nowrap transition-colors border-0">Penarikan Dana</button>
+                </div>
+                
+                <script>
+                function switchTokoTab(tabId) {
+                    const tabs = ['tab-produk', 'tab-analisis', 'tab-pendapatan', 'tab-penarikan'];
+                    tabs.forEach(id => {
+                        const contentEl = document.getElementById(id);
+                        if(contentEl) {
+                            contentEl.classList.add('hidden');
+                            contentEl.classList.remove('block');
+                        }
+                        const btn = document.getElementById('btn-' + id);
+                        if(btn) {
+                            btn.classList.remove('bg-blue-600', 'text-white', 'shadow-sm');
+                            btn.classList.add('bg-slate-100', 'text-slate-600', 'hover:bg-slate-200');
+                        }
+                    });
+                    const activeContent = document.getElementById(tabId);
+                    if(activeContent) {
+                        activeContent.classList.remove('hidden');
+                        activeContent.classList.add('block');
+                    }
+                    const activeBtn = document.getElementById('btn-' + tabId);
+                    if(activeBtn) {
+                        activeBtn.classList.remove('bg-slate-100', 'text-slate-600', 'hover:bg-slate-200');
+                        activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow-sm');
+                    }
+                }
+                window.switchTokoTab = switchTokoTab;
+                </script>
+
+                <div id="tab-produk" class="toko-tab-content block">
                 <!-- Form Tambah Produk (Default Visible) -->
                 <div id="add-product-form-container" class="mb-8">
                     <div class="glass-card p-5 shadow-lg border-blue-200" id="add-product-card-container">
@@ -1418,6 +1494,8 @@
                     </div>
                 </div>
 
+                </div>
+                <div id="tab-analisis" class="toko-tab-content hidden">
                 <!-- AI Store Analysis & Rating Section -->
                 <div class="glass-card p-5 border border-indigo-100 bg-indigo-50/10 rounded-2xl mb-6">
                     <h2 class="font-display text-base font-bold text-slate-800 flex items-center gap-2 mb-3">
@@ -1445,8 +1523,11 @@
                         class="w-full text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/10 border-0 transition-colors">
                         <i class="fa-solid fa-wand-magic-sparkles"></i> Analisis & Update Rating Toko
                     </button>
+                    <div id="ai-cooldown-info" class="mt-3"></div>
                 </div>
 
+                </div>
+                <div id="tab-pendapatan" class="toko-tab-content hidden">
                 <!-- Statistik Pendapatan Toko -->
                 <div class="glass-card p-5 border border-emerald-100 bg-emerald-50/10 rounded-2xl mb-6">
                     <h2 class="font-display text-base font-bold text-slate-800 flex items-center gap-2 mb-4">
@@ -1454,15 +1535,18 @@
                     </h2>
                     
                     <!-- Grand Total Card -->
-                    <div class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white p-4 rounded-xl shadow-md mb-4 flex items-center justify-between">
+                    <div id="grand-total-card" class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white p-4 rounded-xl shadow-md mb-4 flex items-center justify-between transition-colors duration-300">
                         <div>
-                            <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-100">Total Pendapatan Bersih</span>
+                            <span class="text-[10px] uppercase font-bold tracking-wider opacity-90">Total Pendapatan Bersih</span>
                             <h3 id="seller-revenue-total" class="font-display font-black text-2xl mt-0.5">Rp 0</h3>
                         </div>
                         <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-xl">
                             <i class="fa-solid fa-money-bill-trend-up"></i>
                         </div>
                     </div>
+                    
+                    <!-- Returns Drawer Container -->
+                    <div id="returns-drawer-container" class="mb-4"></div>
                     
                     <!-- Payment Methods Title -->
                     <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Metode Pembayaran</div>
@@ -1520,6 +1604,8 @@
                     </div>
                 </div>
 
+                </div>
+                <div id="tab-penarikan" class="toko-tab-content hidden">
                 <!-- Tarik Dana / Payout Section -->
                 <div class="glass-card p-5 border border-blue-100 bg-blue-50/10 rounded-2xl mb-6">
                     <h2 class="font-display text-base font-bold text-slate-800 flex items-center gap-2 mb-4">
@@ -1609,6 +1695,7 @@
                         </div>
                     </div>
                 </div>
+                </div>
             </section>
         </div>
     </main>
@@ -1646,6 +1733,40 @@
             </form>
         </div>
     </nav>
+    <div id="sidebar-resizer" class="hidden md:block"></div>
+    <script>
+        // Sidebar Resizer logic
+        const resizer = document.getElementById('sidebar-resizer');
+        let isResizing = false;
+        if (resizer) {
+            resizer.addEventListener('mousedown', function(e) {
+                isResizing = true;
+                resizer.classList.add('is-resizing');
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+            });
+            document.addEventListener('mousemove', function(e) {
+                if (!isResizing) return;
+                let newWidth = e.clientX;
+                if (newWidth < 70) newWidth = 70; // icon only
+                if (newWidth > 400) newWidth = 400; // max width
+                document.documentElement.style.setProperty('--sidebar-width', newWidth + 'px');
+                if (newWidth < 120) {
+                    document.body.classList.add('sidebar-collapsed');
+                } else {
+                    document.body.classList.remove('sidebar-collapsed');
+                }
+            });
+            document.addEventListener('mouseup', function(e) {
+                if (isResizing) {
+                    isResizing = false;
+                    resizer.classList.remove('is-resizing');
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+                }
+            });
+        }
+    </script>
 
     <!-- Modal Edit Profil -->
     <div id="edit-profile-modal" class="modal-overlay" role="dialog">
@@ -1826,7 +1947,8 @@
             <button onclick="closeProductDetail()" class="fpm-back-btn"><i class="fa-solid fa-arrow-left"></i></button>
             <h2 class="fpm-title">Detail Produk</h2>
         </div>
-        <div class="p-0 pb-24 md:max-w-2xl md:mx-auto md:pt-6">
+        <div class="p-0 pb-24 md:max-w-5xl md:mx-auto md:pt-6 md:flex md:gap-6 md:items-start">
+              <div class="md:w-2/3 w-full">
             <!-- Product Image -->
             <div class="w-full h-72 md:h-96 bg-slate-100 relative md:rounded-3xl md:overflow-hidden md:shadow-md">
                 <img id="detail-img" src="" class="w-full h-full object-cover md:object-contain bg-slate-900/5">
@@ -1861,7 +1983,25 @@
                 <p id="detail-desc" class="text-sm text-slate-600 leading-relaxed mb-8 whitespace-pre-wrap">Deskripsi
                     produk...</p>
 
-                <!-- AI Competitor Analysis Section -->
+                <div id="detail-action-container">
+                    <!-- Dynamic button: Buy or Edit -->
+                </div>
+                  </div> <!-- End Info Section -->
+              </div> <!-- End Left Column -->
+              
+              <!-- Right Column for Recommendations -->
+              <div class="md:w-1/3 w-full mt-6 md:mt-0 px-4 md:px-0">
+                  <!-- Produk Lainnya -->
+                  <div id="other-products-section" class="mb-8 p-4 rounded-2xl bg-white border border-slate-100 hidden">
+                      <h4 class="text-xs font-bold text-slate-800 flex items-center gap-2 mb-3">
+                          <i class="fa-solid fa-store text-blue-600"></i> Produk Lain dari Toko Ini
+                      </h4>
+                      <div id="other-products-list" class="flex flex-col gap-3">
+                          <!-- List produk -->
+                      </div>
+                  </div>
+
+                  <!-- AI Competitor Analysis Section -->
                 <div id="ai-analysis-section" class="mb-8 p-4 rounded-2xl bg-slate-50 border border-slate-100 hidden">
                     <div class="flex items-center justify-between mb-4">
                         <h4 class="text-xs font-bold text-slate-800 flex items-center gap-2">
@@ -1889,12 +2029,8 @@
                         <i class="fa-solid fa-magnifying-glass-chart"></i> Analisis Pesaing dengan AI Echoomrche
                     </button>
                 </div>
-
-                <div id="detail-action-container">
-                    <!-- Dynamic button: Buy or Edit -->
-                </div>
-            </div>
-        </div>
+              </div>
+          </div>
     </div>
     <script type="module">
         import { createClient } from 'https://esm.sh/@libsql/client/web';
@@ -2112,6 +2248,19 @@
                     )
                 `);
             } catch(e) { }
+            try {
+                await turso.execute(`
+                    CREATE TABLE IF NOT EXISTS public_ai_analysis (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        analyzer_uid TEXT NOT NULL,
+                        analyzed_uid TEXT NOT NULL,
+                        analyzed_name TEXT,
+                        analyzer_name TEXT,
+                        analysis_data TEXT,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    )
+                `);
+            } catch(e) { console.error("Error creating public_ai_analysis table", e); }
         })();
 
         let currentUserData = null;
@@ -3497,6 +3646,51 @@
             }
         };
 
+        window.updateAICooldownUI = async function() {
+            const container = document.getElementById('ai-cooldown-info');
+            if(!container || !currentUid) return;
+            
+            try {
+                const rs = await turso.execute({
+                    sql: "SELECT aiStoreAnalysisDate FROM users WHERE uid = ?",
+                    args: [currentUid]
+                });
+                
+                if (rs.rows.length > 0 && rs.rows[0].aiStoreAnalysisDate) {
+                    const lastDate = new Date(rs.rows[0].aiStoreAnalysisDate + " UTC");
+                    const now = new Date();
+                    const diffTime = Math.abs(now - lastDate);
+                    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+                    
+                    if (diffDays < 7) {
+                        const daysLeft = Math.ceil(7 - diffDays);
+                        const percent = (diffDays / 7) * 100;
+                        const nextDate = new Date(lastDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+                        const nextDateStr = nextDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+                        
+                        container.innerHTML = `
+                            <div class="bg-indigo-50/50 border border-indigo-100 rounded-xl p-3 text-center">
+                                <p class="text-[10px] font-bold text-indigo-700 uppercase tracking-wide mb-1">Kesempatan Analisis Berikutnya</p>
+                                <p class="text-xs text-slate-600 mb-2 font-medium">${nextDateStr} <span class="text-indigo-500 font-bold">(${daysLeft} hari lagi)</span></p>
+                                <div class="w-full bg-slate-200 rounded-full h-1.5 mb-1 overflow-hidden">
+                                    <div class="bg-gradient-to-r from-indigo-500 to-purple-500 h-1.5 rounded-full" style="width: ${percent}%"></div>
+                                </div>
+                                <p class="text-[8px] text-slate-400 mt-1">*Analisis rating hanya dapat dilakukan 1x setiap minggu.</p>
+                            </div>
+                        `;
+                    } else {
+                        container.innerHTML = `
+                            <div class="bg-emerald-50/50 border border-emerald-100 rounded-xl p-2 text-center text-[10px] font-bold text-emerald-600">
+                                <i class="fa-solid fa-check-circle"></i> Analisis AI tersedia saat ini.
+                            </div>
+                        `;
+                    }
+                } else {
+                    container.innerHTML = '';
+                }
+            } catch(e) { console.error("Error cooldown:", e); }
+        };
+        
         window.handleRunAIStoreAnalysis = async function () {
             const btn = document.getElementById('run-ai-store-analysis-btn');
             const resultContainer = document.getElementById('ai-store-result-container');
@@ -3517,6 +3711,67 @@
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Menganalisis Toko dengan AI...';
 
             try {
+                // Check Last Analysis Time (1x per minggu)
+                let lastAnalysisDateStr = null;
+                try {
+                    const checkRs = await turso.execute({
+                        sql: "SELECT aiStoreAnalysisDate FROM users WHERE uid = ?",
+                        args: [currentUid]
+                    });
+                    if (checkRs.rows.length > 0 && checkRs.rows[0].aiStoreAnalysisDate) {
+                        lastAnalysisDateStr = checkRs.rows[0].aiStoreAnalysisDate;
+                    }
+                } catch(e) {
+                    if(e.message && e.message.toLowerCase().includes('no such column')) {
+                        await turso.execute({ sql: "ALTER TABLE users ADD COLUMN aiStoreAnalysisDate DATETIME" }).catch(err=>console.error(err));
+                    }
+                }
+
+                if (lastAnalysisDateStr) {
+                    const lastDate = new Date(lastAnalysisDateStr + " UTC");
+                    const now = new Date();
+                    const diffTime = Math.abs(now - lastDate);
+                    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                    if (diffDays < 7) {
+                        showToast(`Anda baru saja menganalisis toko. Silakan coba lagi dalam ${7 - diffDays} hari.`, "error");
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                        return;
+                    }
+                }
+
+                // Fetch Financial Data
+                const salesRs = await turso.execute({
+                    sql: "SELECT total_price, payment_method, status FROM riwayat_pemesanan WHERE seller_uid = ?",
+                    args: [currentUid]
+                });
+                
+                let revenueSum = 0;
+                let successfulOrders = 0;
+                
+                salesRs.rows.forEach(r => {
+                    const price = parseFloat(r.total_price) || 0;
+                    if (r.status !== 'Retur Disetujui' && r.status !== 'Dibatalkan') {
+                        successfulOrders++;
+                        if (r.payment_method === 'QRIS' || r.payment_method === 'PayPal') {
+                            revenueSum += price;
+                        }
+                    }
+                });
+
+                const wdRs = await turso.execute({
+                    sql: "SELECT SUM(amount) as total FROM tarik_dana WHERE seller_uid = ? AND status IN ('Pending', 'Disetujui')",
+                    args: [currentUid]
+                });
+                const wdSum = parseFloat(wdRs.rows[0].total) || 0;
+                const activeBalance = revenueSum - wdSum;
+
+                // Hitung Min Sales Rating
+                let minSalesRating = 3.0; // base rating default
+                minSalesRating += Math.floor(successfulOrders / 5) * 0.1;
+                minSalesRating += Math.floor(revenueSum / 500000) * 0.1;
+                if (minSalesRating > 5.0) minSalesRating = 5.0;
+
                 const userProductsSummary = userProducts.map(p => ({ 
                     name: p.name, 
                     price: p.price, 
@@ -3526,7 +3781,12 @@
 
                 const storeProfile = {
                     businessName: currentUserData.businessName || currentUserData.username || "UMKM Baru",
-                    phone: currentUserData.phone || "-"
+                    phone: currentUserData.phone || "-",
+                    total_successful_orders: successfulOrders,
+                    total_revenue_platform: revenueSum,
+                    total_withdrawals_minus: wdSum,
+                    active_balance: activeBalance,
+                    minimum_rating_requirement: minSalesRating.toFixed(1)
                 };
 
                 const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -3542,17 +3802,21 @@
                         messages: [
                             {
                                 role: "system",
-                                content: `Anda adalah AI Konsultan Bisnis UMKM. Tugas Anda adalah menganalisis toko berdasarkan profil dan daftar produknya, lalu memberikan kesimpulan evaluasi bisnis (maksimal 4 kalimat) beserta rating kelengkapan/kualitas toko dari skala 1.0 hingga 5.0.
+                                content: `Anda adalah AI Konsultan Bisnis UMKM. Tugas Anda adalah menganalisis toko berdasarkan profil, daftar produk, jumlah pesanan berhasil, saldo aktif, dan penarikan dana (minus). 
+                                Berikan kesimpulan evaluasi bisnis (maksimal 4 kalimat) yang menyinggung performa penjualan & kesehatan finansial (saldo) beserta rating kelengkapan/kualitas toko dari skala 1.0 hingga 5.0.
+                                
+                                ATURAN PENTING: Karena toko ini telah memiliki hasil penjualan dan pendapatan, rating dasar kalkulasi matematisnya adalah ${minSalesRating.toFixed(1)}. Anda TIDAK BOLEH memberikan rating di bawah ${minSalesRating.toFixed(1)}.
+                                
                                 Anda WAJIB memberikan respons dalam format JSON valid tanpa penambahan teks markdown apa pun.
                                 Format JSON:
                                 {
                                   "rating": 4.5,
-                                  "kesimpulan": "Toko Anda memiliki..."
+                                  "kesimpulan": "Toko Anda memiliki performa bagus dengan banyak order berhasil..."
                                 }`
                             },
                             {
                                 role: "user",
-                                content: `Profil Toko: ${JSON.stringify(storeProfile)}\n\nDaftar Produk Toko:\n${JSON.stringify(userProductsSummary)}`
+                                content: `Profil & Finansial Toko: ${JSON.stringify(storeProfile)}\n\nDaftar Produk Toko:\n${JSON.stringify(userProductsSummary)}`
                             }
                         ]
                     })
@@ -3575,15 +3839,23 @@
                     throw new Error("Respons AI tidak lengkap.");
                 }
 
-                const ratingVal = parseFloat(parsedResult.rating) || 0.0;
+                let ratingVal = parseFloat(parsedResult.rating) || 0.0;
+                
+                // ENFORCE minimum rating
+                if (ratingVal < minSalesRating) {
+                    ratingVal = minSalesRating;
+                }
+
                 const ratingFormatted = ratingVal.toFixed(1);
                 const kesimpulanVal = parsedResult.kesimpulan;
 
                 // Update Turso database
                 await turso.execute({
-                    sql: "UPDATE users SET aiStoreRating = ?, aiStoreAnalysis = ? WHERE uid = ?",
+                    sql: "UPDATE users SET aiStoreRating = ?, aiStoreAnalysis = ?, aiStoreAnalysisDate = CURRENT_TIMESTAMP WHERE uid = ?",
                     args: [ratingVal, kesimpulanVal, currentUid]
                 });
+                
+                updateAICooldownUI();
 
                 // Update current user cache
                 currentUserData.aiStoreRating = ratingVal;
@@ -3716,11 +3988,96 @@
                                 </div>
                             </div>
                         </div>
-                        <button onclick="viewSellerProducts('${seller.uid}', '${bName}')" class="btn-outline py-1.5 px-3 text-[10px] bg-blue-50 text-blue-600 border-blue-200 font-bold">
-                            Lihat Produk
-                        </button>
+                        <div class="flex flex-col gap-1.5 items-end">
+                            <button onclick="viewSellerProducts('${seller.uid}', '${bName}')" class="btn-outline py-1.5 px-3 text-[10px] bg-blue-50 text-blue-600 border-blue-200 font-bold w-full whitespace-nowrap">
+                                Lihat Produk
+                            </button>
+                            <button onclick="openPublicAIAnalysis('${seller.uid}', '${bName.replace(/'/g, "\\'")}')" class="btn-outline py-1.5 px-3 text-[10px] bg-indigo-50 text-indigo-600 border-indigo-200 font-bold flex items-center justify-center gap-1 w-full whitespace-nowrap shadow-sm hover:shadow">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> AI Analisis
+                            </button>
+                        </div>
                     `;
-                    list.appendChild(div);
+                    
+                    const drawerDiv = document.createElement('div');
+                    drawerDiv.id = `ai-drawer-${seller.uid}`;
+                    drawerDiv.className = 'hidden w-full bg-indigo-50/30 border-x border-b border-indigo-100 rounded-b-2xl p-4 shadow-inner mt-[-10px] pt-5 transition-all duration-300';
+                    drawerDiv.innerHTML = `
+                        <div id="ai-drawer-empty-${seller.uid}" class="text-center py-4">
+                            <i class="fa-solid fa-robot text-4xl text-indigo-200 mb-2"></i>
+                            <p class="text-[10px] text-slate-500 font-medium">Belum ada analisis AI untuk toko ini.</p>
+                            <button onclick="runPublicAIAnalysis('${seller.uid}', '${bName.replace(/'/g, "\\'")}')" class="mt-3 bg-indigo-600 text-white text-[10px] font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-indigo-700 transition-colors">
+                                <i class="fa-solid fa-bolt mr-1"></i> Mulai Analisis Sekarang
+                            </button>
+                        </div>
+                        <div id="ai-drawer-loading-${seller.uid}" class="hidden text-center py-6">
+                            <i class="fa-solid fa-circle-notch fa-spin text-3xl text-indigo-500 mb-3"></i>
+                            <p class="text-[10px] font-bold text-indigo-700 animate-pulse">AI sedang menganalisis performa...</p>
+                        </div>
+                        <div id="ai-drawer-result-${seller.uid}" class="hidden">
+                            <div class="flex justify-between items-center mb-3">
+                                <h5 class="text-[11px] font-bold text-slate-800"><i class="fa-solid fa-chart-line text-indigo-600 mr-1"></i> Hasil Komparasi AI</h5>
+                                <div class="flex items-center gap-2">
+                                    <span id="ai-drawer-date-${seller.uid}" class="text-[9px] text-slate-400 font-medium"></span>
+                                    <div class="flex flex-col items-end">
+                                        <button id="ai-drawer-refresh-btn-${seller.uid}" onclick="runPublicAIAnalysis('${seller.uid}', '${bName.replace(/'/g, "\\'")}')" class="text-[9px] bg-white border border-indigo-200 text-indigo-600 font-bold py-1 px-2 rounded hover:bg-indigo-50 transition-colors flex items-center gap-1 shadow-sm">
+                                            <i class="fa-solid fa-rotate-right"></i> Perbarui
+                                        </button>
+                                        <span id="ai-drawer-countdown-${seller.uid}" class="text-[8px] font-bold text-orange-600 mt-0.5"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto rounded-xl border border-indigo-100 shadow-sm bg-white">
+                                <table class="w-full text-left border-collapse text-[10px]">
+                                    <thead>
+                                        <tr class="bg-indigo-50/50">
+                                            <th class="p-2 border-b border-r border-indigo-100 text-slate-500 font-medium w-1/4">Metrik</th>
+                                            <th id="ai-drawer-th-analyzer-${seller.uid}" class="p-2 border-b border-r border-indigo-100 font-bold text-indigo-700 w-1/3">Toko Anda</th>
+                                            <th id="ai-drawer-th-analyzed-${seller.uid}" class="p-2 border-b border-indigo-100 font-bold text-emerald-700 w-1/3">Toko Ini</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="text-slate-700">
+                                        <tr>
+                                            <td class="p-2 border-b border-r border-indigo-50 font-medium bg-slate-50/50"><i class="fa-solid fa-box text-slate-400 w-3"></i> Produk</td>
+                                            <td id="ai-drawer-td-prod-analyzer-${seller.uid}" class="p-2 border-b border-r border-indigo-50 font-bold text-center">0</td>
+                                            <td id="ai-drawer-td-prod-analyzed-${seller.uid}" class="p-2 border-b border-indigo-50 font-bold text-center">0</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2 border-b border-r border-indigo-50 font-medium bg-slate-50/50"><i class="fa-solid fa-tag text-slate-400 w-3"></i> Hrg Rata²</td>
+                                            <td id="ai-drawer-td-price-analyzer-${seller.uid}" class="p-2 border-b border-r border-indigo-50 font-medium text-center">Rp 0</td>
+                                            <td id="ai-drawer-td-price-analyzed-${seller.uid}" class="p-2 border-b border-indigo-50 font-medium text-center">Rp 0</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2 border-b border-r border-indigo-50 font-medium bg-slate-50/50"><i class="fa-solid fa-star text-slate-400 w-3"></i> Rating</td>
+                                            <td id="ai-drawer-td-rating-analyzer-${seller.uid}" class="p-2 border-b border-r border-indigo-50 font-bold text-amber-500 text-center">-</td>
+                                            <td id="ai-drawer-td-rating-analyzed-${seller.uid}" class="p-2 border-b border-indigo-50 font-bold text-amber-500 text-center">-</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2 border-b border-r border-indigo-50 font-medium bg-slate-50/50 align-top"><i class="fa-solid fa-thumbs-up text-emerald-400 w-3"></i> Pro</td>
+                                            <td id="ai-drawer-td-pros-analyzer-${seller.uid}" class="p-2 border-b border-r border-indigo-50 text-[9px] leading-relaxed text-emerald-700 bg-emerald-50/30"></td>
+                                            <td id="ai-drawer-td-pros-analyzed-${seller.uid}" class="p-2 border-b border-indigo-50 text-[9px] leading-relaxed text-emerald-700 bg-emerald-50/30"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2 border-r border-indigo-50 font-medium bg-slate-50/50 align-top"><i class="fa-solid fa-thumbs-down text-rose-400 w-3"></i> Kontra</td>
+                                            <td id="ai-drawer-td-cons-analyzer-${seller.uid}" class="p-2 border-r border-indigo-50 text-[9px] leading-relaxed text-rose-700 bg-rose-50/30"></td>
+                                            <td id="ai-drawer-td-cons-analyzed-${seller.uid}" class="p-2 text-[9px] leading-relaxed text-rose-700 bg-rose-50/30"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="mt-3 bg-white p-3 rounded-xl border border-indigo-100 shadow-sm relative overflow-hidden">
+                                <div class="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
+                                <p class="text-[9px] font-bold text-indigo-400 uppercase tracking-wider mb-1"><i class="fa-solid fa-lightbulb"></i> Kesimpulan AI</p>
+                                <p id="ai-drawer-conclusion-${seller.uid}" class="text-[10px] text-slate-700 leading-relaxed italic"></p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    const wrapperDiv = document.createElement('div');
+                    wrapperDiv.className = 'w-full mb-3 seller-card-wrapper';
+                    wrapperDiv.appendChild(div);
+                    wrapperDiv.appendChild(drawerDiv);
+                    
+                    list.appendChild(wrapperDiv);
                 });
             } catch (error) {
                 list.innerHTML = `<div class="text-center py-8 text-red-500 text-xs">Gagal memuat data: ${error.message}</div>`;
@@ -3731,11 +4088,12 @@
             if (!currentUid) return;
             try {
                 const rs = await turso.execute({
-                    sql: "SELECT total_price, payment_method, shipping_method FROM riwayat_pemesanan WHERE seller_uid = ?",
+                    sql: "SELECT * FROM riwayat_pemesanan WHERE seller_uid = ?",
                     args: [currentUid]
                 });
                 
                 let grandTotal = 0;
+                let returnTotal = 0;
                 let qrisTotal = 0;
                 let paypalTotal = 0;
                 let waTotal = 0;
@@ -3747,32 +4105,114 @@
                 let instantTotal = 0;
                 let pickupTotal = 0;
                 
+                const returnedOrders = [];
+                
                 const formatRupiah = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
 
                 rs.rows.forEach(row => {
                     const price = parseFloat(row.total_price) || 0;
-                    grandTotal += price;
                     
-                    // Pembayaran
-                    if (row.payment_method === 'QRIS') {
-                        qrisTotal += price;
-                    } else if (row.payment_method === 'PayPal') {
-                        paypalTotal += price;
-                    } else if (row.payment_method === 'WhatsApp') {
-                        waTotal += price;
-                    }
+                    if (row.status === 'Retur Disetujui') {
+                        returnTotal += price;
+                        returnedOrders.push(row);
+                    } else {
+                        // Cek apakah eligible masuk pendapatan
+                        let isEligible = false;
+                        if (row.payment_method === 'QRIS' || row.payment_method === 'PayPal') {
+                            isEligible = true;
+                        } else if (row.status === 'Selesai') {
+                            isEligible = true; // Manual / lainnya masuk jika Selesai
+                        }
 
-                    // Pengiriman
-                    const ship = row.shipping_method || 'JNE';
-                    if (ship === 'JNE') jneTotal += price;
-                    else if (ship === 'J&T') jntTotal += price;
-                    else if (ship === 'SiCepat') sicepatTotal += price;
-                    else if (ship === 'POS Indonesia') posTotal += price;
-                    else if (ship === 'Layanan Instan') instantTotal += price;
-                    else if (ship === 'Ambil Sendiri') pickupTotal += price;
+                        if (isEligible) {
+                            grandTotal += price;
+                            
+                            // Pembayaran
+                            if (row.payment_method === 'QRIS') qrisTotal += price;
+                            else if (row.payment_method === 'PayPal') paypalTotal += price;
+                            else if (row.payment_method === 'WhatsApp') waTotal += price;
+
+                            // Pengiriman
+                            const ship = row.shipping_method || 'JNE';
+                            if (ship === 'JNE') jneTotal += price;
+                            else if (ship === 'J&T') jntTotal += price;
+                            else if (ship === 'SiCepat') sicepatTotal += price;
+                            else if (ship === 'POS Indonesia') posTotal += price;
+                            else if (ship === 'Layanan Instan') instantTotal += price;
+                            else if (ship === 'Ambil Sendiri') pickupTotal += price;
+                        }
+                    }
                 });
                 
-                document.getElementById('seller-revenue-total').textContent = formatRupiah(grandTotal);
+                const finalBalance = grandTotal - returnTotal;
+                
+                const totalEl = document.getElementById('seller-revenue-total');
+                const cardEl = document.getElementById('grand-total-card');
+                
+                totalEl.textContent = formatRupiah(finalBalance);
+                
+                if (finalBalance < 0 || returnTotal > 0) {
+                    // Jika ada retur, ganti warna jadi merah
+                    cardEl.classList.remove('from-emerald-500', 'to-teal-600');
+                    cardEl.classList.add('from-red-500', 'to-rose-600');
+                } else {
+                    cardEl.classList.remove('from-red-500', 'to-rose-600');
+                    cardEl.classList.add('from-emerald-500', 'to-teal-600');
+                }
+                
+                // Render Returns Drawer
+                const drawerContainer = document.getElementById('returns-drawer-container');
+                if (returnedOrders.length > 0) {
+                    let drawerHtml = `
+                        <div class="bg-red-50 border border-red-200 rounded-xl overflow-hidden mb-4 shadow-sm transition-all">
+                            <button onclick="document.getElementById('returns-drawer-content').classList.toggle('hidden')" class="w-full flex items-center justify-between p-4 bg-red-100/50 hover:bg-red-100 transition-colors">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 rounded-full bg-red-200 text-red-600 flex items-center justify-center">
+                                        <i class="fa-solid fa-rotate-left"></i>
+                                    </div>
+                                    <div class="text-left">
+                                        <h4 class="font-bold text-red-800 text-sm">Masalah / Retur (${returnedOrders.length})</h4>
+                                        <p class="text-[10px] text-red-600 font-medium">Total Pengembalian: -${formatRupiah(returnTotal)}</p>
+                                    </div>
+                                </div>
+                                <i class="fa-solid fa-chevron-down text-red-500 text-sm"></i>
+                            </button>
+                            <div id="returns-drawer-content" class="hidden p-4 space-y-3">
+                    `;
+                    
+                    returnedOrders.forEach(ord => {
+                        drawerHtml += `
+                            <div class="bg-white rounded-lg p-3 border border-red-100 relative">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-10 h-10 rounded bg-red-50 text-red-400 flex flex-col items-center justify-center text-xs border border-red-100">
+                                        <i class="fa-solid fa-box-open mb-0.5"></i>
+                                    </div>
+                                    <div class="flex-grow min-w-0">
+                                        <p class="font-bold text-slate-800 text-xs truncate mb-1">${ord.product_name}</p>
+                                        <div class="text-[10px] text-slate-500 space-y-0.5">
+                                            <p>Pembeli: <span class="font-medium text-slate-700">${ord.buyer_name}</span></p>
+                                            <p>Resi: <span class="font-medium text-slate-700">${ord.id}</span></p>
+                                            <p class="text-red-600 font-bold mt-1">-${formatRupiah(ord.total_price)}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="absolute bottom-3 right-3">
+                                    <span class="inline-flex items-center gap-1 bg-green-50 text-green-700 px-2 py-1 rounded text-[9px] font-bold border border-green-200 uppercase">
+                                        <i class="fa-solid fa-check"></i> Pengembalian dana disetujui
+                                    </span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    drawerHtml += `
+                            </div>
+                        </div>
+                    `;
+                    drawerContainer.innerHTML = drawerHtml;
+                } else {
+                    drawerContainer.innerHTML = '';
+                };
                 document.getElementById('seller-revenue-qris').textContent = formatRupiah(qrisTotal);
                 document.getElementById('seller-revenue-paypal').textContent = formatRupiah(paypalTotal);
                 document.getElementById('seller-revenue-wa').textContent = formatRupiah(waTotal);
@@ -3863,10 +4303,17 @@
             try {
                 // 3. Cek Saldo Aktif Penjual (Hanya QRIS & PayPal)
                 const salesRs = await turso.execute({
-                    sql: "SELECT SUM(total_price) as total FROM riwayat_pemesanan WHERE seller_uid = ? AND payment_method IN ('QRIS', 'PayPal')",
+                    sql: "SELECT total_price, payment_method, status FROM riwayat_pemesanan WHERE seller_uid = ?",
                     args: [currentUid]
                 });
-                const revenueSum = parseFloat(salesRs.rows[0].total) || 0;
+                
+                let revenueSum = 0;
+                salesRs.rows.forEach(r => {
+                    const price = parseFloat(r.total_price) || 0;
+                    if (r.status !== 'Retur Disetujui' && (r.payment_method === 'QRIS' || r.payment_method === 'PayPal')) {
+                        revenueSum += price;
+                    }
+                });
 
                 const wdRs = await turso.execute({
                     sql: "SELECT SUM(amount) as total FROM tarik_dana WHERE seller_uid = ? AND status IN ('Pending', 'Disetujui')",
@@ -4131,6 +4578,320 @@
         window.showHelp = function () {
             window.open("https://wa.me/6283802453336?text=Halo,%20saya%20butuh%20bantuan%20di%20PasarUMKM", "_blank");
         };
+
+        // ================================================================
+        // PUBLIC AI ANALYSIS (DRAWER)
+        // ================================================================
+        let countdownIntervals = {};
+
+        window.toggleAllAIDrawers = function() {
+            const aiButtons = document.querySelectorAll('button[onclick^="openPublicAIAnalysis"]');
+            
+            aiButtons.forEach(btn => {
+                const onclickStr = btn.getAttribute('onclick');
+                const match = onclickStr.match(/openPublicAIAnalysis\('([^']*)',\s*'([^']*)'\)/);
+                if(match) {
+                    const uid = match[1];
+                    
+                    const drawer = document.getElementById(`ai-drawer-${uid}`);
+                    if (drawer && drawer.classList.contains('hidden')) {
+                        drawer.classList.remove('hidden');
+                        
+                        const emptyState = document.getElementById(`ai-drawer-empty-${uid}`);
+                        const loadingState = document.getElementById(`ai-drawer-loading-${uid}`);
+                        const resultState = document.getElementById(`ai-drawer-result-${uid}`);
+                        
+                        emptyState.classList.add('hidden');
+                        loadingState.classList.remove('hidden');
+                        resultState.classList.add('hidden');
+                        
+                        turso.execute({
+                            sql: "SELECT * FROM public_ai_analysis WHERE analyzer_uid = ? AND analyzed_uid = ?",
+                            args: [currentUid, uid]
+                        }).then(rs => {
+                            if (rs.rows.length > 0) {
+                                const row = rs.rows[0];
+                                const createdAt = new Date(row.created_at + " UTC");
+                                const now = new Date();
+                                const diffTime = Math.abs(now - createdAt);
+                                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                                const canRefresh = diffDays >= 7;
+                                let data = {};
+                                try { data = JSON.parse(row.analysis_data); } catch(e) {}
+                                renderPublicAIDrawerResult(uid, data, row.analyzer_name, row.analyzed_name, createdAt, canRefresh);
+                            } else {
+                                loadingState.classList.add('hidden');
+                                emptyState.classList.remove('hidden');
+                            }
+                        }).catch(e => {
+                            loadingState.classList.add('hidden');
+                            emptyState.classList.remove('hidden');
+                        });
+                    }
+                }
+            });
+        };
+
+        window.closePublicAIDrawer = function(targetUid) {
+            const drawer = document.getElementById(`ai-drawer-${targetUid}`);
+            if (drawer) {
+                drawer.classList.add('hidden');
+            }
+        };
+
+        window.openPublicAIAnalysis = async function(targetUid, targetName) {
+            const drawer = document.getElementById(`ai-drawer-${targetUid}`);
+            if (!drawer) return;
+            
+            if (!drawer.classList.contains('hidden')) {
+                drawer.classList.add('hidden');
+                return;
+            }
+            
+            // Accordion dihapus agar bisa membuka banyak laci sekaligus
+            
+            drawer.classList.remove('hidden');
+            
+            const emptyState = document.getElementById(`ai-drawer-empty-${targetUid}`);
+            const loadingState = document.getElementById(`ai-drawer-loading-${targetUid}`);
+            const resultState = document.getElementById(`ai-drawer-result-${targetUid}`);
+            
+            emptyState.classList.add('hidden');
+            loadingState.classList.remove('hidden');
+            resultState.classList.add('hidden');
+            
+            if (countdownIntervals[targetUid]) {
+                clearInterval(countdownIntervals[targetUid]);
+            }
+
+            try {
+                const rs = await turso.execute({
+                    sql: "SELECT * FROM public_ai_analysis WHERE analyzer_uid = ? AND analyzed_uid = ?",
+                    args: [currentUid, targetUid]
+                });
+
+                if (rs.rows.length > 0) {
+                    const row = rs.rows[0];
+                    const createdAt = new Date(row.created_at + " UTC");
+                    const now = new Date();
+                    const diffTime = Math.abs(now - createdAt);
+                    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    const canRefresh = diffDays >= 7;
+
+                    let data = {};
+                    try {
+                        data = JSON.parse(row.analysis_data);
+                    } catch(e) { console.error("Error parsing AI JSON data", e); }
+                    
+                    renderPublicAIDrawerResult(targetUid, data, row.analyzer_name, row.analyzed_name, createdAt, canRefresh);
+                    
+                } else {
+                    loadingState.classList.add('hidden');
+                    emptyState.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error("Error opening AI analysis", error);
+                showToast("Gagal memuat data analisis AI", "error");
+                loadingState.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+            }
+        };
+
+        window.runPublicAIAnalysis = async function(targetUid, targetName) {
+            const emptyState = document.getElementById(`ai-drawer-empty-${targetUid}`);
+            const loadingState = document.getElementById(`ai-drawer-loading-${targetUid}`);
+            const resultState = document.getElementById(`ai-drawer-result-${targetUid}`);
+            const refreshBtn = document.getElementById(`ai-drawer-refresh-btn-${targetUid}`);
+            
+            if(refreshBtn) refreshBtn.disabled = true;
+            
+            emptyState.classList.add('hidden');
+            resultState.classList.add('hidden');
+            loadingState.classList.remove('hidden');
+            
+            try {
+                const targetProductsRs = await turso.execute({
+                    sql: "SELECT * FROM products WHERE sellerId = ?",
+                    args: [targetUid]
+                });
+                
+                const myProductsRs = await turso.execute({
+                    sql: "SELECT * FROM products WHERE sellerId = ?",
+                    args: [currentUid]
+                });
+                
+                const getStats = (rs) => {
+                    let totalProducts = rs.rows.length;
+                    let totalPrice = 0;
+                    rs.rows.forEach(p => { totalPrice += parseFloat(p.price) || 0; });
+                    let avgPrice = totalProducts > 0 ? (totalPrice / totalProducts) : 0;
+                    let sampleProducts = rs.rows.slice(0, 5).map(p => p.name).join(", ");
+                    return { totalProducts, avgPrice, sampleProducts };
+                };
+                
+                const targetStats = getStats(targetProductsRs);
+                const myStats = getStats(myProductsRs);
+                const myName = currentUserData?.businessName || currentUserData?.username || 'Toko Anda';
+                
+                const prompt = `Anda adalah analis bisnis UMKM ahli. Bandingkan 2 toko UMKM berikut dan berikan evaluasi performa, rating 1.0-5.0, kelebihan singkat, kekurangan singkat, dan kesimpulan performa keseluruhan.
+                
+                Toko 1 (Yang Menganalisis): ${myName}
+                Total Produk: ${myStats.totalProducts}
+                Harga Rata-rata: Rp ${Math.round(myStats.avgPrice)}
+                Sampel Produk: ${myStats.sampleProducts || 'Belum ada'}
+                
+                Toko 2 (Yang Dianalisis): ${targetName}
+                Total Produk: ${targetStats.totalProducts}
+                Harga Rata-rata: Rp ${Math.round(targetStats.avgPrice)}
+                Sampel Produk: ${targetStats.sampleProducts || 'Belum ada'}
+                
+                Format jawaban Anda secara ketat DALAM FORMAT JSON BERIKUT SAJA:
+                {
+                    "analyzer_rating": "4.5",
+                    "analyzed_rating": "4.2",
+                    "analyzer_pros": "Kelebihan toko 1",
+                    "analyzer_cons": "Kekurangan toko 1",
+                    "analyzed_pros": "Kelebihan toko 2",
+                    "analyzed_cons": "Kekurangan toko 2",
+                    "conclusion": "Kesimpulan perbandingan performa (2 kalimat)."
+                }`;
+
+                const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer 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',
+                        'HTTP-Referer': window.location.href,
+                        'X-Title': 'Pasar UMKM',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: "nvidia/nemotron-nano-12b-v2-vl:free",
+                        messages: [{ role: "user", content: prompt }]
+                    })
+                });
+
+                if (!response.ok) throw new Error("Gagal terhubung ke AI");
+                const data = await response.json();
+                const aiResponse = data.choices[0].message.content.trim();
+                
+                let cleanJsonStr = aiResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+                let aiData;
+                try {
+                    aiData = JSON.parse(cleanJsonStr);
+                } catch(e) {
+                    console.error("AI returned invalid JSON", aiResponse);
+                    throw new Error("Format analisis AI tidak valid");
+                }
+                
+                const finalData = {
+                    ...aiData,
+                    analyzer_products: myStats.totalProducts,
+                    analyzer_avg_price: myStats.avgPrice,
+                    analyzed_products: targetStats.totalProducts,
+                    analyzed_avg_price: targetStats.avgPrice
+                };
+                
+                const finalDataStr = JSON.stringify(finalData);
+                
+                const checkRs = await turso.execute({
+                    sql: "SELECT id FROM public_ai_analysis WHERE analyzer_uid = ? AND analyzed_uid = ?",
+                    args: [currentUid, targetUid]
+                });
+                
+                const now = new Date();
+                const nowIso = now.toISOString();
+                
+                if (checkRs.rows.length > 0) {
+                    await turso.execute({
+                        sql: "UPDATE public_ai_analysis SET analyzed_name = ?, analyzer_name = ?, analysis_data = ?, created_at = ? WHERE id = ?",
+                        args: [targetName, myName, finalDataStr, nowIso, checkRs.rows[0].id]
+                    });
+                } else {
+                    await turso.execute({
+                        sql: "INSERT INTO public_ai_analysis (analyzer_uid, analyzed_uid, analyzed_name, analyzer_name, analysis_data, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+                        args: [currentUid, targetUid, targetName, myName, finalDataStr, nowIso]
+                    });
+                }
+                
+                showToast("Analisis AI Selesai!", "success");
+                renderPublicAIDrawerResult(targetUid, finalData, myName, targetName, now, false);
+                
+            } catch(error) {
+                console.error(error);
+                showToast("Terjadi kesalahan saat AI menganalisis: " + error.message, "error");
+                loadingState.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+            }
+        };
+
+        function renderPublicAIDrawerResult(targetUid, data, myName, targetName, dateObj, canRefresh) {
+            document.getElementById(`ai-drawer-loading-${targetUid}`).classList.add('hidden');
+            document.getElementById(`ai-drawer-result-${targetUid}`).classList.remove('hidden');
+            
+            document.getElementById(`ai-drawer-th-analyzer-${targetUid}`).innerText = (myName || "Toko Anda").split(" ")[0].substring(0,8);
+            document.getElementById(`ai-drawer-th-analyzed-${targetUid}`).innerText = (targetName || "Target").split(" ")[0].substring(0,8);
+            
+            const formatRp = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
+            
+            document.getElementById(`ai-drawer-td-prod-analyzer-${targetUid}`).innerText = data.analyzer_products || 0;
+            document.getElementById(`ai-drawer-td-prod-analyzed-${targetUid}`).innerText = data.analyzed_products || 0;
+            document.getElementById(`ai-drawer-td-price-analyzer-${targetUid}`).innerText = formatRp(data.analyzer_avg_price || 0);
+            document.getElementById(`ai-drawer-td-price-analyzed-${targetUid}`).innerText = formatRp(data.analyzed_avg_price || 0);
+            
+            document.getElementById(`ai-drawer-td-rating-analyzer-${targetUid}`).innerHTML = `<i class="fa-solid fa-star"></i> ${data.analyzer_rating || '-'}`;
+            document.getElementById(`ai-drawer-td-rating-analyzed-${targetUid}`).innerHTML = `<i class="fa-solid fa-star"></i> ${data.analyzed_rating || '-'}`;
+            
+            document.getElementById(`ai-drawer-td-pros-analyzer-${targetUid}`).innerText = data.analyzer_pros || '-';
+            document.getElementById(`ai-drawer-td-pros-analyzed-${targetUid}`).innerText = data.analyzed_pros || '-';
+            document.getElementById(`ai-drawer-td-cons-analyzer-${targetUid}`).innerText = data.analyzer_cons || '-';
+            document.getElementById(`ai-drawer-td-cons-analyzed-${targetUid}`).innerText = data.analyzed_cons || '-';
+            
+            document.getElementById(`ai-drawer-conclusion-${targetUid}`).innerText = data.conclusion || '-';
+            
+            const dateStr = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+            document.getElementById(`ai-drawer-date-${targetUid}`).innerText = dateStr;
+            
+            const refreshBtn = document.getElementById(`ai-drawer-refresh-btn-${targetUid}`);
+            const countdownEl = document.getElementById(`ai-drawer-countdown-${targetUid}`);
+            
+            if (countdownIntervals[targetUid]) clearInterval(countdownIntervals[targetUid]);
+            
+            if (canRefresh) {
+                refreshBtn.disabled = false;
+                refreshBtn.style.opacity = '1';
+                countdownEl.innerText = "Bisa diulang";
+                countdownEl.className = "text-[8px] font-bold text-emerald-600";
+            } else {
+                refreshBtn.disabled = true;
+                refreshBtn.style.opacity = '0.5';
+                countdownEl.className = "text-[8px] font-bold text-orange-600";
+                
+                const targetTime = new Date(dateObj.getTime() + 7 * 24 * 60 * 60 * 1000).getTime();
+                
+                const updateCountdown = () => {
+                    const nowTime = new Date().getTime();
+                    const distance = targetTime - nowTime;
+                    
+                    if (distance <= 0) {
+                        clearInterval(countdownIntervals[targetUid]);
+                        refreshBtn.disabled = false;
+                        refreshBtn.style.opacity = '1';
+                        countdownEl.innerText = "Bisa diulang";
+                        countdownEl.className = "text-[8px] font-bold text-emerald-600";
+                        return;
+                    }
+                    
+                    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    
+                    countdownEl.innerText = `Jeda: ${days}h ${hours}j`;
+                };
+                
+                updateCountdown();
+                countdownIntervals[targetUid] = setInterval(updateCountdown, 60000);
+            }
+        }
 
         window.handleActivateTrial = async function () {
             if (currentUserData.trialStartedAt) {
