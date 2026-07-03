@@ -1238,6 +1238,14 @@
                     </div>
                 </div>
 
+                <!-- Premium Ads (IG Story Style) -->
+                <div id="premium-stories-container" class="mb-4 px-1 hidden mt-4">
+                    <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Sponsored VIP</h4>
+                    <div id="premium-stories-list" class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                        <!-- Stories will be injected here -->
+                    </div>
+                </div>
+
                 <!-- Pencarian Produk (Manual) -->
                 <div class="mb-3 px-1">
                     <div class="relative">
@@ -5257,7 +5265,8 @@
                 const rsAds = await turso.execute("SELECT * FROM ads WHERE is_active = 1 ORDER BY created_at DESC");
                 adList = rsAds.rows;
 
-                if (adList.length === 0) return; // Tidak ada iklan
+                // Render Premium Stories
+                renderPremiumStories();
 
                 // Play all ads on page load/login/refresh
                 startAdPlaylist();
@@ -5265,6 +5274,43 @@
             } catch (err) {
                 console.error("Gagal menginisialisasi sistem iklan", err);
             }
+        }
+
+        function renderPremiumStories() {
+            const container = document.getElementById('premium-stories-container');
+            const list = document.getElementById('premium-stories-list');
+            
+            const premiumAds = adList.filter(ad => ad.is_premium === 1);
+            
+            if (premiumAds.length === 0) {
+                container.classList.add('hidden');
+                return;
+            }
+            
+            container.classList.remove('hidden');
+            list.innerHTML = '';
+            
+            premiumAds.forEach(ad => {
+                const story = document.createElement('a');
+                if (ad.target_url) {
+                    story.href = ad.target_url;
+                    story.target = '_blank';
+                } else {
+                    story.href = '#';
+                    story.onclick = (e) => e.preventDefault();
+                }
+                
+                // IG Story style (vertical rectangle with gradient border)
+                story.className = "flex-shrink-0 cursor-pointer group";
+                story.innerHTML = `
+                    <div class="w-20 h-28 rounded-xl p-0.5 bg-gradient-to-tr from-amber-400 via-orange-500 to-pink-500 shadow-sm transition-transform transform group-hover:scale-105">
+                        <div class="w-full h-full bg-white rounded-[10px] overflow-hidden border-2 border-white">
+                            <img src="${ad.image_url}" class="w-full h-full object-cover" alt="VIP Ad">
+                        </div>
+                    </div>
+                `;
+                list.appendChild(story);
+            });
         }
 
         window.startAdPlaylist = function() {
