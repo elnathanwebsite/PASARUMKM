@@ -964,7 +964,7 @@
     <!-- App Header Fixed -->
     <header class="app-header">
         <div class="flex items-center gap-3 cursor-pointer" onclick="changePage(0)">
-            <img id="header-profile-photo" src="https://ui-avatars.com/api/?background=1E3A8A&color=fff&name=U"
+            <img id="header-profile-photo" src="https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png"
                 alt="Profile" class="w-9 h-9 rounded-full border-2 border-white shadow-sm object-cover bg-white">
             <div class="flex flex-col">
                 <span
@@ -983,6 +983,13 @@
             </div>
         </div>
         <div class="flex items-center gap-2">
+            <!-- Tombol Info AI -->
+            <button onclick="document.getElementById('ai-update-modal').classList.add('visible')"
+                class="relative w-9 h-9 rounded-xl flex items-center justify-center bg-green-50 border border-green-200 text-green-600 shadow-sm transition-transform hover:scale-105 active:scale-95" title="Informasi AI (gpt-oss-120b)">
+                <svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="text-lg">
+                  <path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2057 5.9847 5.9847 0 0 0 3.9804-2.9 6.0557 6.0557 0 0 0-.7302-7.0732zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.8956zm16.0993 3.8558L12.5973 8.3829V6.0505a.0757.0757 0 0 1 .0332-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66v5.5826l-.142-.0852-4.783-2.7582a.7712.7712 0 0 0-.7759 0zM10.7401 1.5676a4.4755 4.4755 0 0 1 2.8812 1.0408l-.1419.0804-4.7784 2.7582a.7948.7948 0 0 0-.3927.6813v6.7369l-2.02-1.1686a.071.071 0 0 1-.038-.052V6.0622a4.504 4.504 0 0 1 4.4898-4.4946zm8.9271 4.7153v5.6775a.7664.7664 0 0 0-.3879-.6765l-5.8144-3.3543 2.0201-1.1685a.0757.0757 0 0 1 .071 0l4.8303 2.7865a4.4945 4.4945 0 0 1-3.324-9.3564zM7.5583 14.1804l-2.02-1.1686a.0757.0757 0 0 1-.0332-.0615V7.3677l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7759 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1 .0332.0615l-4.8303 2.7866a4.4992 4.4992 0 0 1-6.6802-4.66v-5.5826z"/>
+                </svg>
+            </button>
             <!-- Tombol Riwayat Pemesanan -->
             <button onclick="window.location.href='riwayat_pemesanan.html'"
                 class="relative w-9 h-9 rounded-xl flex items-center justify-center bg-white border border-slate-200 text-blue-800 shadow-sm transition-transform hover:scale-105 active:scale-95">
@@ -1005,7 +1012,7 @@
                 <div class="glass-card p-6 text-center mb-6">
                     <div class="w-24 h-24 rounded-full mx-auto mb-4 border-2 overflow-hidden shadow-sm"
                         style="border-color: var(--accent); background: rgba(255,255,255,0.8);"><img id="profile-photo"
-                            src="https://ui-avatars.com/api/?background=1E3A8A&color=fff&name=U" alt="Avatar"
+                            src="https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png" alt="Avatar"
                             class="w-full h-full object-cover"></div>
                     <div id="profile-julukan-badge"
                         class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-bold mb-2 border border-indigo-100 hidden">
@@ -1269,7 +1276,7 @@
                         </div>
                         <span id="ai-usage-badge"
                             class="text-[9px] font-bold bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">Kuota:
-                            ?/7</span>
+                            ?/3</span>
                     </div>
                     <form onsubmit="handleAISearch(event)" class="relative">
                         <textarea id="ai-search-input" rows="2"
@@ -1831,6 +1838,60 @@
         }
     </script>
 
+    <!-- Modal Info AI -->
+    <div id="ai-update-modal" class="modal-overlay" role="dialog">
+        <div class="modal-content glass-card p-6">
+            <div class="flex justify-between items-center mb-5">
+                <h2 class="font-display font-bold text-lg text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-microchip text-indigo-500"></i> Info Pembaruan AI
+                </h2>
+                <button onclick="closeModal('ai-update-modal')"
+                    class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200 transition-colors">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                
+                <div class="p-4 rounded-xl border border-green-200 bg-green-50">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold text-green-700 uppercase tracking-wider">Patch 1.3 (Saat Ini)</span>
+                        <span class="px-2 py-1 bg-green-100 text-green-700 text-[9px] font-bold rounded-full">Aktif</span>
+                    </div>
+                    <p class="font-bold text-sm text-slate-800 mb-1 flex items-center">
+                        <svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="text-green-600 mr-1.5 text-base">
+                          <path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2057 5.9847 5.9847 0 0 0 3.9804-2.9 6.0557 6.0557 0 0 0-.7302-7.0732zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.8956zm16.0993 3.8558L12.5973 8.3829V6.0505a.0757.0757 0 0 1 .0332-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66v5.5826l-.142-.0852-4.783-2.7582a.7712.7712 0 0 0-.7759 0zM10.7401 1.5676a4.4755 4.4755 0 0 1 2.8812 1.0408l-.1419.0804-4.7784 2.7582a.7948.7948 0 0 0-.3927.6813v6.7369l-2.02-1.1686a.071.071 0 0 1-.038-.052V6.0622a4.504 4.504 0 0 1 4.4898-4.4946zm8.9271 4.7153v5.6775a.7664.7664 0 0 0-.3879-.6765l-5.8144-3.3543 2.0201-1.1685a.0757.0757 0 0 1 .071 0l4.8303 2.7865a4.4945 4.4945 0 0 1-3.324-9.3564zM7.5583 14.1804l-2.02-1.1686a.0757.0757 0 0 1-.0332-.0615V7.3677l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7759 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1 .0332.0615l-4.8303 2.7866a4.4992 4.4992 0 0 1-6.6802-4.66v-5.5826z"/>
+                        </svg>
+                        gpt-oss-120b
+                    </p>
+                    <p class="text-xs text-slate-600 leading-relaxed">Model raksasa 120 Miliar Parameter. Memberikan level kecerdasan buatan, akurasi penalaran, serta kecepatan pemrosesan kelas premium untuk fitur analisis pesaing dan asisten belanja.</p>
+                </div>
+
+                <div class="p-4 rounded-xl border border-slate-200 bg-white">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Patch 1.2</span>
+                    </div>
+                    <p class="font-bold text-sm text-slate-800 mb-1 flex items-center">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/8/8a/Google_Gemini_logo.svg" alt="Google" class="w-4 h-4 mr-1.5 opacity-70">
+                        gemma-4-26b-a4b-it:free
+                    </p>
+                    <p class="text-xs text-slate-500 leading-relaxed">Pembaruan ke ekosistem Google Gemma (26B). Sangat responsif untuk teks, namun tidak mendukung fitur Vision (analisis gambar).</p>
+                </div>
+
+                <div class="p-4 rounded-xl border border-slate-200 bg-white">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Patch 1.0.0</span>
+                    </div>
+                    <p class="font-bold text-sm text-slate-800 mb-1 flex items-center">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/2/21/Nvidia_logo.svg" alt="Nvidia" class="w-4 h-4 mr-1.5 opacity-70">
+                        nvidia/nemotron-nano-12b-v2-vl:free
+                    </p>
+                    <p class="text-xs text-slate-500 leading-relaxed">Model fondasi awal (12B) dengan fitur Vision-Language. Digunakan untuk rilis awal fitur deskripsi otomatis dari foto.</p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Edit Profil -->
     <div id="edit-profile-modal" class="modal-overlay" role="dialog">
         <div class="modal-content">
@@ -2033,8 +2094,7 @@
                 <div id="detail-price" class="text-2xl font-bold mb-6" style="color: var(--accent);">Rp0</div>
 
                 <div class="flex items-center gap-3 p-4 rounded-2xl mb-6 bg-blue-50 border border-blue-100">
-                    <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center text-blue-800 shadow-sm font-bold text-xl uppercase"
-                        id="detail-seller-initial">U</div>
+                    <img id="detail-seller-photo" src="https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png" class="w-12 h-12 rounded-full object-cover shadow-sm border border-slate-200" alt="Seller Photo">
                     <div>
                         <p class="text-xs text-slate-500 mb-0.5">Dijual oleh</p>
                         <p id="detail-seller-business" class="font-bold text-sm text-slate-800">Nama Usaha</p>
@@ -2128,7 +2188,7 @@
             try {
                 // Use OpenRouter SDK
                 const stream = await openrouter.chat.send({
-                    model: "nvidia/nemotron-nano-12b-v2-vl:free",
+                    model: "openrouter/free",
                     messages: [
                         {
                             role: "system",
@@ -2264,6 +2324,12 @@
                 await turso.execute("ALTER TABLE users ADD COLUMN aiSearchCount INTEGER DEFAULT 0");
             } catch (e) { }
             try {
+                await turso.execute("ALTER TABLE users ADD COLUMN aiDescCount INTEGER DEFAULT 0");
+            } catch (e) { }
+            try {
+                await turso.execute("ALTER TABLE users ADD COLUMN aiUsageDate TEXT DEFAULT ''");
+            } catch (e) { }
+            try {
                 await turso.execute("ALTER TABLE users ADD COLUMN isSubscribed INTEGER DEFAULT 0");
             } catch (e) { }
             try {
@@ -2367,6 +2433,18 @@
                 const rs = await turso.execute({ sql: "SELECT * FROM users WHERE uid = ?", args: [firebaseUser.uid] });
                 if (rs.rows.length > 0) {
                     currentUserData = rs.rows[0];
+                    
+                    // Cek reset harian
+                    const localDateStr = new Date().toLocaleDateString('en-CA');
+                    if (currentUserData.aiUsageDate !== localDateStr) {
+                        await turso.execute({
+                            sql: "UPDATE users SET aiSearchCount = 0, aiDescCount = 0, aiUsageDate = ? WHERE uid = ?",
+                            args: [localDateStr, firebaseUser.uid]
+                        });
+                        currentUserData.aiSearchCount = 0;
+                        currentUserData.aiDescCount = 0;
+                        currentUserData.aiUsageDate = localDateStr;
+                    }
                 } else {
                     currentUserData = {
                         uid: firebaseUser.uid,
@@ -2406,7 +2484,7 @@
         async function renderProfileUI() {
             if (!currentUserData) return;
             const bName = currentUserData.businessName || currentUserData.username || 'UMKM';
-            const photo = currentUserData.photoURL || `https://ui-avatars.com/api/?background=1E3A8A&color=fff&name=${encodeURIComponent(bName)}`;
+            const photo = currentUserData.photoURL || `https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png`;
 
             document.getElementById('profile-name').textContent = bName;
             document.getElementById('profile-email').textContent = currentUserData.email || '-';
@@ -2481,8 +2559,8 @@
             const badge = document.getElementById('ai-usage-badge');
             if (badge) {
                 const count = currentUserData.aiSearchCount || 0;
-                badge.textContent = `Kuota: ${count}/7`;
-                if (count >= 7) badge.className = "text-[9px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full";
+                badge.textContent = `Kuota: ${count}/3`;
+                if (count >= 3) badge.className = "text-[9px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full";
             }
 
             // Update Subscription Status in Profile
@@ -2729,7 +2807,7 @@
 
             if (!query) return;
 
-            // Cek Kuota AI (Maks 7x per user)
+            // Cek Kuota AI (Maks 3x per user)
             try {
                 const rsCount = await turso.execute({
                     sql: "SELECT aiSearchCount FROM users WHERE uid = ?",
@@ -2737,8 +2815,8 @@
                 });
                 const count = rsCount.rows[0]?.aiSearchCount || 0;
 
-                if (count >= 7) {
-                    showToast("Kuota AI Anda sudah habis (Maks 7x). Silakan gunakan pencarian manual.", "error");
+                if (count >= 3) {
+                    showToast("Kuota AI Pencarian Anda sudah habis (Maks 3x per hari). Silakan gunakan pencarian manual.", "error");
                     return;
                 }
 
@@ -2769,7 +2847,7 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        model: "nvidia/nemotron-nano-12b-v2-vl:free",
+                        model: "openrouter/free",
                         messages: [
                             {
                                 role: "system",
@@ -2818,8 +2896,8 @@
                     const newCount = count + 1;
                     const badge = document.getElementById('ai-usage-badge');
                     if (badge) {
-                        badge.textContent = `Kuota: ${newCount}/7`;
-                        if (newCount >= 7) badge.className = "text-[9px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full";
+                        badge.textContent = `Kuota: ${newCount}/3`;
+                        if (newCount >= 3) badge.className = "text-[9px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full";
                     }
 
                     showToast(`AI menemukan ${recommendedIds.length} produk!`, "success");
@@ -2861,6 +2939,21 @@
             if (!name) {
                 showToast("Silakan isi Nama Produk terlebih dahulu!", "error");
                 return;
+            }
+
+            // CEK LIMIT AI DESC
+            try {
+                const rsCount = await turso.execute({
+                    sql: "SELECT aiDescCount FROM users WHERE uid = ?",
+                    args: [currentUid]
+                });
+                const descCount = rsCount.rows[0]?.aiDescCount || 0;
+                if (descCount >= 3) {
+                    showToast("Kuota AI Deskripsi Anda sudah habis (Maks 3x per hari).", "error");
+                    return;
+                }
+            } catch (err) {
+                console.error("Error cek kuota AI:", err);
             }
 
             if (descArea) {
@@ -2922,7 +3015,7 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        model: "nvidia/nemotron-nano-12b-v2-vl:free",
+                        model: "openrouter/free",
                         messages: [
                             {
                                 role: "system",
@@ -2950,6 +3043,14 @@
 
                 descArea.value = aiDesc;
                 showToast("Deskripsi berhasil dibuat oleh AI!", "success");
+                
+                try {
+                    await turso.execute({
+                        sql: "UPDATE users SET aiDescCount = aiDescCount + 1 WHERE uid = ?",
+                        args: [currentUid]
+                    });
+                    if (currentUserData) currentUserData.aiDescCount = (currentUserData.aiDescCount || 0) + 1;
+                } catch(e) {}
             } catch (error) {
                 clearInterval(progressInterval);
                 if (progressContainer) progressContainer.classList.add('hidden');
@@ -3218,7 +3319,7 @@
                     </div>
                 `;
             }
-            const sellerPhoto = product.sellerPhoto || `https://ui-avatars.com/api/?background=1E3A8A&color=fff&name=${encodeURIComponent(product.sellerBusiness || 'U')}`;
+            const sellerPhoto = product.sellerPhoto || `https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png`;
             const sellerRating = product.sellerAiRating !== null && product.sellerAiRating !== undefined
                 ? parseFloat(product.sellerAiRating).toFixed(1)
                 : "0.0";
@@ -3547,7 +3648,8 @@
 
             const sellerName = product.sellerBusiness || product.sellerName || 'Penjual';
             document.getElementById('detail-seller-business').innerText = sellerName;
-            document.getElementById('detail-seller-initial').innerText = sellerName.charAt(0);
+            const defaultPhoto = 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png';
+            document.getElementById('detail-seller-photo').src = product.sellerPhoto || defaultPhoto;
             document.getElementById('detail-desc').innerText = product.description || 'Tidak ada deskripsi.';
 
             document.getElementById('detail-share-btn').onclick = () => {
@@ -3643,15 +3745,20 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        model: "nvidia/nemotron-nano-12b-v2-vl:free",
+                        model: "openrouter/free",
                         messages: [
                             {
                                 role: "system",
-                                content: `Anda adalah AI Echoomrche Market Strategist. Tugas Anda:
-                                1. Bandingkan produk User dengan Pesaing. 
-                                2. Sebutkan akun UMKM lain yang mirip secara eksplisit dalam teks analisis: ${marketSellers.join(", ")}.
-                                3. Berikan analisis singkat (maks 4 kalimat) berisi 1 Pujian untuk user dan 1 Roasting pedas. 
-                                Gaya bahasa chat santai.`
+                                content: `Anda adalah pakar analisis produk dan pasar. Lakukan analisis terhadap produk pesaing berikut dan bandingkan dengan produk user.
+                                Output HARUS terstruktur dengan poin-poin berikut (gunakan bullet points):
+                                - **Desain Produk**: [Analisis desain atau visual produk berdasarkan nama & deskripsi]
+                                - **Harga Produk**: [Analisis harga produk]
+                                - **Kelemahan dan Kelebihan**: [Analisis kelemahan dan kelebihan]
+                                - **Rating**: [Berikan rating kualitas produk 1-10]
+                                - **Potensi Laku Keras di Pasaran**: [Rating/Prediksi kemungkinan laku di pasaran]
+                                - **Kesimpulan Singkat**: [Kesimpulan analisis secara keseluruhan]
+                                
+                                UMKM lain yang mirip: ${marketSellers.join(", ")}.`
                             },
                             {
                                 role: "user",
@@ -3861,7 +3968,7 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        model: "nvidia/nemotron-nano-12b-v2-vl:free",
+                        model: "openrouter/free",
                         messages: [
                             {
                                 role: "system",
@@ -4029,7 +4136,7 @@
 
                 rs.rows.forEach(seller => {
                     const bName = seller.businessName || seller.username || 'UMKM';
-                    const photo = seller.photoURL || `https://ui-avatars.com/api/?background=1E3A8A&color=fff&name=${encodeURIComponent(bName)}`;
+                    const photo = seller.photoURL || `https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png`;
                     const julukan = seller.dominantCategory ? getAIJulukan(seller.dominantCategory) : null;
                     const sRating = seller.aiStoreRating !== null && seller.aiStoreRating !== undefined 
                         ? parseFloat(seller.aiStoreRating).toFixed(1) 
@@ -4829,7 +4936,7 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        model: "nvidia/nemotron-nano-12b-v2-vl:free",
+                        model: "openrouter/free",
                         messages: [{ role: "user", content: prompt }]
                     })
                 });

@@ -638,7 +638,7 @@ const locationText = row.location ? `<div class="text-xs text-slate-500 mt-2 fle
 
                     // Users Profile Logic
                     const otherName = row.other_name || 'Pengguna';
-                    const otherPhoto = row.other_photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherName)}&background=random`;
+                    const otherPhoto = row.other_photo || `https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png`;
                     const otherEmail = row.other_email || '-';
                     const otherRating = (row.other_rating !== null && row.other_rating !== undefined) ? parseFloat(row.other_rating).toFixed(1) : '0.0';
                     const labelOther = currentTab === 'beli' ? 'Penjual' : 'Pembeli';
