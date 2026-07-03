@@ -1804,6 +1804,27 @@
         </div>
     </nav>
     <div id="sidebar-resizer" class="hidden md:block"></div>
+    
+    <!-- Ad Modal Popup -->
+    <div id="ad-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="relative bg-white rounded-2xl shadow-2xl overflow-hidden max-w-sm w-full mx-auto transform scale-95 transition-transform duration-300 border border-white/20">
+            <!-- Close Button -->
+            <button id="ad-close-btn" onclick="closeAdModal()" class="absolute top-2 right-2 w-8 h-8 bg-black/50 hover:bg-black/80 text-white rounded-full flex items-center justify-center z-10 transition-colors backdrop-blur-md">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <!-- Ad Content -->
+            <a id="ad-link" href="#" target="_blank" class="block w-full cursor-pointer relative group">
+                <img id="ad-image" src="" class="w-full h-auto max-h-[60vh] object-cover" alt="Iklan">
+                
+                <!-- Ad Label Overlay -->
+                <div class="absolute bottom-2 left-2 bg-black/40 backdrop-blur-md px-2 py-0.5 rounded text-[10px] font-bold text-white tracking-widest uppercase">
+                    Iklan
+                </div>
+            </a>
+        </div>
+    </div>
+
     <script>
         // Sidebar Resizer logic
         const resizer = document.getElementById('sidebar-resizer');
@@ -2224,10 +2245,15 @@
         // --- PAGE MANAGEMENT ---
         let currentPageIndex = 2; // Default to Dashboard (Beranda)
         window.changePage = function (index) {
-            // Pembatasan: Jika akun dinonaktifkan (isVerified !== 1)
-            if (index === 3 && currentUserData && currentUserData.isVerified !== 1) {
-                showToast("Akun Anda telah dinonaktifkan izinnya karena melakukan pelanggaran. Harap melakukan banding melalui situs resmi atau hubungi Customer Service: 083802453336", "error");
-                return;
+            // Pembatasan: Akses Toko Saya
+            if (index === 3 && currentUserData) {
+                if (currentUserData.isVerified === 0) {
+                    showToast("Toko Anda sedang diverifikasi oleh Admin. Saat ini Anda hanya dapat berbelanja dan mengeksplor produk.", "info");
+                    return;
+                } else if (currentUserData.isVerified === -1) {
+                    showToast("Akun Anda telah dinonaktifkan izinnya karena melakukan pelanggaran. Harap melakukan banding melalui situs resmi.", "error");
+                    return;
+                }
             }
 
             currentPageIndex = index;
@@ -2363,6 +2389,18 @@
                 await turso.execute("ALTER TABLE users ADD COLUMN bankAccountName TEXT");
             } catch (e) { }
             try {
+                await turso.execute("ALTER TABLE users ADD COLUMN aiLimit INTEGER DEFAULT 5");
+            } catch (e) { }
+            try {
+                await turso.execute("ALTER TABLE users ADD COLUMN aiSearchLimit INTEGER DEFAULT 5");
+            } catch (e) { }
+            try {
+                await turso.execute("ALTER TABLE users ADD COLUMN aiDescLimit INTEGER DEFAULT 5");
+            } catch (e) { }
+            try {
+                await turso.execute("ALTER TABLE users ADD COLUMN aiAnalysisLimit INTEGER DEFAULT 5");
+            } catch (e) { }
+            try {
                 await turso.execute(`
                     CREATE TABLE IF NOT EXISTS tarik_dana (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2390,6 +2428,34 @@
                     )
                 `);
             } catch(e) { console.error("Error creating public_ai_analysis table", e); }
+            try {
+                await turso.execute(`
+                    CREATE TABLE IF NOT EXISTS ads (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        image_url TEXT NOT NULL,
+                        target_url TEXT,
+                        is_active INTEGER DEFAULT 1,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    )
+                `);
+                
+                try {
+                    await turso.execute("ALTER TABLE ads ADD COLUMN duration_seconds INTEGER DEFAULT 5");
+                } catch(e){}
+                
+                try {
+                    await turso.execute("ALTER TABLE ads ADD COLUMN is_premium INTEGER DEFAULT 0");
+                } catch(e){}
+
+                await turso.execute(`
+                    CREATE TABLE IF NOT EXISTS settings (
+                        key TEXT PRIMARY KEY,
+                        value TEXT
+                    )
+                `);
+                await turso.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('ad_interval_seconds', '30')");
+                await turso.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('ad_max_views', '3')");
+            } catch(e){}
         })();
 
         let currentUserData = null;
@@ -2411,10 +2477,13 @@
                     return;
                 }
 
+                // Email Verification check removed so users can explore dashboard while waiting for admin verification.
+
                 currentUid = user.uid;
                 overlay.classList.add('hidden');
                 syncUserProfileToTurso(user);
                 loadMarketProducts();
+                initAdsSystem();
 
                 // Cek notifikasi pesanan baru
                 if (localStorage.getItem('hasNewOrder') === 'true') {
@@ -2434,15 +2503,24 @@
                 if (rs.rows.length > 0) {
                     currentUserData = rs.rows[0];
                     
+                    // PROTEKSI ADMIN VERIFICATION & BAN
+                    if (currentUserData.isVerified === -1) {
+                        auth.signOut();
+                        alert('Akun Anda diblokir karena melanggar standar komunitas.');
+                        window.location.href = 'index.html';
+                        return;
+                    }
+                    
                     // Cek reset harian
                     const localDateStr = new Date().toLocaleDateString('en-CA');
                     if (currentUserData.aiUsageDate !== localDateStr) {
                         await turso.execute({
-                            sql: "UPDATE users SET aiSearchCount = 0, aiDescCount = 0, aiUsageDate = ? WHERE uid = ?",
+                            sql: "UPDATE users SET aiSearchCount = 0, aiDescCount = 0, aiAnalysisCount = 0, aiUsageDate = ? WHERE uid = ?",
                             args: [localDateStr, firebaseUser.uid]
                         });
                         currentUserData.aiSearchCount = 0;
                         currentUserData.aiDescCount = 0;
+                        currentUserData.aiAnalysisCount = 0;
                         currentUserData.aiUsageDate = localDateStr;
                     }
                 } else {
@@ -2475,6 +2553,10 @@
 
                     // Tambahkan ke riwayat pendaftaran
                     await turso.execute({ sql: "INSERT INTO registration_history (user_uid, username, email, business_name, status) VALUES (?, ?, ?, ?, ?)", args: [currentUserData.uid, currentUserData.username, currentUserData.email, currentUserData.businessName, 'Aktif'] });
+                    
+                    // Akun baru dibuat, otomatis ditahan (isVerified = 0)
+                    // Pengguna tetap di dashboard untuk mengeksplor (berbelanja), Toko Saya diblokir
+                    showToast('Akun berhasil dibuat. Anda dapat berbelanja sambil menunggu verifikasi Toko Anda oleh Admin.', 'info');
                 }
                 renderProfileUI();
                 renderAIStoreSection();
@@ -2555,13 +2637,42 @@
                 profileRatingDiv.classList.remove('hidden');
             }
 
-            // Update AI Usage Badge
-            const badge = document.getElementById('ai-usage-badge');
-            if (badge) {
-                const count = currentUserData.aiSearchCount || 0;
-                badge.textContent = `Kuota: ${count}/3`;
-                if (count >= 3) badge.className = "text-[9px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full";
+            // Disable Toko Saya Nav Button visually if not verified
+            const navBtnToko = document.getElementById('nav-btn-3');
+            if (navBtnToko) {
+                if (currentUserData.isVerified !== 1) {
+                    navBtnToko.style.opacity = '0.5';
+                    navBtnToko.style.filter = 'grayscale(100%)';
+                } else {
+                    navBtnToko.style.opacity = '1';
+                    navBtnToko.style.filter = 'none';
+                }
             }
+
+            // Update AI Usage Badge and Button Quotas
+            const badge = document.getElementById('ai-usage-badge');
+            const searchCount = currentUserData.aiSearchCount || 0;
+            const descCount = currentUserData.aiDescCount || 0;
+            const analysisCount = currentUserData.aiAnalysisCount || 0;
+            
+            const searchLimit = currentUserData.aiSearchLimit !== undefined && currentUserData.aiSearchLimit !== null ? currentUserData.aiSearchLimit : 5;
+            const descLimit = currentUserData.aiDescLimit !== undefined && currentUserData.aiDescLimit !== null ? currentUserData.aiDescLimit : 5;
+            const analysisLimit = currentUserData.aiAnalysisLimit !== undefined && currentUserData.aiAnalysisLimit !== null ? currentUserData.aiAnalysisLimit : 5;
+
+            if (badge) {
+                badge.textContent = `Kuota: ${searchCount}/${searchLimit}`;
+                if (searchCount >= searchLimit) badge.className = "text-[9px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full";
+            }
+            
+            // Update UI text on all AI buttons
+            const btnDescAdd = document.getElementById('ai-gen-desc-add');
+            if (btnDescAdd) btnDescAdd.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Analisis AI (${descCount}/${descLimit})`;
+
+            const btnDescEdit = document.getElementById('ai-gen-desc-edit');
+            if (btnDescEdit) btnDescEdit.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Analisis AI (${descCount}/${descLimit})`;
+
+            const btnAnalysis = document.getElementById('btn-run-ai-analysis');
+            if (btnAnalysis) btnAnalysis.innerHTML = `<i class="fa-solid fa-magnifying-glass-chart"></i> Analisis Pesaing AI (${analysisCount}/${analysisLimit})`;
 
             // Update Subscription Status in Profile
             const isSub = currentUserData.isSubscribed === 1;
@@ -2807,16 +2918,17 @@
 
             if (!query) return;
 
-            // Cek Kuota AI (Maks 3x per user)
+            // Cek Kuota AI
             try {
                 const rsCount = await turso.execute({
-                    sql: "SELECT aiSearchCount FROM users WHERE uid = ?",
+                    sql: "SELECT aiSearchCount, aiSearchLimit FROM users WHERE uid = ?",
                     args: [currentUid]
                 });
                 const count = rsCount.rows[0]?.aiSearchCount || 0;
+                const limit = (rsCount.rows[0]?.aiSearchLimit !== undefined && rsCount.rows[0]?.aiSearchLimit !== null) ? rsCount.rows[0]?.aiSearchLimit : 5;
 
-                if (count >= 3) {
-                    showToast("Kuota AI Pencarian Anda sudah habis (Maks 3x per hari). Silakan gunakan pencarian manual.", "error");
+                if (count >= limit) {
+                    showToast(`Kuota AI Pencarian Anda sudah habis (Maks ${limit}x per hari). Silakan gunakan pencarian manual.`, "error");
                     return;
                 }
 
@@ -2944,12 +3056,14 @@
             // CEK LIMIT AI DESC
             try {
                 const rsCount = await turso.execute({
-                    sql: "SELECT aiDescCount FROM users WHERE uid = ?",
+                    sql: "SELECT aiDescCount, aiDescLimit FROM users WHERE uid = ?",
                     args: [currentUid]
                 });
                 const descCount = rsCount.rows[0]?.aiDescCount || 0;
-                if (descCount >= 3) {
-                    showToast("Kuota AI Deskripsi Anda sudah habis (Maks 3x per hari).", "error");
+                const limit = (rsCount.rows[0]?.aiDescLimit !== undefined && rsCount.rows[0]?.aiDescLimit !== null) ? rsCount.rows[0]?.aiDescLimit : 5;
+                
+                if (descCount >= limit) {
+                    showToast(`Kuota AI Deskripsi Anda sudah habis (Maks ${limit}x per hari).`, "error");
                     return;
                 }
             } catch (err) {
@@ -3058,7 +3172,9 @@
                 showToast("Gagal membuat deskripsi: " + error.message, "error");
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = originalText;
+                const limit = currentUserData.aiDescLimit !== undefined && currentUserData.aiDescLimit !== null ? currentUserData.aiDescLimit : 5;
+                const descCount = currentUserData.aiDescCount || 0;
+                btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Analisis AI (${descCount}/${limit})`;
             }
         };
 
@@ -3435,6 +3551,7 @@
                 clearAddImagePreview();
                 loadMarketProducts();
                 changePage(2); // Kembali ke beranda setelah sukses
+                startAdPlaylist(); // Tampilkan playlist iklan setelah tambah produk
             } catch (error) {
                 console.error(error);
                 showToast('Error: ' + error.message, 'error');
@@ -3702,22 +3819,12 @@
             const quotaBadge = document.getElementById('ai-analysis-quota');
             const compList = document.getElementById('ai-competitors-list');
 
-            // Quota Logic: 5 uses per 10 days
-            const now = new Date();
+            // Quota Logic: Use daily aiAnalysisLimit
+            const limit = currentUserData.aiAnalysisLimit !== undefined && currentUserData.aiAnalysisLimit !== null ? currentUserData.aiAnalysisLimit : 5;
             let quotaUsed = currentUserData.aiAnalysisCount || 0;
-            let lastReset = currentUserData.lastAnalysisMonth ? new Date(currentUserData.lastAnalysisMonth) : new Date(0);
 
-            const diffTime = Math.abs(now - lastReset);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-            if (diffDays > 10) {
-                quotaUsed = 0;
-                lastReset = now;
-            }
-
-            if (quotaUsed >= 5) {
-                const nextReset = new Date(lastReset.getTime() + 10 * 24 * 60 * 60 * 1000);
-                showToast(`Kuota Analisis Pesaing habis (Maks 5x/10 hari). Reset pada: ${nextReset.toLocaleDateString()}`, "error");
+            if (quotaUsed >= limit) {
+                showToast(`Kuota Analisis Pesaing habis (Maks ${limit}x/hari). Silakan tunggu besok.`, "error");
                 return;
             }
 
@@ -3799,12 +3906,13 @@
                 // Update DB Quota
                 quotaUsed++;
                 await turso.execute({
-                    sql: "UPDATE users SET aiAnalysisCount = ?, lastAnalysisMonth = ? WHERE uid = ?",
-                    args: [quotaUsed, lastReset.toISOString(), currentUid]
+                    sql: "UPDATE users SET aiAnalysisCount = ? WHERE uid = ?",
+                    args: [quotaUsed, currentUid]
                 });
                 currentUserData.aiAnalysisCount = quotaUsed;
-                currentUserData.lastAnalysisMonth = lastReset.toISOString();
-                quotaBadge.innerText = `Kuota: ${quotaUsed}/5`;
+                if (quotaBadge) quotaBadge.innerText = `Kuota: ${quotaUsed}/${limit}`;
+                
+                renderProfileUI(); // Update UI buttons
 
                 showToast("Analisis Pasar Selesai!", "success");
             } catch (error) {
@@ -3812,7 +3920,9 @@
                 showToast("Gagal analisis: " + error.message, "error");
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-magnifying-glass-chart"></i> Analisis Pesaing dengan AI Echoomrche';
+                const limitFinal = currentUserData.aiAnalysisLimit !== undefined && currentUserData.aiAnalysisLimit !== null ? currentUserData.aiAnalysisLimit : 5;
+                const countFinal = currentUserData.aiAnalysisCount || 0;
+                btn.innerHTML = `<i class="fa-solid fa-magnifying-glass-chart"></i> Analisis Pesaing AI (${countFinal}/${limitFinal})`;
             }
         };
 
@@ -5132,6 +5242,107 @@
                 slider.scrollLeft = scrollLeft - walk;
             });
         });
+
+        // ================================================================
+        // SISTEM IKLAN POPUP (AD MANAGEMENT)
+        // ================================================================
+        let adList = [];
+        let adCurrentPlaylistIndex = 0;
+        let adTimeoutId = null;
+        let isAdPlaying = false;
+
+        async function initAdsSystem() {
+            try {
+                // Fetch Active Ads
+                const rsAds = await turso.execute("SELECT * FROM ads WHERE is_active = 1 ORDER BY created_at DESC");
+                adList = rsAds.rows;
+
+                if (adList.length === 0) return; // Tidak ada iklan
+
+                // Play all ads on page load/login/refresh
+                startAdPlaylist();
+
+            } catch (err) {
+                console.error("Gagal menginisialisasi sistem iklan", err);
+            }
+        }
+
+        window.startAdPlaylist = function() {
+            if (adList.length === 0) return;
+            if (isAdPlaying) return;
+            isAdPlaying = true;
+            adCurrentPlaylistIndex = 0;
+            playNextAd();
+        };
+
+        function playNextAd() {
+            if (adCurrentPlaylistIndex >= adList.length) {
+                hideAdModalVisuals();
+                isAdPlaying = false;
+                return;
+            }
+
+            const ad = adList[adCurrentPlaylistIndex];
+            adCurrentPlaylistIndex++;
+
+            const modal = document.getElementById('ad-modal');
+            const img = document.getElementById('ad-image');
+            const link = document.getElementById('ad-link');
+            const closeBtn = document.getElementById('ad-close-btn');
+
+            img.src = ad.image_url;
+            if (ad.target_url) {
+                link.href = ad.target_url;
+                link.removeAttribute('onclick');
+            } else {
+                link.removeAttribute('href');
+                link.setAttribute('onclick', 'event.preventDefault();');
+            }
+
+            if (ad.is_premium === 1) {
+                closeBtn.classList.add('hidden');
+            } else {
+                closeBtn.classList.remove('hidden');
+            }
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.firstElementChild.classList.remove('scale-95');
+                modal.firstElementChild.classList.add('scale-100');
+            }, 10);
+
+            clearTimeout(adTimeoutId);
+            const duration = (ad.duration_seconds || 5) * 1000;
+            adTimeoutId = setTimeout(() => {
+                transitionToNextAd();
+            }, duration);
+        }
+
+        function transitionToNextAd() {
+            clearTimeout(adTimeoutId);
+            const modal = document.getElementById('ad-modal');
+            modal.classList.add('opacity-0');
+            modal.firstElementChild.classList.remove('scale-100');
+            modal.firstElementChild.classList.add('scale-95');
+            setTimeout(() => {
+                playNextAd();
+            }, 300);
+        }
+
+        window.closeAdModal = function() {
+            transitionToNextAd();
+        };
+
+        function hideAdModalVisuals() {
+            const modal = document.getElementById('ad-modal');
+            modal.classList.add('opacity-0');
+            modal.firstElementChild.classList.remove('scale-100');
+            modal.firstElementChild.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
     </script>
     <!-- Subscription Modal -->
     <div id="subscription-modal" class="modal-overlay">

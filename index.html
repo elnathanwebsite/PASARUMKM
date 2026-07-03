@@ -994,7 +994,11 @@
             btn.innerHTML = '<span class="btn-spinner"></span> Memproses...';
 
             try {
-                await auth.signInWithEmailAndPassword(email, password);
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+                
+                // Email Verification check removed so users can login and explore dashboard.
+                
                 showToast('Login berhasil! Mengalihkan ke dashboard...', 'success');
             } catch (error) {
                 console.error('Login error:', error);
@@ -1054,6 +1058,9 @@
                 const user = userCredential.user;
 
                 await user.updateProfile({ displayName: username });
+                
+                // Kirim email verifikasi
+                await user.sendEmailVerification();
 
                 await db.ref('users/' + user.uid).set({
                     uid: user.uid,
@@ -1067,7 +1074,12 @@
                     authProvider: 'email'
                 });
 
-                showToast('Pendaftaran berhasil! Mengalihkan ke dashboard...', 'success');
+                // Sign out agar tidak langsung masuk dashboard (harus verifikasi dulu)
+                await auth.signOut();
+                showToast('Pendaftaran berhasil! Silakan cek email Anda untuk verifikasi sebelum login.', 'success');
+                
+                // Pindah ke form login
+                setTimeout(() => switchTab('login'), 3500);
             } catch (error) {
                 console.error('Register error:', error);
                 showToast(getFirebaseErrorMessage(error.code), 'error');
