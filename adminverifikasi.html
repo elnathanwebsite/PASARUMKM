@@ -430,15 +430,20 @@
                             <label class="block text-xs font-bold text-slate-700 mb-1">URL Tujuan (Opsional)</label>
                             <input type="url" id="ad-target-url" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20" placeholder="https://tokoanda.com/promo">
                         </div>
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 gap-4">
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Waktu Tayang (Detik) *</label>
                                 <input type="number" id="ad-duration" required min="3" value="5" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20">
                             </div>
-                            <div class="flex items-center mt-6">
+                            <div class="flex flex-col gap-2">
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Lokasi Tayang Iklan</label>
                                 <label class="flex items-center gap-2 cursor-pointer">
-                                    <input type="checkbox" id="ad-premium" class="w-4 h-4 text-amber-500 rounded border-slate-300 focus:ring-amber-500">
-                                    <span class="text-xs font-bold text-slate-700"><i class="fa-solid fa-crown text-amber-500 mr-1"></i>Iklan Premium (Tanpa Silang)</span>
+                                    <input type="checkbox" id="ad-popup" checked class="w-4 h-4 text-blue-500 rounded border-slate-300 focus:ring-blue-500">
+                                    <span class="text-xs font-bold text-slate-700">Tampil di Layar Pop-up Utama</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" id="ad-story" class="w-4 h-4 text-amber-500 rounded border-slate-300 focus:ring-amber-500">
+                                    <span class="text-xs font-bold text-slate-700"><i class="fa-solid fa-crown text-amber-500 mr-1"></i>Tampil di Daftar VIP (Dashboard & Public)</span>
                                 </label>
                             </div>
                         </div>
@@ -650,6 +655,14 @@
                 
                 try {
                     await turso.execute("ALTER TABLE ads ADD COLUMN is_premium INTEGER DEFAULT 0");
+                } catch(e){}
+
+                try {
+                    await turso.execute("ALTER TABLE ads ADD COLUMN show_in_popup INTEGER DEFAULT 1");
+                } catch(e){}
+
+                try {
+                    await turso.execute("ALTER TABLE ads ADD COLUMN show_in_story INTEGER DEFAULT 0");
                 } catch(e){}
 
             } catch(e){}
@@ -1259,9 +1272,10 @@
                         </td>
                         <td class="px-4 py-3 text-xs">
                             ${row.target_url ? `<a href="${row.target_url}" target="_blank" class="text-blue-500 hover:underline break-all"><i class="fa-solid fa-link mr-1"></i>${row.target_url}</a>` : '<span class="text-slate-400 italic">Tanpa Link</span>'}
-                            <div class="mt-1 flex items-center gap-2">
+                            <div class="mt-1 flex flex-wrap items-center gap-2">
                                 <span class="text-[10px] font-bold text-slate-500"><i class="fa-regular fa-clock mr-1"></i>${row.duration_seconds || 5} dtk</span>
-                                ${row.is_premium === 1 ? '<span class="text-[10px] font-bold text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded"><i class="fa-solid fa-crown mr-1"></i>Premium</span>' : ''}
+                                ${row.show_in_popup === 1 ? '<span class="text-[10px] font-bold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">Pop-up</span>' : ''}
+                                ${row.show_in_story === 1 ? '<span class="text-[10px] font-bold text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100"><i class="fa-solid fa-crown mr-1"></i>VIP Story</span>' : ''}
                             </div>
                         </td>
                         <td class="px-4 py-3 text-center">
@@ -1290,14 +1304,15 @@
             const imgUrl = document.getElementById('ad-image-url').value.trim();
             const targetUrl = document.getElementById('ad-target-url').value.trim();
             const duration = parseInt(document.getElementById('ad-duration').value) || 5;
-            const isPremium = document.getElementById('ad-premium').checked ? 1 : 0;
+            const isPopup = document.getElementById('ad-popup').checked ? 1 : 0;
+            const isStory = document.getElementById('ad-story').checked ? 1 : 0;
             
             if (!imgUrl) return;
 
             try {
                 await turso.execute({
-                    sql: "INSERT INTO ads (image_url, target_url, duration_seconds, is_premium) VALUES (?, ?, ?, ?)",
-                    args: [imgUrl, targetUrl, duration, isPremium]
+                    sql: "INSERT INTO ads (image_url, target_url, duration_seconds, show_in_popup, show_in_story) VALUES (?, ?, ?, ?, ?)",
+                    args: [imgUrl, targetUrl, duration, isPopup, isStory]
                 });
                 showToast("Iklan berhasil ditambahkan!", "success");
                 document.getElementById('add-ad-form').reset();

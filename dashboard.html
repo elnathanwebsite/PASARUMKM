@@ -1152,6 +1152,14 @@
                     </div>
                 </div>
 
+                <!-- Premium Ads (IG Story Style - Public) -->
+                <div id="public-premium-stories-container" class="mb-4 hidden">
+                    <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">VIP</h4>
+                    <div id="public-premium-stories-list" class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide px-1">
+                        <!-- Stories will be injected here -->
+                    </div>
+                </div>
+
                 <div class="mb-4 flex gap-2">
                     <select id="public-category-filter" onchange="loadOtherSellers(this.value)"
                         class="glass-input text-xs py-2 px-3 w-full bg-white/50">
@@ -1240,7 +1248,7 @@
 
                 <!-- Premium Ads (IG Story Style) -->
                 <div id="premium-stories-container" class="mb-4 px-1 hidden mt-4">
-                    <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Sponsored VIP</h4>
+                    <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">VIP</h4>
                     <div id="premium-stories-list" class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                         <!-- Stories will be injected here -->
                     </div>
@@ -2453,6 +2461,19 @@
                 
                 try {
                     await turso.execute("ALTER TABLE ads ADD COLUMN is_premium INTEGER DEFAULT 0");
+                } catch(e){}
+
+                try {
+                    await turso.execute("ALTER TABLE ads ADD COLUMN show_in_popup INTEGER DEFAULT 1");
+                } catch(e){}
+
+                try {
+                    await turso.execute("ALTER TABLE ads ADD COLUMN show_in_story INTEGER DEFAULT 0");
+                } catch(e){}
+
+                try {
+                    // Migrasi iklan premium lama agar otomatis masuk ke VIP Story
+                    await turso.execute("UPDATE ads SET show_in_story = 1 WHERE is_premium = 1 AND (show_in_story = 0 OR show_in_story IS NULL)");
                 } catch(e){}
 
                 await turso.execute(`
@@ -5255,6 +5276,7 @@
         // SISTEM IKLAN POPUP (AD MANAGEMENT)
         // ================================================================
         let adList = [];
+        let adPopupList = [];
         let adCurrentPlaylistIndex = 0;
         let adTimeoutId = null;
         let isAdPlaying = false;
@@ -5264,6 +5286,8 @@
                 // Fetch Active Ads
                 const rsAds = await turso.execute("SELECT * FROM ads WHERE is_active = 1 ORDER BY created_at DESC");
                 adList = rsAds.rows;
+                
+                adPopupList = adList.filter(ad => ad.show_in_popup === 1);
 
                 // Render Premium Stories
                 renderPremiumStories();
@@ -5277,44 +5301,43 @@
         }
 
         function renderPremiumStories() {
-            const container = document.getElementById('premium-stories-container');
-            const list = document.getElementById('premium-stories-list');
+            const premiumAds = adList.filter(ad => ad.show_in_story === 1);
             
-            const premiumAds = adList.filter(ad => ad.is_premium === 1);
+            // Container Public Page
+            const publicContainer = document.getElementById('public-premium-stories-container');
+            const publicList = document.getElementById('public-premium-stories-list');
+            
+            // Container Dashboard Page
+            const dashContainer = document.getElementById('premium-stories-container');
+            const dashList = document.getElementById('premium-stories-list');
             
             if (premiumAds.length === 0) {
-                container.classList.add('hidden');
+                if(publicContainer) publicContainer.classList.add('hidden');
+                if(dashContainer) dashContainer.classList.add('hidden');
                 return;
             }
             
-            container.classList.remove('hidden');
-            list.innerHTML = '';
+            if(publicContainer) publicContainer.classList.remove('hidden');
+            if(dashContainer) dashContainer.classList.remove('hidden');
+            
+            if(publicList) publicList.innerHTML = '';
+            if(dashList) dashList.innerHTML = '';
             
             premiumAds.forEach(ad => {
-                const story = document.createElement('a');
-                if (ad.target_url) {
-                    story.href = ad.target_url;
-                    story.target = '_blank';
-                } else {
-                    story.href = '#';
-                    story.onclick = (e) => e.preventDefault();
-                }
-                
-                // IG Story style (vertical rectangle with gradient border)
-                story.className = "flex-shrink-0 cursor-pointer group";
-                story.innerHTML = `
-                    <div class="w-20 h-28 rounded-xl p-0.5 bg-gradient-to-tr from-amber-400 via-orange-500 to-pink-500 shadow-sm transition-transform transform group-hover:scale-105">
-                        <div class="w-full h-full bg-white rounded-[10px] overflow-hidden border-2 border-white">
+                const storyHTML = `
+                    <a href="${ad.target_url ? ad.target_url : '#'}" ${ad.target_url ? 'target="_blank"' : 'onclick="event.preventDefault();"'} class="flex-shrink-0 cursor-pointer group">
+                        <div class="w-28 h-40 rounded-xl shadow-sm transition-transform transform group-hover:scale-105 overflow-hidden">
                             <img src="${ad.image_url}" class="w-full h-full object-cover" alt="VIP Ad">
                         </div>
-                    </div>
+                    </a>
                 `;
-                list.appendChild(story);
+                if(publicList) publicList.innerHTML += storyHTML;
+                if(dashList) dashList.innerHTML += storyHTML;
             });
         }
 
         window.startAdPlaylist = function() {
-            if (adList.length === 0) return;
+            if (adPopupList.length === 0) return;
             if (isAdPlaying) return;
             isAdPlaying = true;
             adCurrentPlaylistIndex = 0;
@@ -5322,13 +5345,13 @@
         };
 
         function playNextAd() {
-            if (adCurrentPlaylistIndex >= adList.length) {
+            if (adCurrentPlaylistIndex >= adPopupList.length) {
                 hideAdModalVisuals();
                 isAdPlaying = false;
                 return;
             }
 
-            const ad = adList[adCurrentPlaylistIndex];
+            const ad = adPopupList[adCurrentPlaylistIndex];
             adCurrentPlaylistIndex++;
 
             const modal = document.getElementById('ad-modal');
@@ -5345,11 +5368,7 @@
                 link.setAttribute('onclick', 'event.preventDefault();');
             }
 
-            if (ad.is_premium === 1) {
-                closeBtn.classList.add('hidden');
-            } else {
-                closeBtn.classList.remove('hidden');
-            }
+            closeBtn.classList.remove('hidden'); // Selalu tampilkan tombol silang
 
             modal.classList.remove('hidden');
             setTimeout(() => {
