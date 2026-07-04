@@ -12,6 +12,10 @@ AUTH_TOKEN = os.getenv("TURSO_AUTH_TOKEN")
 if not DB_URL or not AUTH_TOKEN:
     raise ValueError("Missing TURSO_DATABASE_URL or TURSO_AUTH_TOKEN in .env")
 
+# Sanitize URL: force https:// instead of libsql:// to avoid WebSocket handshake issues
+if DB_URL.startswith("libsql://"):
+    DB_URL = "https://" + DB_URL[9:]
+
 # Initialize connection client
 # Create a global client instance for sync execution
 client = libsql_client.create_client_sync(

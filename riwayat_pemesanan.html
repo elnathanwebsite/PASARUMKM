@@ -27,6 +27,7 @@
     <!-- Firebase SDK (HANYA AUTENTIKASI) -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="push-notification.js" defer></script>
 
     <script>
         tailwind.config = {
@@ -1049,6 +1050,24 @@ const locationText = row.location ? `<div class="text-xs text-slate-500 mt-2 fle
                 closeModal('update-resi-modal');
                 alert('Laporan status resi berhasil dikirim!');
                 loadOrders();
+
+                // Send push notification to buyer
+                try {
+                    const orderRs = await turso.execute({
+                        sql: "SELECT buyer_uid, product_name FROM riwayat_pemesanan WHERE id = ?",
+                        args: [orderId]
+                    });
+                    if (orderRs.rows.length > 0 && window.sendPushNotification) {
+                        await window.sendPushNotification(
+                            orderRs.rows[0].buyer_uid,
+                            "Update Pengiriman!",
+                            `Status pesanan ${orderRs.rows[0].product_name} terbaru: ${statusText}`,
+                            "/riwayat_pemesanan.html"
+                        );
+                    }
+                } catch (pushErr) {
+                    console.error("Gagal mengirim notifikasi push ke pembeli:", pushErr);
+                }
             } catch (err) {
                 alert('Gagal mengirim laporan status: ' + err.message);
             }
@@ -1086,6 +1105,24 @@ const locationText = row.location ? `<div class="text-xs text-slate-500 mt-2 fle
                 closeModal('konfirmasi-modal');
                 alert('Konfirmasi berhasil! Status pesanan kini Selesai. Mohon kirimkan foto bukti melalui WhatsApp yang akan terbuka setelah ini.');
                 loadOrders();
+
+                // Send push notification to seller
+                try {
+                    const orderRs = await turso.execute({
+                        sql: "SELECT seller_uid, product_name, buyer_name FROM riwayat_pemesanan WHERE id = ?",
+                        args: [orderId]
+                    });
+                    if (orderRs.rows.length > 0 && window.sendPushNotification) {
+                        await window.sendPushNotification(
+                            orderRs.rows[0].seller_uid,
+                            "Pesanan Selesai!",
+                            `${orderRs.rows[0].buyer_name} telah mengkonfirmasi penerimaan produk ${orderRs.rows[0].product_name}.`,
+                            "/riwayat_pemesanan.html"
+                        );
+                    }
+                } catch (pushErr) {
+                    console.error("Gagal mengirim notifikasi push ke penjual:", pushErr);
+                }
 
                 // Buka WhatsApp
                 let waMessage = `Halo, saya ingin mengkonfirmasi bahwa pesanan *${productName}* (Resi: ${resiCode}) telah saya terima dengan baik.\n\nBerikut foto buktinya (akan saya lampirkan). Terima kasih!`;
@@ -1138,6 +1175,24 @@ const locationText = row.location ? `<div class="text-xs text-slate-500 mt-2 fle
                 alert('Pengajuan retur berhasil! Mohon kirimkan foto bukti barang cacat melalui WhatsApp yang akan terbuka setelah ini.');
                 loadOrders();
 
+                // Send push notification to seller
+                try {
+                    const orderRs = await turso.execute({
+                        sql: "SELECT seller_uid, product_name, buyer_name FROM riwayat_pemesanan WHERE id = ?",
+                        args: [orderId]
+                    });
+                    if (orderRs.rows.length > 0 && window.sendPushNotification) {
+                        await window.sendPushNotification(
+                            orderRs.rows[0].seller_uid,
+                            "Pengajuan Retur Baru!",
+                            `${orderRs.rows[0].buyer_name} mengajukan retur untuk produk ${orderRs.rows[0].product_name}.`,
+                            "/riwayat_pemesanan.html"
+                        );
+                    }
+                } catch (pushErr) {
+                    console.error("Gagal mengirim notifikasi push ke penjual:", pushErr);
+                }
+
                 // Buka WhatsApp
                 let waMessage = `Halo, saya ingin mengajukan *RETUR* untuk pesanan *${productName}* (Resi: ${resiCode}).\n\nAlasan Retur: ${notes}\n\nBerikut foto buktinya (akan saya lampirkan). Mohon tindak lanjutnya.`;
                 const fullWaLink = `${waLink}?text=${encodeURIComponent(waMessage)}`;
@@ -1166,6 +1221,24 @@ const locationText = row.location ? `<div class="text-xs text-slate-500 mt-2 fle
                 
                 alert('Pengajuan retur berhasil disetujui.');
                 loadOrders(); // Refresh halaman
+
+                // Send push notification to buyer
+                try {
+                    const orderRs = await turso.execute({
+                        sql: "SELECT buyer_uid, product_name FROM riwayat_pemesanan WHERE id = ?",
+                        args: [orderId]
+                    });
+                    if (orderRs.rows.length > 0 && window.sendPushNotification) {
+                        await window.sendPushNotification(
+                            orderRs.rows[0].buyer_uid,
+                            "Retur Disetujui!",
+                            `Pengajuan retur Anda untuk produk ${orderRs.rows[0].product_name} telah disetujui penjual.`,
+                            "/riwayat_pemesanan.html"
+                        );
+                    }
+                } catch (pushErr) {
+                    console.error("Gagal mengirim notifikasi push ke pembeli:", pushErr);
+                }
             } catch (err) {
                 alert('Gagal menyetujui retur: ' + err.message);
             }

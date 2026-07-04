@@ -29,6 +29,7 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="push-notification.js" defer></script>
 
     <script>
         tailwind.config = {
@@ -726,6 +727,7 @@
                     document.getElementById('admin-info').classList.remove('hidden');
                     document.getElementById('admin-email').textContent = user.email;
                     loadUsers();
+                    initPushNotification(user.uid, turso);
                 } else {
                     showToast("Akses ditolak! Halaman ini hanya untuk Admin.", "error");
                     setTimeout(() => window.location.href = 'dashboard.html', 2000);

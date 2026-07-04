@@ -29,6 +29,7 @@
     <!-- Firebase SDK (HANYA AUTENTIKASI) -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="push-notification.js" defer></script>
     
     <!-- PayPal JS SDK -->
     <script src="https://www.paypal.com/sdk/js?client-id=AVcoPi4PLPfUW3mTRIFg0LgxtJEhPfQtGJQW3FD0hfh7PtX2UCYdyePDz2mDTPvGuezxH2tILh0vRVtu&currency=USD"></script>
@@ -923,6 +924,20 @@
                 }
 
                 localStorage.setItem('hasNewOrder', 'true');
+
+                // Send push notification to the seller
+                try {
+                    if (window.sendPushNotification) {
+                        await window.sendPushNotification(
+                            sellerId,
+                            "Pesanan Baru!",
+                            `Ada pesanan baru ${productName} (${qty}x) dari ${name}.`,
+                            "/riwayat_pemesanan.html"
+                        );
+                    }
+                } catch (pushErr) {
+                    console.error("Gagal mengirim notifikasi push ke penjual:", pushErr);
+                }
 
                 if (paymentMethod === 'WhatsApp') {
                     let locText = location;

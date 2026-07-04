@@ -30,6 +30,7 @@
     <!-- Firebase SDK (HANYA AUTENTIKASI) -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="push-notification.js" defer></script>
 
     <script>
         tailwind.config = {
@@ -2484,6 +2485,17 @@
                 `);
                 await turso.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('ad_interval_seconds', '30')");
                 await turso.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('ad_max_views', '3')");
+                
+                // Heal push_subscriptions table
+                await turso.execute(`
+                    CREATE TABLE IF NOT EXISTS push_subscriptions (
+                        user_id TEXT NOT NULL,
+                        endpoint TEXT PRIMARY KEY,
+                        p256dh TEXT NOT NULL,
+                        auth TEXT NOT NULL,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    )
+                `);
             } catch(e){}
         })();
 
@@ -2511,6 +2523,7 @@
                 currentUid = user.uid;
                 overlay.classList.add('hidden');
                 syncUserProfileToTurso(user);
+                initPushNotification(user.uid, turso);
                 loadMarketProducts();
                 initAdsSystem();
 

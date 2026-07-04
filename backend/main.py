@@ -32,7 +32,7 @@ def health_check():
     except Exception as e:
         return {"status": "unhealthy", "error": str(e)}
 
-from routers import products, users, orders, subscription, admin
+from routers import products, users, orders, subscription, admin, push
 
 # --- Placeholder Routers (to be implemented in separate files) ---
 app.include_router(products.router, prefix="/api/products", tags=["products"])
@@ -40,6 +40,7 @@ app.include_router(users.router, prefix="/api/users", tags=["users"])
 app.include_router(orders.router, prefix="/api/orders", tags=["orders"])
 app.include_router(subscription.router, prefix="/api/subscription", tags=["subscription"])
 app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
+app.include_router(push.router, prefix="/api/push", tags=["push"])
 
 if __name__ == "__main__":
     import uvicorn
