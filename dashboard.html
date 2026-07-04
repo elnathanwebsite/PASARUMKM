@@ -4796,33 +4796,32 @@
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghubungkan...';
 
             try {
-                const response = await fetch("https://api.louvin.dev/create-subscription", {
+                // Panggil backend FastAPI kita
+                const response = await fetch("http://localhost:8000/api/subscription/create", {
                     method: "POST",
                     headers: {
-                        "Content-Type": "application/json",
-                        "x-api-key": LOUVIN_API_KEY
+                        "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        plan_id: SLOT_PLAN_ID,
-                        customer_email: currentUserData.email,
-                        customer_name: currentUserData.username || currentUserData.businessName
+                        uid: currentUid,
+                        customer_email: currentUserData.email || 'user@pasarumkm.com',
+                        customer_name: currentUserData.username || currentUserData.businessName || 'User UMKM'
                     })
                 });
 
                 const data = await response.json();
-                if (data.success) {
-                    const qrString = data.payment.qr_string;
-                    const subId = data.subscription.id;
-                    const txnId = data.transaction.id;
+                if (data.status === "success" && data.data.success) {
+                    const qrString = data.data.payment.qr_string;
+                    const txnId = data.data.transaction.id;
 
                     const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrString)}`;
                     qrisImage.innerHTML = `<img src="${qrImageUrl}" class="w-40 h-40 mx-auto" />`;
                     qrisContainer.classList.remove('hidden');
                     btn.classList.add('hidden');
 
-                    startPollingSubscription(subId, txnId);
+                    startPollingSubscription(txnId, currentUid);
                 } else {
-                    throw new Error(data.error || "Gagal membuat langganan");
+                    throw new Error(data.message || "Gagal membuat transaksi");
                 }
             } catch (error) {
                 console.error(error);
@@ -4832,29 +4831,27 @@
             }
         };
 
-        function startPollingSubscription(subId, txnId) {
+        function startPollingSubscription(txnId, uid) {
             if (subPollingInterval) clearInterval(subPollingInterval);
 
             subPollingInterval = setInterval(async () => {
                 try {
-                    const response = await fetch(`https://api.louvin.dev/check-status?id=${txnId}`, {
-                        method: "GET",
-                        headers: { "x-api-key": LOUVIN_API_KEY }
-                    });
+                    const response = await fetch(`http://localhost:8000/api/subscription/check-status?transaction_id=${txnId}&uid=${uid}`);
                     const data = await response.json();
 
-                    if (data.success && data.transaction && data.transaction.status === 'settled') {
+                    if (data.status === 'success' && data.payment_status === 'settled') {
                         clearInterval(subPollingInterval);
 
-                        await turso.execute({
-                            sql: "UPDATE users SET isSubscribed = 1, subscriptionExpiry = ? WHERE uid = ?",
-                            args: [new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), currentUid]
-                        });
-
+                        // The backend already updated the DB, just update local state
                         currentUserData.isSubscribed = 1;
+                        currentUserData.aiLimit = (currentUserData.aiLimit || 0) + 10;
+                        currentUserData.aiSearchLimit = (currentUserData.aiSearchLimit || 0) + 10;
+                        currentUserData.aiDescLimit = (currentUserData.aiDescLimit || 0) + 10;
+                        currentUserData.aiAnalysisLimit = (currentUserData.aiAnalysisLimit || 0) + 10;
+                        
                         renderProfileUI();
 
-                        showToast("Upgrade Berhasil! Sekarang Anda memiliki slot tak terbatas.", "success");
+                        showToast("Upgrade Berhasil! Anda mendapatkan 50 slot dan 10 credit AI.", "success");
                         setTimeout(() => closeModal('subscription-modal'), 2000);
 
                         setTimeout(() => {
@@ -5423,7 +5420,7 @@
                         Bulan</span>
                 </div>
                 <div class="flex items-baseline gap-1 mb-4">
-                    <span class="text-2xl font-black text-amber-800">Rp 50.000</span>
+                    <span class="text-2xl font-black text-amber-800">Rp 60.000</span>
                     <span class="text-xs text-slate-500 font-medium">/ bulan</span>
                 </div>
                 <ul class="space-y-2.5">
@@ -5438,6 +5435,9 @@
                     </li>
                     <li class="flex items-center gap-2 text-xs text-amber-800 font-medium">
                         <i class="fa-solid fa-circle-check text-amber-500"></i> Prioritas Rekomendasi AI
+                    </li>
+                    <li class="flex items-center gap-2 text-xs text-amber-800 font-medium">
+                        <i class="fa-solid fa-circle-check text-amber-500"></i> 10 Credit AI per hari
                     </li>
                 </ul>
             </div>
