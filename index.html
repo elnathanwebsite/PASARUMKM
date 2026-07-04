@@ -1097,12 +1097,8 @@
                     authProvider: 'email'
                 });
 
-                // Sign out agar tidak langsung masuk dashboard (harus verifikasi dulu)
-                await auth.signOut();
-                showToast('Pendaftaran berhasil! Silakan cek email Anda untuk verifikasi sebelum login.', 'success');
-                
-                // Pindah ke form login
-                setTimeout(() => switchTab('login'), 3500);
+                showToast('Pendaftaran berhasil! Mengalihkan ke dashboard...', 'success');
+                // Tidak perlu sign out, biarkan onAuthStateChanged mengalihkan pengguna ke dashboard.
             } catch (error) {
                 console.error('Register error:', error);
                 showToast(getFirebaseErrorMessage(error.code), 'error');
