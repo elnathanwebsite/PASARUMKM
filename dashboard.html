@@ -2497,59 +2497,31 @@
         // ================================================================
         // AUTENTIKASI
         // ================================================================
-        async function initAuth() {
-            // Tunggu proses redirect Google Sign-In (jika ada) sebelum mengecek status login
-            try {
-                const result = await auth.getRedirectResult();
-                if (result && result.user) {
-                    const user = result.user;
-                    const snapshot = await db.ref('users/' + user.uid).once('value');
-                    if (!snapshot.exists()) {
-                        await db.ref('users/' + user.uid).set({
-                            uid: user.uid,
-                            username: user.displayName || user.email.split('@')[0],
-                            email: user.email || '',
-                            phone: '',
-                            businessName: '',
-                            photoURL: user.photoURL || '',
-                            createdAt: firebase.database.ServerValue.TIMESTAMP,
-                            role: 'umkm',
-                            authProvider: 'google'
-                        });
-                    }
+        auth.onAuthStateChanged((user) => {
+            const overlay = document.getElementById('loading-overlay');
+            if (user) {
+                // PROTEKSI ADMIN: Jika admin masuk ke dashboard, arahkan ke panel admin
+                if (user.email === 'admin@pasarumkm.com') {
+                    window.location.href = 'adminverifikasi.html';
+                    return;
                 }
-            } catch(e) {
-                console.error("Redirect error:", e);
+
+                // Email Verification check removed so users can explore dashboard while waiting for admin verification.
+
+                currentUid = user.uid;
+                overlay.classList.add('hidden');
+                syncUserProfileToTurso(user);
+                loadMarketProducts();
+                initAdsSystem();
+
+                // Cek notifikasi pesanan baru
+                if (localStorage.getItem('hasNewOrder') === 'true') {
+                    document.getElementById('notif-red-dot').classList.remove('hidden');
+                }
+            } else {
+                window.location.href = 'index.html';
             }
-
-            auth.onAuthStateChanged((user) => {
-                const overlay = document.getElementById('loading-overlay');
-                if (user) {
-                    // PROTEKSI ADMIN: Jika admin masuk ke dashboard, arahkan ke panel admin
-                    if (user.email === 'admin@pasarumkm.com') {
-                        window.location.href = 'adminverifikasi.html';
-                        return;
-                    }
-
-                    // Email Verification check removed so users can explore dashboard while waiting for admin verification.
-
-                    currentUid = user.uid;
-                    overlay.classList.add('hidden');
-                    syncUserProfileToTurso(user);
-                    loadMarketProducts();
-                    initAdsSystem();
-
-                    // Cek notifikasi pesanan baru
-                    if (localStorage.getItem('hasNewOrder') === 'true') {
-                        document.getElementById('notif-red-dot').classList.remove('hidden');
-                    }
-                } else {
-                    window.location.href = 'index.html';
-                }
-            });
-        }
-        
-        initAuth();
+        });
 
         // ================================================================
         // FUNGSI PROFIL

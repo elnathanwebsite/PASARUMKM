@@ -834,33 +834,50 @@
         // ================================================================
         // Observer Status Autentikasi
         // ================================================================
-        auth.onAuthStateChanged(async (user) => {
+        let isProcessingRedirect = true;
+
+        // Pertama, tangkap hasil redirect (jika user baru kembali dari Google)
+        auth.getRedirectResult().then(async (result) => {
+            if (result && result.user) {
+                const user = result.user;
+                try {
+                    const snapshot = await db.ref('users/' + user.uid).once('value');
+                    if (!snapshot.exists()) {
+                        await db.ref('users/' + user.uid).set({
+                            uid: user.uid,
+                            username: user.displayName || user.email.split('@')[0],
+                            email: user.email || '',
+                            phone: '',
+                            businessName: '',
+                            photoURL: user.photoURL || '',
+                            createdAt: firebase.database.ServerValue.TIMESTAMP,
+                            role: 'umkm',
+                            authProvider: 'google'
+                        });
+                        showToast('Akun berhasil dibuat! Mengalihkan...', 'success');
+                    }
+                } catch(e) {
+                    console.error('Error saat menyimpan user:', e);
+                }
+                // Setelah selesai proses DB, arahkan ke dashboard
+                window.location.href = 'dashboard.html';
+            } else {
+                // Bukan hasil dari redirect
+                isProcessingRedirect = false;
+            }
+        }).catch((error) => {
+            console.error('Redirect sign-in error:', error);
+            isProcessingRedirect = false;
+        });
+
+        // Kedua, observer standar untuk status auth
+        auth.onAuthStateChanged((user) => {
             const overlay = document.getElementById('loading-overlay');
             if (user) {
-                try {
-                    // Menangkap hasil dari signInWithRedirect
-                    const result = await auth.getRedirectResult();
-                    if (result && result.user) {
-                        const snapshot = await db.ref('users/' + user.uid).once('value');
-                        if (!snapshot.exists()) {
-                            await db.ref('users/' + user.uid).set({
-                                uid: user.uid,
-                                username: user.displayName || user.email.split('@')[0],
-                                email: user.email || '',
-                                phone: '',
-                                businessName: '',
-                                photoURL: user.photoURL || '',
-                                createdAt: firebase.database.ServerValue.TIMESTAMP,
-                                role: 'umkm',
-                                authProvider: 'google'
-                            });
-                            showToast('Akun berhasil dibuat! Mengalihkan...', 'success');
-                        }
-                    }
-                } catch (error) {
-                    console.error('Redirect sign-in error:', error);
+                // Hanya redirect jika tidak sedang diproses oleh getRedirectResult di atas
+                if (!isProcessingRedirect) {
+                    window.location.href = 'dashboard.html';
                 }
-                window.location.href = 'dashboard.html';
             } else {
                 overlay.classList.add('hidden');
             }
@@ -1118,15 +1135,10 @@
 
                 showToast('Membuka login Google...', 'info');
                 
-                // Trik: Ubah URL secara virtual agar Firebase meredirect kembali ke dashboard.html
-                window.history.pushState(null, null, 'dashboard.html');
-                
                 // Menggunakan redirect untuk kompabilitas dengan WebView (Median.co)
                 await auth.signInWithRedirect(provider);
 
             } catch (error) {
-                // Kembalikan URL jika gagal
-                window.history.pushState(null, null, 'index.html');
                 console.error('Google sign-in error:', error);
                 showToast(getFirebaseErrorMessage(error.code), 'error');
             }
