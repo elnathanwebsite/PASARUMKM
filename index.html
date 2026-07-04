@@ -105,14 +105,17 @@
 
         /* ===== Bagian Branding ===== */
         .auth-brand {
-            background: linear-gradient(135deg, #1E3A8A, #2563EB);
+            
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.7)), url('CARD.png');
+            background-size: cover;
+            background-position: center;
             padding: 2.5rem 1.5rem; /* Padding lebih kecil di mobile */
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             text-align: center;
-            color: white;
+            color: #1e293b;
             position: relative;
             overflow: hidden;
         }
@@ -134,16 +137,14 @@
         }
 
         .brand-logo {
-            width: 64px;
-            height: 64px;
-            background: rgba(255,255,255,0.9);
-            border-radius: 16px;
+            width: 80px;
+            height: 80px;
+            background: transparent;
+            border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
-            color: white;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            box-shadow: none;
             margin-bottom: 16px;
             position: relative;
             z-index: 1;
@@ -175,12 +176,13 @@
             align-items: center;
             gap: 12px;
             padding: 12px;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.03);
             border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.05);
             font-size: 14px;
-            color: rgba(255, 255, 255, 0.9);
+            text-align: left;
             transition: all 0.3s ease;
+            backdrop-filter: blur(4px);
         }
 
         .brand-feature:hover {
@@ -652,27 +654,27 @@
 
                 <!-- Bagian Branding -->
                 <section class="auth-brand">
-                    <div class="brand-logo" style="padding: 8px;">
-                        <img src="favicon/favicon.svg" alt="Logo PASAR UMKM" style="width: 100%; height: 100%; object-fit: contain; border-radius: 8px;">
+                    <div class="brand-logo">
+                        <img src="favicon/web-app-manifest-512x512.png" alt="Logo PASAR UMKM" style="width: 100%; height: 100%; object-fit: contain; border-radius: 4px;">
                     </div>
-                    <h1 class="font-display font-black mb-2 relative z-10 text-white">PASAR UMKM</h1>
-                    <p class="text-sm mb-6 relative z-10 text-white/80">Wadah jual beli produk UMKM Indonesia</p>
+                    <h1 class="font-display font-black mb-2 relative z-10 text-slate-800">PASAR UMKM</h1>
+                    <p class="text-sm mb-6 relative z-10 text-slate-600">Wadah jual beli produk UMKM Indonesia</p>
 
                     <div class="brand-features">
                         <div class="brand-feature">
-                            <i class="fa-solid fa-basket-shopping" style="color: #93C5FD; width: 20px; text-align: center;"></i>
+                            <i class="fa-solid fa-basket-shopping" style="color: #2563EB; width: 20px; text-align: center;"></i>
                             <span>Jual produk usahamu</span>
                         </div>
                         <div class="brand-feature">
-                            <i class="fa-solid fa-globe" style="color: #93C5FD; width: 20px; text-align: center;"></i>
+                            <i class="fa-solid fa-globe" style="color: #2563EB; width: 20px; text-align: center;"></i>
                             <span>Jangkau pasar luas</span>
                         </div>
                         <div class="brand-feature">
-                            <i class="fa-solid fa-shield-halved" style="color: #93C5FD; width: 20px; text-align: center;"></i>
+                            <i class="fa-solid fa-shield-halved" style="color: #2563EB; width: 20px; text-align: center;"></i>
                             <span>Transaksi aman dan mudah</span>
                         </div>
                         <div class="brand-feature">
-                            <i class="fa-solid fa-chart-line" style="color: #93C5FD; width: 20px; text-align: center;"></i>
+                            <i class="fa-solid fa-chart-line" style="color: #2563EB; width: 20px; text-align: center;"></i>
                             <span>Kelola bisnis dengan dashboard</span>
                         </div>
                     </div>
