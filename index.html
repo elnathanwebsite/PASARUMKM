@@ -834,9 +834,32 @@
         // ================================================================
         // Observer Status Autentikasi
         // ================================================================
-        auth.onAuthStateChanged((user) => {
+        auth.onAuthStateChanged(async (user) => {
             const overlay = document.getElementById('loading-overlay');
             if (user) {
+                try {
+                    // Menangkap hasil dari signInWithRedirect
+                    const result = await auth.getRedirectResult();
+                    if (result && result.user) {
+                        const snapshot = await db.ref('users/' + user.uid).once('value');
+                        if (!snapshot.exists()) {
+                            await db.ref('users/' + user.uid).set({
+                                uid: user.uid,
+                                username: user.displayName || user.email.split('@')[0],
+                                email: user.email || '',
+                                phone: '',
+                                businessName: '',
+                                photoURL: user.photoURL || '',
+                                createdAt: firebase.database.ServerValue.TIMESTAMP,
+                                role: 'umkm',
+                                authProvider: 'google'
+                            });
+                            showToast('Akun berhasil dibuat! Mengalihkan...', 'success');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Redirect sign-in error:', error);
+                }
                 window.location.href = 'dashboard.html';
             } else {
                 overlay.classList.add('hidden');
@@ -1097,33 +1120,13 @@
                 provider.addScope('profile');
                 provider.addScope('email');
 
-                const result = await auth.signInWithPopup(provider);
-                const user = result.user;
-
-                const snapshot = await db.ref('users/' + user.uid).once('value');
-
-                if (!snapshot.exists()) {
-                    await db.ref('users/' + user.uid).set({
-                        uid: user.uid,
-                        username: user.displayName || user.email.split('@')[0],
-                        email: user.email || '',
-                        phone: '',
-                        businessName: '',
-                        photoURL: user.photoURL || '',
-                        createdAt: firebase.database.ServerValue.TIMESTAMP,
-                        role: 'umkm',
-                        authProvider: 'google'
-                    });
-                    showToast('Akun berhasil dibuat! Lengkapi profil usahamu di dashboard.', 'info');
-                } else {
-                    showToast('Login berhasil! Mengalihkan...', 'success');
-                }
+                showToast('Membuka login Google...', 'info');
+                // Menggunakan redirect untuk kompabilitas dengan WebView (Median.co)
+                await auth.signInWithRedirect(provider);
 
             } catch (error) {
                 console.error('Google sign-in error:', error);
-                if (error.code !== 'auth/popup-closed-by-user') {
-                    showToast(getFirebaseErrorMessage(error.code), 'error');
-                }
+                showToast(getFirebaseErrorMessage(error.code), 'error');
             }
         }
 
