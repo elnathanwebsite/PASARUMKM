@@ -1117,10 +1117,16 @@
                 provider.addScope('email');
 
                 showToast('Membuka login Google...', 'info');
+                
+                // Trik: Ubah URL secara virtual agar Firebase meredirect kembali ke dashboard.html
+                window.history.pushState(null, null, 'dashboard.html');
+                
                 // Menggunakan redirect untuk kompabilitas dengan WebView (Median.co)
                 await auth.signInWithRedirect(provider);
 
             } catch (error) {
+                // Kembalikan URL jika gagal
+                window.history.pushState(null, null, 'index.html');
                 console.error('Google sign-in error:', error);
                 showToast(getFirebaseErrorMessage(error.code), 'error');
             }

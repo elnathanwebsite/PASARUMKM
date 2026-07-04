@@ -2497,9 +2497,31 @@
         // ================================================================
         // AUTENTIKASI
         // ================================================================
-        auth.onAuthStateChanged((user) => {
+        auth.onAuthStateChanged(async (user) => {
             const overlay = document.getElementById('loading-overlay');
             if (user) {
+                // Tangani hasil redirect Google Sign-In jika pengguna baru
+                try {
+                    const result = await auth.getRedirectResult();
+                    if (result && result.user) {
+                        const snapshot = await db.ref('users/' + user.uid).once('value');
+                        if (!snapshot.exists()) {
+                            await db.ref('users/' + user.uid).set({
+                                uid: user.uid,
+                                username: user.displayName || user.email.split('@')[0],
+                                email: user.email || '',
+                                phone: '',
+                                businessName: '',
+                                photoURL: user.photoURL || '',
+                                createdAt: firebase.database.ServerValue.TIMESTAMP,
+                                role: 'umkm',
+                                authProvider: 'google'
+                            });
+                        }
+                    }
+                } catch(e) {
+                    // Abaikan jika tidak ada redirect
+                }
                 // PROTEKSI ADMIN: Jika admin masuk ke dashboard, arahkan ke panel admin
                 if (user.email === 'admin@pasarumkm.com') {
                     window.location.href = 'adminverifikasi.html';
