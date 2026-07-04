@@ -5386,13 +5386,7 @@
 
         function transitionToNextAd() {
             clearTimeout(adTimeoutId);
-            const modal = document.getElementById('ad-modal');
-            modal.classList.add('opacity-0');
-            modal.firstElementChild.classList.remove('scale-100');
-            modal.firstElementChild.classList.add('scale-95');
-            setTimeout(() => {
-                playNextAd();
-            }, 300);
+            playNextAd();
         }
 
         window.closeAdModal = function() {
