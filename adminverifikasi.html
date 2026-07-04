@@ -204,6 +204,9 @@
             <button onclick="switchAdminTab('iklan')" id="tab-adm-iklan" class="flex-1 text-center py-2 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-700 transition-all active:scale-[0.98]">
                 Iklan Popup
             </button>
+            <button onclick="switchAdminTab('transactions')" id="tab-adm-transactions" class="flex-1 text-center py-2 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-700 transition-all active:scale-[0.98]">
+                Transaksi & Pembayaran
+            </button>
         </div>
 
         <!-- Section: UMKM List & Revenue -->
@@ -501,6 +504,37 @@
                         <i class="fa-regular fa-image text-2xl"></i>
                     </div>
                     <p class="text-slate-500 text-sm font-medium">Belum ada iklan yang ditambahkan.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: Transaksi & Pembayaran -->
+        <div id="section-adm-transactions" class="hidden space-y-8">
+            <div class="glass-card overflow-hidden shadow-sm bg-white p-6 border border-slate-100">
+                <h3 class="font-display text-base font-bold text-slate-800 flex items-center gap-2 mb-4">
+                    <i class="fa-solid fa-receipt text-blue-500"></i> Riwayat Transaksi & Pembayaran
+                </h3>
+                <p class="text-xs text-slate-500 mb-6">Daftar semua transaksi pesanan yang terjadi di platform dari seluruh penjual dan pembeli.</p>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th class="px-4 py-3 text-xs font-bold text-slate-700 uppercase tracking-wider">ID</th>
+                                <th class="px-4 py-3 text-xs font-bold text-slate-700 uppercase tracking-wider">Tanggal</th>
+                                <th class="px-4 py-3 text-xs font-bold text-slate-700 uppercase tracking-wider">Pembeli</th>
+                                <th class="px-4 py-3 text-xs font-bold text-slate-700 uppercase tracking-wider">Penjual</th>
+                                <th class="px-4 py-3 text-xs font-bold text-slate-700 uppercase tracking-wider">Produk</th>
+                                <th class="px-4 py-3 text-xs font-bold text-slate-700 uppercase tracking-wider text-center">Qty</th>
+                                <th class="px-4 py-3 text-xs font-bold text-slate-700 uppercase tracking-wider text-right">Total</th>
+                                <th class="px-4 py-3 text-xs font-bold text-slate-700 uppercase tracking-wider">Metode</th>
+                                <th class="px-4 py-3 text-xs font-bold text-slate-700 uppercase tracking-wider">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-transactions-table-body" class="divide-y divide-slate-100">
+                            <!-- Loaded dynamically -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -1018,20 +1052,22 @@
             const btnWd = document.getElementById('tab-adm-wd');
             const btnRetur = document.getElementById('tab-adm-retur');
             const btnIklan = document.getElementById('tab-adm-iklan');
+            const btnTransactions = document.getElementById('tab-adm-transactions');
             
             const secUmkm = document.getElementById('section-adm-umkm');
             const secWd = document.getElementById('section-adm-wd');
             const secRetur = document.getElementById('section-adm-retur');
             const secIklan = document.getElementById('section-adm-iklan');
+            const secTransactions = document.getElementById('section-adm-transactions');
 
-            [btnUmkm, btnWd, btnRetur, btnIklan].forEach(btn => {
+            [btnUmkm, btnWd, btnRetur, btnIklan, btnTransactions].forEach(btn => {
                 if(btn) {
                     btn.classList.remove('bg-white', 'shadow-sm', 'text-slate-700');
                     btn.classList.add('text-slate-500', 'hover:text-slate-700');
                 }
             });
 
-            [secUmkm, secWd, secRetur, secIklan].forEach(sec => {
+            [secUmkm, secWd, secRetur, secIklan, secTransactions].forEach(sec => {
                 if(sec) sec.classList.add('hidden');
             });
 
@@ -1055,6 +1091,13 @@
                 btnIklan.classList.remove('text-slate-500', 'hover:text-slate-700');
                 secIklan.classList.remove('hidden');
                 loadAdminAds();
+            } else if (tab === 'transactions') {
+                if (btnTransactions) {
+                    btnTransactions.classList.add('bg-white', 'shadow-sm', 'text-slate-700');
+                    btnTransactions.classList.remove('text-slate-500', 'hover:text-slate-700');
+                }
+                if (secTransactions) secTransactions.classList.remove('hidden');
+                loadAllTransactions();
             }
         };
 
@@ -1370,6 +1413,80 @@
         };
 
         window.loadUsers = loadUsers;
+        async function loadAllTransactions() {
+            const tbody = document.getElementById('admin-transactions-table-body');
+            tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-8 text-center text-slate-400"><i class="fa-solid fa-circle-notch fa-spin"></i> Memuat transaksi...</td></tr>';
+            try {
+                let data = [];
+                try {
+                    const res = await fetch("http://localhost:8000/api/admin/transactions");
+                    const json = await res.json();
+                    if (json.status === "success") {
+                        data = json.data;
+                    } else {
+                        throw new Error("Gagal mengambil data dari backend");
+                    }
+                } catch (backendErr) {
+                    console.log("Backend not running or failed, falling back to direct Turso query:", backendErr);
+                    // Query Turso directly
+                    const query = `
+                        SELECT 
+                            r.id,
+                            r.buyer_name,
+                            u.businessName as seller_name,
+                            r.product_name,
+                            r.qty,
+                            r.total_price,
+                            r.status,
+                            r.payment_method,
+                            r.created_at
+                        FROM riwayat_pemesanan r
+                        LEFT JOIN users u ON r.seller_uid = u.uid
+                        ORDER BY r.created_at DESC
+                    `;
+                    const rs = await turso.execute(query);
+                    data = rs.rows;
+                }
+                
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-8 text-center text-slate-400">Belum ada transaksi.</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = '';
+                data.forEach(row => {
+                    const dateObj = new Date(row.created_at || Date.now());
+                    const dateStr = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit' });
+                    
+                    let statusColor = "text-slate-600 bg-slate-50 border-slate-200";
+                    if (row.status === "Berhasil" || row.status === "Selesai") statusColor = "text-emerald-600 bg-emerald-50 border-emerald-200";
+                    if (row.status === "Dibatalkan" || row.status === "Gagal") statusColor = "text-red-600 bg-red-50 border-red-200";
+                    if (row.status === "Diproses" || row.status === "Pending") statusColor = "text-amber-600 bg-amber-50 border-amber-200";
+
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50 transition-colors";
+                    tr.innerHTML = `
+                        <td class="px-4 py-3 font-mono text-xs font-bold text-slate-500">#${row.id}</td>
+                        <td class="px-4 py-3 text-xs text-slate-500">${dateStr}</td>
+                        <td class="px-4 py-3 font-bold text-slate-800">${row.buyer_name || '-'}</td>
+                        <td class="px-4 py-3 font-bold text-blue-600">${row.seller_name || '-'}</td>
+                        <td class="px-4 py-3 max-w-[200px] truncate" title="${row.product_name}">${row.product_name}</td>
+                        <td class="px-4 py-3 text-center font-bold">${row.qty}</td>
+                        <td class="px-4 py-3 text-right font-bold text-emerald-600">Rp ${parseInt(row.total_price).toLocaleString('id-ID')}</td>
+                        <td class="px-4 py-3 text-xs uppercase font-bold text-slate-500">${row.payment_method || '-'}</td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide border ${statusColor}">
+                                ${row.status || 'Pending'}
+                            </span>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                console.error(err);
+                tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-8 text-center text-red-500">Terjadi kesalahan saat memuat data transaksi.</td></tr>';
+            }
+        }
     </script>
 </body>
 
