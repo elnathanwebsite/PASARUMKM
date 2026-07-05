@@ -9,6 +9,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/websocket/v2"
 )
 
 func main() {
@@ -53,6 +54,15 @@ func main() {
 		})
 	})
 
+	// WebSocket Upgrade Middleware
+	app.Use("/api/realtime/ws", func(c *fiber.Ctx) error {
+		if websocket.IsWebSocketUpgrade(c) {
+			c.Locals("allowed", true)
+			return c.Next()
+		}
+		return fiber.ErrUpgradeRequired
+	})
+
 	// API Groups
 	api := app.Group("/api")
 
@@ -73,6 +83,9 @@ func main() {
 
 	push := api.Group("/push")
 	routers.SetupPushRoutes(push)
+
+	rt := api.Group("/realtime")
+	routers.SetupRealtimeRoutes(rt)
 
 	// Start server
 	port := os.Getenv("PORT")
