@@ -599,34 +599,55 @@
             }
         }
 
-        /* Mobile Compacting to prevent scroll */
+        /* Mobile Full-Screen Edge-to-Edge Layout */
         @media (max-width: 767px) {
-            body { padding: 0.25rem; align-items: stretch; }
-            .auth-card { border-radius: 16px; min-height: auto; max-height: 98vh; overflow-y: auto; }
-            .auth-brand { padding: 1rem; }
-            .brand-logo { width: 48px; height: 48px; margin-bottom: 4px; }
-            .auth-brand h1 { font-size: 1.25rem; margin-bottom: 0; }
-            .auth-brand p { font-size: 0.75rem; margin-bottom: 0; }
+            body { padding: 0; margin: 0; height: 100dvh; overflow: hidden; align-items: stretch; }
+            main { height: 100%; max-width: 100%; display: flex; flex-direction: column; padding: 0; }
+            .auth-card { 
+                border-radius: 0; 
+                box-shadow: none;
+                flex: 1; 
+                min-height: auto; 
+                max-height: none; 
+                overflow-y: auto; 
+                display: flex;
+                flex-direction: column;
+            }
+            .auth-card-grid { display: flex; flex-direction: column; flex: 1; }
             
-            .form-container { padding: 0.75rem 1rem; }
-            .tab-toggle { margin-bottom: 8px; padding: 2px; }
-            .tab-btn { padding: 6px; font-size: 13px; }
+            /* Branding Section with Background Image */
+            .auth-brand { 
+                padding: 2rem 1.5rem; 
+                flex: 0 0 35%; /* Takes 35% of the screen height */
+                justify-content: center; 
+            }
+            .brand-logo { width: 64px; height: 64px; margin-bottom: 8px; }
+            .auth-brand h1 { font-size: 1.75rem; margin-bottom: 0.25rem; }
+            .auth-brand p { font-size: 0.875rem; margin-bottom: 0; }
             
-            .glass-input { padding: 8px 12px 8px 36px; font-size: 13px; }
-            .input-icon { left: 12px; font-size: 14px; }
-            .input-wrapper { margin-bottom: 8px; }
-            .btn-primary, .btn-google { padding: 8px 16px; font-size: 13px; }
+            /* Form Container */
+            .form-container { padding: 1.5rem 1.25rem; flex: 1; display: flex; flex-direction: column; justify-content: flex-start; }
+            .tab-toggle { margin-bottom: 16px; padding: 4px; }
+            .tab-btn { padding: 8px; font-size: 14px; }
             
-            h2.text-2xl { font-size: 1.125rem; margin-bottom: 0 !important; }
-            p.text-sm { font-size: 0.75rem; line-height: 1.2; }
-            .mb-6, .mb-5 { margin-bottom: 8px !important; }
-            .mb-4 { margin-bottom: 8px !important; }
-            .mb-3 { margin-bottom: 4px !important; }
+            .glass-input { padding: 12px 14px 12px 40px; font-size: 14px; }
+            .input-icon { left: 14px; font-size: 15px; }
+            .input-wrapper { margin-bottom: 12px; }
+            .btn-primary, .btn-google { padding: 12px 20px; font-size: 14px; }
             
-            .divider { margin: 8px 0; }
-            .divider span { font-size: 11px; }
+            h2.text-2xl { font-size: 1.5rem; margin-bottom: 0.25rem !important; }
+            p.text-sm { font-size: 0.875rem; line-height: 1.4; }
+            .mb-6, .mb-5 { margin-bottom: 12px !important; }
+            .mb-4 { margin-bottom: 12px !important; }
+            .mb-3 { margin-bottom: 8px !important; }
             
-            .flex.items-center.justify-between.mb-6 { margin-bottom: 8px !important; }
+            .divider { margin: 12px 0; }
+            .divider span { font-size: 12px; }
+            
+            .flex.items-center.justify-between.mb-6 { margin-bottom: 12px !important; }
+            
+            /* Footer */
+            p.mt-6 { margin-top: auto !important; margin-bottom: 12px !important; flex-shrink: 0; font-size: 0.75rem; }
         }
 
         /* Reduced motion */
