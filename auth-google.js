@@ -9,7 +9,7 @@
  */
 
 const GOOGLE_CLIENT_ID = '327599206682-spog2c3u2566qqffdgjmu66dg1ja5109.apps.googleusercontent.com';
-const ADMIN_EMAIL      = 'admin@pasarumkm.com';
+const ADMIN_EMAIL      = 'arifanadmin@gmail.com';
 
 // ── Storage Keys ────────────────────────────────────────────────
 const KEY_USER    = 'pasar_umkm_user';    // { uid, email, name, photoURL, ... }
@@ -55,6 +55,12 @@ function signOut() {
     localStorage.removeItem(KEY_USER);
     localStorage.removeItem(KEY_TOKEN);
     localStorage.removeItem(KEY_ROLE);
+    try {
+        sessionStorage.removeItem('has_shown_login_ad');
+        Object.keys(sessionStorage).forEach(k => {
+            if (k.startsWith('ad_shown_session_')) sessionStorage.removeItem(k);
+        });
+    } catch (_) {}
     // Revoke token Google (best-effort)
     try {
         google.accounts.oauth2.revoke(localStorage.getItem(KEY_TOKEN) || '', () => {});

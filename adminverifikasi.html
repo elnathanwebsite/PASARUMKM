@@ -707,22 +707,22 @@
             } catch(e){}
         })();
 
-        const ADMIN_EMAIL = 'admin@pasarumkm.com';
+        const ADMIN_EMAIL = 'arifanadmin@gmail.com';
         let allUsers = [];
 
         // Auth Check
         PasarAuth.onAuthStateChanged(async (user) => {
             const overlay = document.getElementById('loading-overlay');
             if (user) {
-                if (user.email === ADMIN_EMAIL) {
+                if (user.email === ADMIN_EMAIL || user.role === 'admin' && user.email.toLowerCase() === 'arifanadmin@gmail.com') {
                     overlay.classList.add('hidden');
                     document.getElementById('admin-info').classList.remove('hidden');
                     document.getElementById('admin-email').textContent = user.email;
                     loadUsers();
                     initPushNotification(user.uid, turso);
                 } else {
-                    showToast("Akses ditolak! Halaman ini hanya untuk Admin.", "error");
-                    setTimeout(() => window.location.href = 'adminlogin.html', 2000);
+                    showToast("Akses ditolak! Halaman ini hanya untuk Admin (arifanadmin@gmail.com).", "error");
+                    setTimeout(() => window.location.href = 'adminlogin.html', 1500);
                 }
             } else {
                 window.location.href = 'adminlogin.html';
