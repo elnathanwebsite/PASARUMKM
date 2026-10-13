@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 
 <head>
@@ -24,10 +24,10 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!-- Auth Helper -->
+    <script src="auth-google.js"></script>
 
     <script>
         tailwind.config = {
@@ -673,18 +673,13 @@
     <!-- Toast Container -->
     <div id="toast-container"></div>
 
-    <!-- Modal Lupa Password -->
-    <div id="forgot-modal" class="modal-overlay" role="dialog" aria-label="Reset Password">
+    <!-- Informasi Google OAuth -->
+    <div id="forgot-modal" class="modal-overlay" role="dialog" aria-label="Info Login Google">
         <div class="modal-content">
-            <h3 class="font-display text-xl font-bold mb-2">Reset Password</h3>
-            <p class="text-sm mb-4" style="color: var(--muted);">Masukkan email Anda dan kami akan mengirimkan link untuk mereset password.</p>
-            <div class="input-wrapper mb-4">
-                <i class="fa-regular fa-envelope input-icon"></i>
-                <input type="email" id="forgot-email" class="glass-input" placeholder="nama@email.com" aria-label="Email reset password">
-            </div>
+            <h3 class="font-display text-xl font-bold mb-2">Login dengan Google</h3>
+            <p class="text-sm mb-4" style="color: var(--muted);">Sistem ini menggunakan <strong>Google OAuth 2.0</strong>. Klik tombol <strong>"Masuk dengan Google"</strong> untuk login atau mendaftar secara otomatis menggunakan akun Google Anda.</p>
             <div class="flex gap-3">
-                <button onclick="closeForgotModal()" class="flex-1 py-3 px-4 rounded-xl font-semibold text-sm bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors">Batal</button>
-                <button onclick="sendResetEmail()" id="reset-btn" class="btn-primary flex-1">Kirim Link</button>
+                <button onclick="closeForgotModal()" class="flex-1 py-3 px-4 rounded-xl font-semibold text-sm bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors">Mengerti</button>
             </div>
         </div>
     </div>
@@ -731,41 +726,21 @@
                         <button class="tab-btn" id="tab-register" onclick="switchTab('register')" role="tab" aria-selected="false">Daftar</button>
                     </div>
 
-                    <!-- Form Login -->
+                    <!-- Panel Login -->
                     <div class="form-panel active" id="panel-login" role="tabpanel">
                         <h2 class="font-display text-2xl font-bold mb-1">Selamat Datang</h2>
-                        <p class="text-sm mb-6" style="color: var(--muted);">Masuk ke akun Pasar UMKM kamu</p>
+                        <p class="text-sm mb-6" style="color: var(--muted);">Masuk ke akun Pasar UMKM kamu menggunakan Google</p>
 
-                        <form id="login-form" onsubmit="handleLogin(event)" novalidate>
-                            <div class="input-wrapper mb-4">
-                                <i class="fa-regular fa-envelope input-icon"></i>
-                                <input type="email" id="login-email" class="glass-input" placeholder="Email" required autocomplete="email" aria-label="Email">
-                                <div class="input-error" id="login-email-error">Masukkan email yang valid</div>
+                        <!-- Info Google Sign-In -->
+                        <div style="background: linear-gradient(135deg,#EEF2FF,#DBEAFE); border: 1px solid #BFDBFE; border-radius: 14px; padding: 16px 18px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 12px;">
+                            <i class="fa-brands fa-google" style="color:#4285F4; font-size:18px; margin-top:2px; flex-shrink:0;"></i>
+                            <div>
+                                <p style="font-size:13px; font-weight:700; color:#1E3A8A; margin-bottom:3px;">Login dengan Akun Google</p>
+                                <p style="font-size:12px; color:#3B82F6;">Klik tombol di bawah untuk masuk menggunakan akun Google Anda. Aman & cepat tanpa password tambahan.</p>
                             </div>
+                        </div>
 
-                            <div class="input-wrapper mb-3">
-                                <i class="fa-solid fa-lock input-icon"></i>
-                                <input type="password" id="login-password" class="glass-input" placeholder="Password" required autocomplete="current-password" style="padding-right: 48px;" aria-label="Password">
-                                <button type="button" class="pwd-toggle" onclick="togglePassword('login-password', this)" aria-label="Tampilkan password">
-                                    <i class="fa-regular fa-eye"></i>
-                                </button>
-                                <div class="input-error" id="login-password-error">Password minimal 6 karakter</div>
-                            </div>
-
-                            <div class="flex items-center justify-between mb-6">
-                                <label class="flex items-center gap-2 cursor-pointer text-sm" style="color: var(--muted);">
-                                    <input type="checkbox" class="custom-checkbox" id="remember-me">
-                                    Ingat saya
-                                </label>
-                                <span class="link text-sm" onclick="openForgotModal()" tabindex="0" role="button">Lupa password?</span>
-                            </div>
-
-                            <button type="submit" class="btn-primary mb-4" id="login-btn">Masuk</button>
-                        </form>
-
-                        <div class="divider mb-4"><span>atau masuk dengan</span></div>
-
-                        <button class="btn-google" onclick="handleGoogleSignIn()" aria-label="Masuk dengan Google">
+                        <button class="btn-google" id="login-google-btn" onclick="handleGoogleSignIn()" aria-label="Masuk dengan Google">
                             <svg width="20" height="20" viewBox="0 0 48 48">
                                 <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" />
                                 <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" />
@@ -774,70 +749,53 @@
                             </svg>
                             Masuk dengan Google
                         </button>
+
+                        <!-- Render area tombol Google resmi (backup) -->
+                        <div id="google-signin-btn" style="display:flex; justify-content:center; margin-top:10px;"></div>
                     </div>
 
-                    <!-- Form Daftar -->
+                    <!-- Panel Daftar -->
                     <div class="form-panel" id="panel-register" role="tabpanel">
                         <h2 class="font-display text-2xl font-bold mb-1">Buat Akun Baru</h2>
-                        <p class="text-sm mb-5" style="color: var(--muted);">Daftarkan usahamu di Pasar UMKM</p>
+                        <p class="text-sm mb-5" style="color: var(--muted);">Daftarkan usahamu di Pasar UMKM dengan Google</p>
 
-                        <form id="register-form" onsubmit="handleRegister(event)" novalidate>
-                            <div class="input-wrapper mb-3">
-                                <i class="fa-regular fa-user input-icon"></i>
-                                <input type="text" id="reg-username" class="glass-input" placeholder="Username" required autocomplete="username" minlength="3" aria-label="Username">
-                                <div class="input-error" id="reg-username-error">Username minimal 3 karakter</div>
-                            </div>
-
-                            <div class="input-wrapper mb-3">
-                                <i class="fa-regular fa-envelope input-icon"></i>
-                                <input type="email" id="reg-email" class="glass-input" placeholder="Email" required autocomplete="email" aria-label="Email">
-                                <div class="input-error" id="reg-email-error">Masukkan email yang valid</div>
-                            </div>
-
+                        <!-- Form data tambahan (diisi setelah Google login) -->
+                        <div id="reg-extra-form" style="display:none;">
+                            <p style="font-size:12px; color:#64748B; margin-bottom:12px;">Lengkapi data usaha Anda:</p>
                             <div class="input-wrapper mb-3">
                                 <i class="fa-brands fa-whatsapp input-icon"></i>
-                                <input type="tel" id="reg-phone" class="glass-input" placeholder="No. WhatsApp (08xxx)" required aria-label="Nomor WhatsApp">
+                                <input type="tel" id="reg-phone" class="glass-input" placeholder="No. WhatsApp (08xxx)" aria-label="Nomor WhatsApp">
                                 <div class="input-error" id="reg-phone-error">Nomor WhatsApp tidak valid</div>
                             </div>
-
-                            <div class="input-wrapper mb-3">
+                            <div class="input-wrapper mb-5">
                                 <i class="fa-solid fa-store input-icon"></i>
-                                <input type="text" id="reg-business" class="glass-input" placeholder="Nama Usaha" required aria-label="Nama Usaha">
+                                <input type="text" id="reg-business" class="glass-input" placeholder="Nama Usaha" aria-label="Nama Usaha">
                                 <div class="input-error" id="reg-business-error">Nama usaha wajib diisi</div>
                             </div>
+                            <button class="btn-primary mb-4" id="register-btn" onclick="handleCompleteRegister()">Simpan &amp; Masuk Dashboard</button>
+                        </div>
 
-                            <div class="input-wrapper mb-3">
-                                <i class="fa-solid fa-lock input-icon"></i>
-                                <input type="password" id="reg-password" class="glass-input" placeholder="Password (min. 6 karakter)" required minlength="6" style="padding-right: 48px;" aria-label="Password">
-                                <button type="button" class="pwd-toggle" onclick="togglePassword('reg-password', this)" aria-label="Tampilkan password">
-                                    <i class="fa-regular fa-eye"></i>
-                                </button>
-                                <div class="input-error" id="reg-password-error">Password minimal 6 karakter</div>
+                        <div id="reg-google-area">
+                            <!-- Info -->
+                            <div style="background: linear-gradient(135deg,#F0FDF4,#DCFCE7); border: 1px solid #BBF7D0; border-radius: 14px; padding: 16px 18px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 12px;">
+                                <i class="fa-solid fa-shield-halved" style="color:#22C55E; font-size:18px; margin-top:2px; flex-shrink:0;"></i>
+                                <div>
+                                    <p style="font-size:13px; font-weight:700; color:#166534; margin-bottom:3px;">Daftar Mudah &amp; Aman</p>
+                                    <p style="font-size:12px; color:#16A34A;">Gunakan akun Google Anda untuk mendaftar. Data profil dasar (nama, email, foto) akan diambil secara otomatis.</p>
+                                </div>
                             </div>
 
-                            <div class="input-wrapper mb-5">
-                                <i class="fa-solid fa-lock input-icon" style="opacity: 0.6;"></i>
-                                <input type="password" id="reg-confirm" class="glass-input" placeholder="Konfirmasi Password" required style="padding-right: 48px;" aria-label="Konfirmasi Password">
-                                <button type="button" class="pwd-toggle" onclick="togglePassword('reg-confirm', this)" aria-label="Tampilkan konfirmasi password">
-                                    <i class="fa-regular fa-eye"></i>
-                                </button>
-                                <div class="input-error" id="reg-confirm-error">Password tidak cocok</div>
-                            </div>
-
-                            <button type="submit" class="btn-primary mb-4" id="register-btn">Daftar Sekarang</button>
-                        </form>
-
-                        <div class="divider mb-4"><span>atau daftar dengan</span></div>
-
-                        <button class="btn-google" onclick="handleGoogleSignIn()" aria-label="Daftar dengan Google">
-                            <svg width="20" height="20" viewBox="0 0 48 48">
-                                <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" />
-                                <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" />
-                                <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" />
-                                <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" />
-                            </svg>
-                            Daftar dengan Google
-                        </button>
+                            <button class="btn-google" id="register-google-btn" onclick="handleGoogleSignUp()" aria-label="Daftar dengan Google">
+                                <svg width="20" height="20" viewBox="0 0 48 48">
+                                    <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" />
+                                    <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" />
+                                    <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" />
+                                    <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" />
+                                </svg>
+                                Daftar dengan Google
+                            </button>
+                            <div id="google-signup-btn" style="display:flex; justify-content:center; margin-top:10px;"></div>
+                        </div>
                     </div>
                 </section>
             </div>
@@ -850,37 +808,15 @@
 
     <script>
         // ================================================================
-        // Konfigurasi Firebase
+        // AUTENTIKASI GOOGLE OAUTH 2.0
+        // (Menggantikan Firebase Auth)
         // ================================================================
-        const firebaseConfig = {
-            apiKey: "AIzaSyDjtYr8Wsb9WAtfxM3UfDMFL_oFaMYM2Yg",
-            authDomain: "umkm-75e22.firebaseapp.com",
-            projectId: "umkm-75e22",
-            storageBucket: "umkm-75e22.firebasestorage.app",
-            messagingSenderId: "1042010063344",
-            appId: "1:1042010063344:web:c7be3bbedcd8f79c2c5d35",
-            databaseURL: "https://umkm-75e22-default-rtdb.firebaseio.com"
-        };
 
-        // Inisialisasi Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.database();
-
-        // ================================================================
-        // Konfigurasi Cloudinary
-        // ================================================================
-        const CLOUDINARY_CONFIG = {
-            cloudName: 'umkm',
-            apiKey: '496393633193373',
-            uploadPreset: 'umkm_unsigned'
-        };
-
-        // ================================================================
-        // Observer Status Autentikasi
-        // ================================================================
-        auth.onAuthStateChanged((user) => {
+        // ── Cek sesi aktif → redirect ke dashboard ──────────────────────
+        // Tunggu GIS library dimuat sebelum cek
+        window.addEventListener('load', () => {
             const overlay = document.getElementById('loading-overlay');
+            const user = PasarAuth.getCurrentUser();
             if (user) {
                 window.location.href = 'dashboard.html';
             } else {
@@ -888,370 +824,150 @@
             }
         });
 
-        // ================================================================
-        // Perpindahan Tab Login / Daftar
-        // ================================================================
+        // ── Perpindahan Tab ─────────────────────────────────────────────
         function switchTab(tab) {
-            const loginTab = document.getElementById('tab-login');
-            const registerTab = document.getElementById('tab-register');
-            const loginPanel = document.getElementById('panel-login');
-            const registerPanel = document.getElementById('panel-register');
-
-            clearAllErrors();
+            const loginTab     = document.getElementById('tab-login');
+            const registerTab  = document.getElementById('tab-register');
+            const loginPanel   = document.getElementById('panel-login');
+            const registerPanel= document.getElementById('panel-register');
 
             if (tab === 'login') {
-                loginTab.classList.add('active');
-                loginTab.setAttribute('aria-selected', 'true');
-                registerTab.classList.remove('active');
-                registerTab.setAttribute('aria-selected', 'false');
-                loginPanel.classList.add('active');
-                registerPanel.classList.remove('active');
+                loginTab.classList.add('active');    loginTab.setAttribute('aria-selected','true');
+                registerTab.classList.remove('active'); registerTab.setAttribute('aria-selected','false');
+                loginPanel.classList.add('active');  registerPanel.classList.remove('active');
             } else {
-                registerTab.classList.add('active');
-                registerTab.setAttribute('aria-selected', 'true');
-                loginTab.classList.remove('active');
-                loginTab.setAttribute('aria-selected', 'false');
-                registerPanel.classList.add('active');
-                loginPanel.classList.remove('active');
+                registerTab.classList.add('active'); registerTab.setAttribute('aria-selected','true');
+                loginTab.classList.remove('active'); loginTab.setAttribute('aria-selected','false');
+                registerPanel.classList.add('active'); loginPanel.classList.remove('active');
             }
         }
 
-        // ================================================================
-        // Toggle Visibilitas Password
-        // ================================================================
-        function togglePassword(inputId, btn) {
-            const input = document.getElementById(inputId);
-            const icon = btn.querySelector('i');
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            } else {
-                input.type = 'password';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-            }
-        }
-
-        // ================================================================
-        // Sistem Notifikasi Toast
-        // ================================================================
+        // ── Toast ───────────────────────────────────────────────────────
         function showToast(message, type = 'info') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
             toast.className = 'toast ' + type;
-
             let icon = 'fa-circle-info';
             if (type === 'success') icon = 'fa-circle-check';
-            if (type === 'error') icon = 'fa-circle-xmark';
-
+            if (type === 'error')   icon = 'fa-circle-xmark';
             toast.innerHTML = '<i class="fa-solid ' + icon + '"></i><span>' + message + '</span>';
             container.appendChild(toast);
-
             setTimeout(() => {
                 toast.classList.add('toast-exit');
                 setTimeout(() => toast.remove(), 300);
             }, 4000);
         }
 
-        // ================================================================
-        // Penanganan Error Form
-        // ================================================================
-        function showError(elementId, message) {
-            const errorEl = document.getElementById(elementId);
-            if (errorEl) {
-                errorEl.textContent = message;
-                errorEl.classList.add('visible');
+        // ── Modal info ──────────────────────────────────────────────────
+        function openForgotModal()  { document.getElementById('forgot-modal').classList.add('visible'); }
+        function closeForgotModal() { document.getElementById('forgot-modal').classList.remove('visible'); }
+
+        // ── Google Sign-In (Login) ──────────────────────────────────────
+        function handleGoogleSignIn() {
+            const btn = document.getElementById('login-google-btn');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span> Memproses...'; }
+
+            PasarAuth.signInWithGoogle(
+                ({ user, isNewUser }) => {
+                    showToast('Login berhasil! Mengalihkan ke dashboard...', 'success');
+                    setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
+                },
+                (err) => {
+                    console.error('Google Sign-In Error:', err);
+                    showToast('Login dibatalkan atau gagal. Silakan coba lagi.', 'error');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/></svg> Masuk dengan Google';
+                    }
+                },
+                'user'
+            );
+        }
+
+        // ── Sementara Google Sign-Up (Daftar) ──────────────────────────
+        let _pendingGoogleUser = null;
+
+        function handleGoogleSignUp() {
+            const btn = document.getElementById('register-google-btn');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span> Memproses...'; }
+
+            PasarAuth.signInWithGoogle(
+                ({ user, isNewUser }) => {
+                    _pendingGoogleUser = user;
+                    if (isNewUser) {
+                        // Tampilkan form pelengkap
+                        document.getElementById('reg-google-area').style.display  = 'none';
+                        document.getElementById('reg-extra-form').style.display    = 'block';
+                        showToast('Akun Google ditemukan! Lengkapi data usaha Anda.', 'info');
+                    } else {
+                        // User sudah pernah daftar, langsung masuk
+                        showToast('Selamat datang kembali! Mengalihkan...', 'success');
+                        setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
+                    }
+                },
+                (err) => {
+                    console.error('Google Sign-Up Error:', err);
+                    showToast('Pendaftaran dibatalkan atau gagal. Silakan coba lagi.', 'error');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/></svg> Daftar dengan Google';
+                    }
+                },
+                'user'
+            );
+        }
+
+        // ── Simpan data tambahan (nama usaha, no. HP) ───────────────────
+        async function handleCompleteRegister() {
+            const phone        = document.getElementById('reg-phone').value.trim();
+            const businessName = document.getElementById('reg-business').value.trim();
+            const btn          = document.getElementById('register-btn');
+
+            if (!validatePhone(phone)) {
+                document.getElementById('reg-phone-error').classList.add('visible');
+                return;
             }
-            const wrapper = errorEl ? errorEl.parentElement : null;
-            const input = wrapper ? wrapper.querySelector('.glass-input') : null;
-            if (input) input.classList.add('error');
+            if (businessName.length < 1) {
+                document.getElementById('reg-business-error').classList.add('visible');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="btn-spinner"></span> Menyimpan...';
+
+            // Merge data tambahan ke user yang sudah tersimpan
+            const user = PasarAuth.getCurrentUser();
+            if (user) {
+                user.phone        = phone;
+                user.businessName = businessName;
+                user.username     = user.name || user.email.split('@')[0];
+                localStorage.setItem('pasar_umkm_user', JSON.stringify(user));
+            }
+
+            showToast('Pendaftaran berhasil! Mengalihkan ke dashboard...', 'success');
+            setTimeout(() => { window.location.href = 'dashboard.html'; }, 1500);
         }
 
-        function clearError(elementId) {
-            const errorEl = document.getElementById(elementId);
-            if (errorEl) errorEl.classList.remove('visible');
-            const wrapper = errorEl ? errorEl.parentElement : null;
-            const input = wrapper ? wrapper.querySelector('.glass-input') : null;
-            if (input) input.classList.remove('error');
-        }
-
-        function clearAllErrors() {
-            document.querySelectorAll('.input-error').forEach(el => el.classList.remove('visible'));
-            document.querySelectorAll('.glass-input').forEach(el => el.classList.remove('error'));
-        }
-
-        // ================================================================
-        // Pesan Error Firebase dalam Bahasa Indonesia
-        // ================================================================
-        function getFirebaseErrorMessage(errorCode) {
-            const messages = {
-                'auth/email-already-in-use': 'Email sudah terdaftar. Silakan masuk atau gunakan email lain.',
-                'auth/invalid-email': 'Format email tidak valid.',
-                'auth/weak-password': 'Password terlalu lemah. Gunakan minimal 6 karakter.',
-                'auth/user-not-found': 'Akun tidak ditemukan. Silakan daftar terlebih dahulu.',
-                'auth/wrong-password': 'Password salah. Silakan coba lagi.',
-                'auth/invalid-credential': 'Email atau password salah. Silakan coba lagi.',
-                'auth/too-many-requests': 'Terlalu banyak percobaan. Silakan coba lagi nanti.',
-                'auth/network-request-failed': 'Koneksi internet bermasalah. Silakan coba lagi.',
-                'auth/popup-closed-by-user': 'Proses login dibatalkan.',
-                'auth/popup-blocked': 'Popup diblokir browser. Izinkan popup untuk melanjutkan.',
-                'auth/account-exists-with-different-credential': 'Akun sudah ada dengan metode login berbeda.',
-            };
-            return messages[errorCode] || 'Terjadi kesalahan: ' + errorCode;
-        }
-
-        // ================================================================
-        // Validasi Input
-        // ================================================================
-        function validateEmail(email) {
-            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-        }
-
+        // ── Validasi ────────────────────────────────────────────────────
         function validatePhone(phone) {
             const cleaned = phone.replace(/[\s\-()]/g, '');
             return /^(08|\+628)\d{8,12}$/.test(cleaned);
         }
 
-        // ================================================================
-        // Handle Login Email/Password
-        // ================================================================
-        async function handleLogin(e) {
-            e.preventDefault();
-            clearAllErrors();
-
-            const email = document.getElementById('login-email').value.trim();
-            const password = document.getElementById('login-password').value;
-            const btn = document.getElementById('login-btn');
-            let hasError = false;
-
-            if (!validateEmail(email)) {
-                showError('login-email-error', 'Masukkan email yang valid');
-                hasError = true;
-            }
-            if (password.length < 6) {
-                showError('login-password-error', 'Password minimal 6 karakter');
-                hasError = true;
-            }
-            if (hasError) return;
-
-            btn.disabled = true;
-            btn.innerHTML = '<span class="btn-spinner"></span> Memproses...';
-
-            try {
-                const userCredential = await auth.signInWithEmailAndPassword(email, password);
-                const user = userCredential.user;
-                
-                // Email Verification check removed so users can login and explore dashboard.
-                
-                showToast('Login berhasil! Mengalihkan ke dashboard...', 'success');
-            } catch (error) {
-                console.error('Login error:', error);
-                showToast(getFirebaseErrorMessage(error.code), 'error');
-                btn.disabled = false;
-                btn.innerHTML = 'Masuk';
-            }
-        }
-
-        // ================================================================
-        // Handle Daftar Email/Password
-        // ================================================================
-        async function handleRegister(e) {
-            e.preventDefault();
-            clearAllErrors();
-
-            const username = document.getElementById('reg-username').value.trim();
-            const email = document.getElementById('reg-email').value.trim();
-            const phone = document.getElementById('reg-phone').value.trim();
-            const businessName = document.getElementById('reg-business').value.trim();
-            const password = document.getElementById('reg-password').value;
-            const confirm = document.getElementById('reg-confirm').value;
-            const btn = document.getElementById('register-btn');
-            let hasError = false;
-
-            if (username.length < 3) {
-                showError('reg-username-error', 'Username minimal 3 karakter');
-                hasError = true;
-            }
-            if (!validateEmail(email)) {
-                showError('reg-email-error', 'Masukkan email yang valid');
-                hasError = true;
-            }
-            if (!validatePhone(phone)) {
-                showError('reg-phone-error', 'Masukkan nomor WhatsApp yang valid (08xxx)');
-                hasError = true;
-            }
-            if (businessName.length < 1) {
-                showError('reg-business-error', 'Nama usaha wajib diisi');
-                hasError = true;
-            }
-            if (password.length < 6) {
-                showError('reg-password-error', 'Password minimal 6 karakter');
-                hasError = true;
-            }
-            if (password !== confirm) {
-                showError('reg-confirm-error', 'Password tidak cocok');
-                hasError = true;
-            }
-            if (hasError) return;
-
-            btn.disabled = true;
-            btn.innerHTML = '<span class="btn-spinner"></span> Verifikasi...';
-
-            try {
-                showToast('Pilih akun Google Anda untuk verifikasi...', 'info');
-                const provider = new firebase.auth.GoogleAuthProvider();
-                provider.setCustomParameters({
-                    prompt: 'select_account'
-                });
-
-                const result = await auth.signInWithPopup(provider);
-                const googleUser = result.user;
-
-                // Verifikasi email cocok
-                if (googleUser.email !== email) {
-                    if (result.additionalUserInfo && result.additionalUserInfo.isNewUser) {
-                        await googleUser.delete();
-                    } else {
-                        await auth.signOut();
-                    }
-                    showToast('Pendaftaran ditolak: Email Google tidak cocok dengan form', 'error');
-                    btn.disabled = false;
-                    btn.innerHTML = 'Daftar Sekarang';
-                    return;
-                }
-
-                // Email cocok. Tautkan dengan kredensial password.
-                try {
-                    const credential = firebase.auth.EmailAuthProvider.credential(email, password);
-                    await googleUser.linkWithCredential(credential);
-                } catch (e) {
-                    console.log('Tautan kredensial tidak diperlukan atau gagal:', e);
-                }
-
-                await googleUser.updateProfile({ displayName: username });
-
-                await db.ref('users/' + googleUser.uid).set({
-                    uid: googleUser.uid,
-                    username: username,
-                    email: email,
-                    phone: phone,
-                    businessName: businessName,
-                    photoURL: googleUser.photoURL || '',
-                    createdAt: firebase.database.ServerValue.TIMESTAMP,
-                    role: 'umkm',
-                    authProvider: 'google_and_email'
-                });
-
-                showToast('Pendaftaran berhasil! Mengalihkan ke dashboard...', 'success');
-                setTimeout(() => {
-                    window.location.href = 'dashboard.html';
-                }, 1500);
-
-            } catch (error) {
-                console.error('Register error:', error);
-                if (error.code !== 'auth/popup-closed-by-user') {
-                    showToast(getFirebaseErrorMessage(error.code), 'error');
-                }
-                btn.disabled = false;
-                btn.innerHTML = 'Daftar Sekarang';
-            }
-        }
-
-        // ================================================================
-        // Handle Login/Daftar dengan Google
-        // ================================================================
-        async function handleGoogleSignIn() {
-            try {
-                const provider = new firebase.auth.GoogleAuthProvider();
-                provider.addScope('profile');
-                provider.addScope('email');
-
-                const result = await auth.signInWithPopup(provider);
-                const user = result.user;
-
-                const snapshot = await db.ref('users/' + user.uid).once('value');
-
-                if (!snapshot.exists()) {
-                    await db.ref('users/' + user.uid).set({
-                        uid: user.uid,
-                        username: user.displayName || user.email.split('@')[0],
-                        email: user.email || '',
-                        phone: '',
-                        businessName: '',
-                        photoURL: user.photoURL || '',
-                        createdAt: firebase.database.ServerValue.TIMESTAMP,
-                        role: 'umkm',
-                        authProvider: 'google'
-                    });
-                    showToast('Akun berhasil dibuat! Lengkapi profil usahamu di dashboard.', 'info');
-                } else {
-                    showToast('Login berhasil! Mengalihkan...', 'success');
-                }
-
-            } catch (error) {
-                console.error('Google sign-in error:', error);
-                if (error.code !== 'auth/popup-closed-by-user') {
-                    showToast(getFirebaseErrorMessage(error.code), 'error');
-                }
-            }
-        }
-
-        // ================================================================
-        // Lupa Password / Reset Password
-        // ================================================================
-        function openForgotModal() {
-            document.getElementById('forgot-modal').classList.add('visible');
-            setTimeout(() => document.getElementById('forgot-email').focus(), 300);
-        }
-
-        function closeForgotModal() {
-            document.getElementById('forgot-modal').classList.remove('visible');
-        }
-
-        async function sendResetEmail() {
-            const email = document.getElementById('forgot-email').value.trim();
-            const btn = document.getElementById('reset-btn');
-
-            if (!validateEmail(email)) {
-                showToast('Masukkan email yang valid', 'error');
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerHTML = '<span class="btn-spinner"></span> Mengirim...';
-
-            try {
-                await auth.sendPasswordResetEmail(email);
-                showToast('Link reset password telah dikirim ke email Anda', 'success');
-                closeForgotModal();
-                document.getElementById('forgot-email').value = '';
-            } catch (error) {
-                showToast(getFirebaseErrorMessage(error.code), 'error');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = 'Kirim Link';
-            }
-        }
-
-        // ================================================================
-        // Partikel Latar Belakang
-        // ================================================================
+        // ── Partikel ────────────────────────────────────────────────────
         function createParticles() {
             const bgLayer = document.getElementById('bg-layer');
             const count = 25;
-
             for (let i = 0; i < count; i++) {
                 const particle = document.createElement('div');
                 particle.className = 'particle';
                 const size = (2 + Math.random() * 3);
                 particle.style.left = Math.random() * 100 + '%';
-                particle.style.top = (70 + Math.random() * 30) + '%';
+                particle.style.top  = (70 + Math.random() * 30) + '%';
                 particle.style.animationDuration = (8 + Math.random() * 15) + 's';
-                particle.style.animationDelay = Math.random() * 12 + 's';
-                particle.style.width = size + 'px';
+                particle.style.animationDelay   = Math.random() * 12 + 's';
+                particle.style.width  = size + 'px';
                 particle.style.height = size + 'px';
-
                 const colors = [
                     'rgba(20, 184, 166, 0.35)',
                     'rgba(245, 158, 11, 0.25)',
@@ -1259,39 +975,16 @@
                     'rgba(251, 191, 36, 0.2)'
                 ];
                 particle.style.background = colors[Math.floor(Math.random() * colors.length)];
-
                 bgLayer.appendChild(particle);
             }
         }
         createParticles();
 
-        // ================================================================
-        // Validasi Real-time & Interaksi
-        // ================================================================
-        document.querySelectorAll('.glass-input').forEach(input => {
-            input.addEventListener('input', function () {
-                if (this.classList.contains('error')) {
-                    const wrapper = this.closest('.input-wrapper');
-                    if (wrapper) {
-                        const errorEl = wrapper.querySelector('.input-error');
-                        if (errorEl) errorEl.classList.remove('visible');
-                    }
-                    this.classList.remove('error');
-                }
-            });
-        });
-
-        document.getElementById('forgot-modal').addEventListener('click', function (e) {
+        // ── Modal tutup saat klik overlay ──────────────────────────────
+        document.getElementById('forgot-modal').addEventListener('click', function(e) {
             if (e.target === this) closeForgotModal();
         });
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeForgotModal();
-        });
-
-        document.getElementById('forgot-email').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') sendResetEmail();
-        });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeForgotModal(); });
     </script>
 </body>
 

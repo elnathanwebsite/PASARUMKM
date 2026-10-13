@@ -26,9 +26,9 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <!-- Firebase SDK (HANYA AUTENTIKASI) -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <!-- Google Identity Services & Auth -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="auth-google.js"></script>
     <script src="push-notification.js" defer></script>
     
     <!-- PayPal JS SDK -->
@@ -441,17 +441,6 @@
     <script type="module">
         import { createClient } from 'https://esm.sh/@libsql/client/web';
 
-        // Konfigurasi Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyDjtYr8Wsb9WAtfxM3UfDMFL_oFaMYM2Yg",
-            authDomain: "umkm-75e22.firebaseapp.com",
-            projectId: "umkm-75e22",
-            storageBucket: "umkm-75e22.firebasestorage.app",
-            messagingSenderId: "1042010063344",
-            appId: "1:1042010063344:web:c7be3bbedcd8f79c2c5d35"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
 
         // Konfigurasi Turso
         const turso = createClient({
@@ -461,7 +450,7 @@
 
         let currentUid = null;
         let currentUserEmail = null;
-        auth.onAuthStateChanged((user) => {
+        PasarAuth.onAuthStateChanged((user) => {
             if (user) {
                 currentUid = user.uid;
                 currentUserEmail = user.email;

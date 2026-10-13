@@ -26,9 +26,10 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!-- Auth Helper -->
+    <script src="auth-google.js"></script>
 
     <script>
         tailwind.config = {
@@ -221,36 +222,34 @@
                 class="flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white">Daftar</button>
         </div>
 
-        <!-- Form Login -->
-        <form id="login-panel" onsubmit="handleAdminLogin(event)">
-            <div class="relative mb-4">
-                <i class="fa-regular fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                <input type="email" id="login-email" class="glass-input" placeholder="Email Admin" required>
+        <!-- Google Sign-In Section -->
+        <div id="login-panel">
+            <!-- Info box -->
+            <div style="background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.3); border-radius: 14px; padding: 16px 18px; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 12px;">
+                <i class="fa-solid fa-shield-halved" style="color:#3B82F6; font-size:18px; margin-top:2px; flex-shrink:0;"></i>
+                <div>
+                    <p style="font-size:13px; font-weight:700; color:#93C5FD; margin-bottom:3px;">Autentikasi Google OAuth 2.0</p>
+                    <p style="font-size:12px; color:#64748B;">Hanya akun Google dengan email <strong style="color:#93C5FD;">admin@pasarumkm.com</strong> yang diizinkan masuk ke sistem ini.</p>
+                </div>
             </div>
-            <div class="relative mb-8">
-                <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                <input type="password" id="login-password" class="glass-input" placeholder="Password" required>
-            </div>
-            <button type="submit" id="login-btn" class="btn-admin">Masuk Sekarang</button>
-        </form>
 
-        <!-- Form Daftar -->
-        <form id="register-panel" class="hidden" onsubmit="handleAdminRegister(event)">
-            <div class="relative mb-4">
-                <i class="fa-regular fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                <input type="email" id="reg-email" class="glass-input" placeholder="Email Admin (admin@pasarumkm.com)"
-                    required>
+            <button id="admin-google-btn" onclick="handleAdminGoogleSignIn()" class="btn-admin" style="display:flex; align-items:center; justify-content:center; gap:10px;">
+                <svg width="20" height="20" viewBox="0 0 48 48">
+                    <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
+                    <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>
+                    <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
+                    <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
+                </svg>
+                Masuk sebagai Admin (Google)
+            </button>
+        </div>
+
+        <!-- Register panel (hidden, tidak diperlukan lagi) -->
+        <div id="register-panel" class="hidden">
+            <div style="background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.3); border-radius: 14px; padding: 16px 18px; margin-bottom: 24px;">
+                <p style="font-size:13px; color:#93C5FD; text-align:center;">Untuk mendaftarkan admin baru, hubungi pengelola sistem.<br><br>Gunakan tab <strong>Masuk</strong> dengan akun Google admin@pasarumkm.com</p>
             </div>
-            <div class="relative mb-4">
-                <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                <input type="password" id="reg-password" class="glass-input" placeholder="Password Baru" required>
-            </div>
-            <div class="relative mb-8">
-                <i class="fa-solid fa-check-double absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                <input type="password" id="reg-confirm" class="glass-input" placeholder="Konfirmasi Password" required>
-            </div>
-            <button type="submit" id="reg-btn" class="btn-admin">Daftar Admin</button>
-        </form>
+        </div>
 
         <p class="mt-8 text-center text-[10px] text-slate-600 font-medium tracking-widest uppercase">
             &copy; 2025 PASAR UMKM. Restricted Access.
@@ -263,96 +262,74 @@
         </div>
     </div>
 
-    <script>
-        // Firebase Config (Session Terpisah untuk Admin)
-        const firebaseConfig = {
-            apiKey: "AIzaSyDjtYr8Wsb9WAtfxM3UfDMFL_oFaMYM2Yg",
-            authDomain: "umkm-75e22.firebaseapp.com",
-            projectId: "umkm-75e22",
-            storageBucket: "umkm-75e22.firebasestorage.app",
-            messagingSenderId: "1042010063344",
-            appId: "1:1042010063344:web:c7be3bbedcd8f79c2c5d35"
-        };
 
-        // Gunakan nama aplikasi khusus "AdminPortal" agar tidak menimpa sesi user biasa
-        const adminApp = firebase.initializeApp(firebaseConfig, "AdminPortal");
-        const auth = adminApp.auth();
+    <script>
+        // ================================================================
+        // ADMIN LOGIN - Google OAuth 2.0
+        // Hanya email admin@pasarumkm.com yang diizinkan
+        // ================================================================
 
         const ADMIN_EMAIL = 'admin@pasarumkm.com';
 
+        // Cek sesi admin yang sudah login
+        window.addEventListener('load', () => {
+            const user = PasarAuth.getCurrentUser();
+            if (user && user.email === ADMIN_EMAIL) {
+                window.location.href = 'adminverifikasi.html';
+            }
+        });
+
         function switchTab(tab) {
-            const loginBtn = document.getElementById('tab-login');
-            const regBtn = document.getElementById('tab-register');
+            const loginBtn  = document.getElementById('tab-login');
+            const regBtn    = document.getElementById('tab-register');
             const loginPanel = document.getElementById('login-panel');
-            const regPanel = document.getElementById('register-panel');
+            const regPanel   = document.getElementById('register-panel');
 
             if (tab === 'login') {
-                loginBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-blue-600 text-white shadow-lg shadow-blue-500/20';
-                regBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white';
+                loginBtn.className  = 'flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-blue-600 text-white shadow-lg shadow-blue-500/20';
+                regBtn.className    = 'flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white';
                 loginPanel.classList.remove('hidden');
                 regPanel.classList.add('hidden');
             } else {
-                regBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-blue-600 text-white shadow-lg shadow-blue-500/20';
-                loginBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white';
+                regBtn.className    = 'flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-blue-600 text-white shadow-lg shadow-blue-500/20';
+                loginBtn.className  = 'flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white';
                 regPanel.classList.remove('hidden');
                 loginPanel.classList.add('hidden');
             }
         }
 
-        async function handleAdminLogin(e) {
-            e.preventDefault();
-            const email = document.getElementById('login-email').value.trim();
-            const password = document.getElementById('login-password').value;
-            const btn = document.getElementById('login-btn');
+        // Google Sign-In Admin
+        function handleAdminGoogleSignIn() {
+            const btn = document.getElementById('admin-google-btn');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<span class="loader"></span>'; }
 
-            if (email !== ADMIN_EMAIL) {
-                showToast("Akses Ditolak! Hanya Admin yang diizinkan.", "error");
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerHTML = '<span class="loader"></span>';
-
-            try {
-                await auth.signInWithEmailAndPassword(email, password);
-                showToast("Berhasil! Masuk ke sistem...", "success");
-                setTimeout(() => window.location.href = 'adminverifikasi.html', 1000);
-            } catch (error) {
-                showToast("Login gagal. Periksa password Anda.", "error");
-                btn.disabled = false;
-                btn.innerHTML = "Masuk Sekarang";
-            }
-        }
-
-        async function handleAdminRegister(e) {
-            e.preventDefault();
-            const email = document.getElementById('reg-email').value.trim();
-            const password = document.getElementById('reg-password').value;
-            const confirm = document.getElementById('reg-confirm').value;
-            const btn = document.getElementById('reg-btn');
-
-            if (email !== ADMIN_EMAIL) {
-                showToast("Gagal! Anda hanya bisa mendaftar dengan email Admin.", "error");
-                return;
-            }
-
-            if (password !== confirm) {
-                showToast("Password tidak cocok!", "error");
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerHTML = '<span class="loader"></span>';
-
-            try {
-                await auth.createUserWithEmailAndPassword(email, password);
-                showToast("Akun Admin Berhasil Dibuat!", "success");
-                setTimeout(() => window.location.href = 'adminverifikasi.html', 1500);
-            } catch (error) {
-                showToast("Gagal mendaftar: " + error.message, "error");
-                btn.disabled = false;
-                btn.innerHTML = "Daftar Admin";
-            }
+            PasarAuth.signInWithGoogle(
+                ({ user }) => {
+                    if (user.email !== ADMIN_EMAIL) {
+                        // Tolak akses - bukan admin
+                        PasarAuth.signOut();
+                        showToast('Akses Ditolak! Hanya Admin yang diizinkan.', 'error');
+                        if (btn) { btn.disabled = false; btn.innerHTML = 'Masuk sebagai Admin (Google)'; }
+                        return;
+                    }
+                    // Admin terverifikasi
+                    // Tandai sebagai admin
+                    const u = PasarAuth.getCurrentUser();
+                    if (u) {
+                        u.role = 'admin';
+                        localStorage.setItem('pasar_umkm_user', JSON.stringify(u));
+                        localStorage.setItem('pasar_umkm_role', 'admin');
+                    }
+                    showToast('Berhasil! Masuk ke sistem admin...', 'success');
+                    setTimeout(() => window.location.href = 'adminverifikasi.html', 1000);
+                },
+                (err) => {
+                    console.error('Admin Google Sign-In Error:', err);
+                    showToast('Login dibatalkan atau gagal.', 'error');
+                    if (btn) { btn.disabled = false; btn.innerHTML = 'Masuk sebagai Admin (Google)'; }
+                },
+                'admin'
+            );
         }
 
         function showToast(message, type = 'info') {
@@ -361,7 +338,7 @@
             toast.className = 'toast';
             let icon = 'fa-circle-info text-blue-500';
             if (type === 'success') icon = 'fa-circle-check text-emerald-500';
-            if (type === 'error') icon = 'fa-circle-xmark text-red-500';
+            if (type === 'error')   icon = 'fa-circle-xmark text-red-500';
             toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${message}</span>`;
             container.appendChild(toast);
             setTimeout(() => {
@@ -371,13 +348,8 @@
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
         }
-
-        auth.onAuthStateChanged(user => {
-            if (user && user.email === ADMIN_EMAIL) {
-                window.location.href = 'adminverifikasi.html';
-            }
-        });
     </script>
 </body>
 
 </html>
+            apiKey: "AIzaSyDjtYr8Wsb9WAtfxM3UfDMFL_oFaMYM2Yg",

@@ -26,9 +26,9 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <!-- Google Identity Services & Auth -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="auth-google.js"></script>
     <script src="push-notification.js" defer></script>
 
     <script>
@@ -173,6 +173,10 @@
                     class="text-xs font-bold bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg border border-blue-100 hidden">
                     Admin: <span id="admin-email"></span>
                 </div>
+                <button onclick="handleAdminLogout()"
+                    class="text-xs font-bold bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-lg border border-red-200 transition-colors">
+                    <i class="fa-solid fa-right-from-bracket mr-1"></i> Keluar
+                </button>
             </div>
         </div>
     </nav>
@@ -615,19 +619,7 @@
     <script type="module">
         import { createClient } from 'https://esm.sh/@libsql/client/web';
 
-        // Firebase Config (Session Terpisah untuk Admin)
-        const firebaseConfig = {
-            apiKey: "AIzaSyDjtYr8Wsb9WAtfxM3UfDMFL_oFaMYM2Yg",
-            authDomain: "umkm-75e22.firebaseapp.com",
-            projectId: "umkm-75e22",
-            storageBucket: "umkm-75e22.firebasestorage.app",
-            messagingSenderId: "1042010063344",
-            appId: "1:1042010063344:web:c7be3bbedcd8f79c2c5d35"
-        };
 
-        // Menggunakan sesi yang sama dengan Admin Login
-        const adminApp = firebase.initializeApp(firebaseConfig, "AdminPortal");
-        const auth = adminApp.auth();
 
         // Turso Config
         const turso = createClient({
@@ -719,7 +711,7 @@
         let allUsers = [];
 
         // Auth Check
-        auth.onAuthStateChanged(async (user) => {
+        PasarAuth.onAuthStateChanged(async (user) => {
             const overlay = document.getElementById('loading-overlay');
             if (user) {
                 if (user.email === ADMIN_EMAIL) {
@@ -730,12 +722,17 @@
                     initPushNotification(user.uid, turso);
                 } else {
                     showToast("Akses ditolak! Halaman ini hanya untuk Admin.", "error");
-                    setTimeout(() => window.location.href = 'dashboard.html', 2000);
+                    setTimeout(() => window.location.href = 'adminlogin.html', 2000);
                 }
             } else {
-                window.location.href = 'index.html';
+                window.location.href = 'adminlogin.html';
             }
         });
+
+        window.handleAdminLogout = function() {
+            PasarAuth.signOut();
+            window.location.href = 'adminlogin.html';
+        };
 
         let sellerSales = {};
         let sellerPaymentSales = {};
@@ -927,10 +924,7 @@
                 await turso.execute({ sql: "DELETE FROM tarik_dana WHERE seller_uid = ?", args: [uid] });
                 await turso.execute({ sql: "DELETE FROM riwayat_pemesanan WHERE seller_uid = ?", args: [uid] });
                 
-                // Hapus akun dari Firebase Realtime DB (jika ada data tersisa)
-                try {
-                    await firebase.database().ref('users/' + uid).remove();
-                } catch(e) { console.warn("Firebase RTDB delete error:", e); }
+                // Catatan: Auth telah beralih ke Google OAuth
 
                 showToast(`Toko ${username} beserta seluruh datanya berhasil dihapus permanen!`, "success");
                 loadUsers();

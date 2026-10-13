@@ -27,9 +27,10 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <!-- Firebase SDK (HANYA AUTENTIKASI) -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!-- Auth Helper -->
+    <script src="auth-google.js"></script>
     <script src="push-notification.js" defer></script>
 
     <script>
@@ -2331,18 +2332,9 @@
         }
 
         // ================================================================
-        // KONFIGURASI FIREBASE & TURSO
+        // KONFIGURASI AUTH GOOGLE & TURSO
         // ================================================================
-        const firebaseConfig = {
-            apiKey: "AIzaSyDjtYr8Wsb9WAtfxM3UfDMFL_oFaMYM2Yg",
-            authDomain: "umkm-75e22.firebaseapp.com",
-            projectId: "umkm-75e22",
-            storageBucket: "umkm-75e22.firebasestorage.app",
-            messagingSenderId: "1042010063344",
-            appId: "1:1042010063344:web:c7be3bbedcd8f79c2c5d35"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
+        // Firebase telah digantikan oleh Google OAuth 2.0 (auth-google.js)
 
         const turso = createClient({
             url: 'libsql://umkm-elnathanwebsite.aws-ap-northeast-1.turso.io',
@@ -2519,9 +2511,9 @@
         const MARKET_LIMIT = 20;
 
         // ================================================================
-        // AUTENTIKASI
+        // AUTENTIKASI - Google OAuth 2.0
         // ================================================================
-        auth.onAuthStateChanged((user) => {
+        PasarAuth.onAuthStateChanged((user) => {
             const overlay = document.getElementById('loading-overlay');
             if (user) {
                 // PROTEKSI ADMIN: Jika admin masuk ke dashboard, arahkan ke panel admin
@@ -2529,8 +2521,6 @@
                     window.location.href = 'adminverifikasi.html';
                     return;
                 }
-
-                // Email Verification check removed so users can explore dashboard while waiting for admin verification.
 
                 currentUid = user.uid;
                 overlay.classList.add('hidden');
@@ -2551,15 +2541,15 @@
         // ================================================================
         // FUNGSI PROFIL
         // ================================================================
-        async function syncUserProfileToTurso(firebaseUser) {
+        async function syncUserProfileToTurso(googleUser) {
             try {
-                const rs = await turso.execute({ sql: "SELECT * FROM users WHERE uid = ?", args: [firebaseUser.uid] });
+                const rs = await turso.execute({ sql: "SELECT * FROM users WHERE uid = ?", args: [googleUser.uid] });
                 if (rs.rows.length > 0) {
                     currentUserData = rs.rows[0];
                     
                     // PROTEKSI ADMIN VERIFICATION & BAN
                     if (currentUserData.isVerified === -1) {
-                        auth.signOut();
+                        PasarAuth.signOut();
                         alert('Akun Anda diblokir karena melanggar standar komunitas.');
                         window.location.href = 'index.html';
                         return;
@@ -2570,7 +2560,7 @@
                     if (currentUserData.aiUsageDate !== localDateStr) {
                         await turso.execute({
                             sql: "UPDATE users SET aiSearchCount = 0, aiDescCount = 0, aiAnalysisCount = 0, aiUsageDate = ? WHERE uid = ?",
-                            args: [localDateStr, firebaseUser.uid]
+                            args: [localDateStr, googleUser.uid]
                         });
                         currentUserData.aiSearchCount = 0;
                         currentUserData.aiDescCount = 0;
@@ -2579,12 +2569,12 @@
                     }
                 } else {
                     currentUserData = {
-                        uid: firebaseUser.uid,
-                        username: firebaseUser.displayName || firebaseUser.email.split('@')[0],
-                        email: firebaseUser.email,
+                        uid: googleUser.uid,
+                        username: googleUser.displayName || googleUser.email.split('@')[0],
+                        email: googleUser.email,
                         phone: '-',
                         businessName: 'UMKM Baru',
-                        photoURL: firebaseUser.photoURL || '',
+                        photoURL: googleUser.photoURL || '',
                         trialStartedAt: null
                     };
                     await turso.execute({
@@ -3755,7 +3745,7 @@
         // UTILITAS UI
         // ================================================================
         function closeModal(modalId) { document.getElementById(modalId).classList.remove('visible'); }
-        function handleLogout() { auth.signOut(); }
+        function handleLogout() { PasarAuth.signOut(); window.location.href = 'index.html'; }
 
         function showToast(message, type = 'info') {
             const container = document.getElementById('toast-container');
